@@ -12,18 +12,46 @@ import datetime # Added for timestamp generation
 import json # Added for JSON logging
 
 # ---- CONFIG ----
-SAMPLE_RATE = 16000
-MODEL_SIZE = "small"
-OLLAMA_MODEL = "qwen2.5:3b"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, "config.json")
+
+default_config = {
+    "SAMPLE_RATE": 16000,
+    "WHISPER_MODEL": "large-v3-turbo",
+    "OLLAMA_MODEL": "qwen2.5:3b",
+    "SILENCE_THRESHOLD": 300,
+    "SILENCE_DURATION": 2,
+    "TEMPERATURE": 0.1
+}
+
+if os.path.exists(config_path):
+    with open(config_path, "r") as f:
+        config = json.load(f)
+else:
+    config = default_config
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=4)
+
+SAMPLE_RATE = config.get("SAMPLE_RATE", 16000)
+MODEL_SIZE = config.get("WHISPER_MODEL", "large-v3-turbo")
+OLLAMA_MODEL = config.get("OLLAMA_MODEL", "qwen2.5:3b")
+OLLAMA_HOST = config.get("OLLAMA_HOST", "http://localhost:11434")
+SILENCE_THRESHOLD = config.get("SILENCE_THRESHOLD", 300)
+SILENCE_DURATION = config.get("SILENCE_DURATION", 2)
+TEMPERATURE = config.get("TEMPERATURE", 0.1)
+
+# ---- SOUND PATHS ----
+START_SOUND = os.path.join(script_dir, "sounds", "start.oga")
+END_SOUND = os.path.join(script_dir, "sounds", "end.oga")
+COMPLETE_SOUND = os.path.join(script_dir, "sounds", "complete.oga")
 
 # ---- SILENCE DETECTION CONFIG ----
-SILENCE_THRESHOLD = 300  # Adjust as needed (amplitude level)
-SILENCE_DURATION = 2   # seconds of continuous silence to stop recording
 CHUNK_SIZE = 1024        # Audio chunk size for processing
 
 # ---- RECORD AUDIO ----
-print("🎙 Recording...")
-subprocess.run(["paplay", "/usr/share/sounds/freedesktop/stereo/service-login.oga"]) # Start beep
+print(f"🎙 Recording (Model: {MODEL_SIZE}, Ollama: {OLLAMA_MODEL}, Host: {OLLAMA_HOST})...")
+# Sound 1: Start Recording
+subprocess.run(["paplay", START_SOUND])
 
 audio_buffer = []
 silent_chunks = 0
@@ -31,14 +59,10 @@ recording = True
 
 with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='int16', blocksize=CHUNK_SIZE) as stream:
     while recording:
-        chunk, overflowed = stream.read(CHUNK_SIZE)
+        chunk, _ = stream.read(CHUNK_SIZE)
         audio_buffer.append(chunk)
 
-        if len(chunk) == 0:
-            continue # Skip empty chunks
-
         # Calculate energy (RMS) of the chunk
-        # Ensure chunk is float to avoid overflow with **2, then convert back if needed
         energy = np.sqrt(np.mean(chunk.astype(float)**2))
 
         if energy < SILENCE_THRESHOLD:
@@ -48,50 +72,79 @@ with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='int16', blocksize
         else:
             silent_chunks = 0
 
-subprocess.run(["paplay", "/usr/share/sounds/freedesktop/stereo/service-logout.oga"]) # End beep
+# Sound 2: End Recording
+subprocess.run(["paplay", END_SOUND])
 
 audio = np.concatenate(audio_buffer)
-wav.write("input.wav", SAMPLE_RATE, audio)
+wav_path = os.path.join(script_dir, "input.wav")
+wav.write(wav_path, SAMPLE_RATE, audio)
+
+from langdetect import detect, DetectorFactory
+# Ensure consistent results
+DetectorFactory.seed = 0
+
+def detect_lang(text):
+    try:
+        return detect(text)
+    except:
+        return "en"
 
 # ---- TRANSCRIBE ----
 print("🧠 Transcribing...")
 model = WhisperModel(MODEL_SIZE, compute_type="int8")
-segments, _ = model.transcribe("input.wav")
+segments, _ = model.transcribe(wav_path)
 
 text = " ".join(seg.text for seg in segments)
 print("📝 Raw text:", text)
 
-# ---- SEND TO OLLAMA ----
-prompt = f"""
-You are an advanced text editor expert at cleaning and rewriting text obtained from speech transcription. Your task is to clean, format, and correct transcribed text from voice dictation.
+# ---- LANGUAGE DETECTION & PROMPT SELECTION ----
+lang = detect_lang(text)
+print(f"🌍 Detected Language: {lang}")
+
+if lang == 'hi':
+    # Hindi prompt
+    prompt = f"""
+कार्य: बोले गए पाठ को साफ़ और स्पष्ट रूप में दोबारा लिखना।
+
+कठोर नियम:
+1. इनपुट भाषा हिंदी है।
+2. आउटपुट केवल देवनागरी हिंदी में हो।
+3. अनुवाद (Translation) न करें।
+4. दोहराव और अनावश्यक शब्द (जैसे 'uh', 'um', 'मतलब') हटाएँ।
+5. व्याकरण और विराम चिह्नों को सही करें।
+6. केवल सुधारा हुआ पाठ ही दें। कोई अतिरिक्त टिप्पणी न करें।
+
+इनपुट पाठ:
+{text}
+
+आउटपुट:
+"""
+else:
+    # English/Default prompt
+    prompt = f"""
+Task: Clean and professionally rewrite the following speech transcription.
+
+STRICT RULES:
+1. The input language is ENGLISH.
+2. Output MUST be in ENGLISH ONLY. 
+3. DO NOT translate to any other language.
+4. Remove filler words (uh, um, like, okay, actually) and fix grammar/punctuation.
+5. If technical terms are used (like 'web.php', 'routes'), keep them intact.
+6. Output ONLY the refined text. No introductions or conclusions.
 
 INPUT TEXT:
 {text}
 
-INSTRUCTIONS:
-1. Detect the dominant language (English or Hindi/Hinglish).
-2. If the text is mostly English (>20%):
-   - Correct grammar, spelling, and engineering terminology.
-   - Output purely in English.
-3. If the text is mostly Hindi/Hinglish (>80%):
-   - Keep the flow natural but fix grammar.
-   - Output ONLY in Devanagari script (Hindi).
-   - DO NOT use Urdu script.
-4. Remove filler words (uh, um, like, okay) and repetitions.
-5. NEVER use Urdu / Arabic / Persian script.
-6. Clean grammar, remove filler words, and rewrite clearly and professionally.
-5. Do NOT add introductions ("Here is the corrected text") or explanations. Just output the final text.
-
-OUTPUT:
+REFINED TEXT:
 """
 
 response = requests.post(
-    "http://localhost:11434/api/generate",
+    f"{OLLAMA_HOST}/api/generate",
     json={
         "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False,
-        "temperature": 0.1,
+        "temperature": TEMPERATURE,
         "top_p": 0.9
     }
 )
@@ -139,4 +192,6 @@ subprocess.run(
 )
 
 print("✅ Copied to clipboard")
+# Sound 3: Processing Complete
+subprocess.run(["paplay", COMPLETE_SOUND])
 sys.exit(0)
