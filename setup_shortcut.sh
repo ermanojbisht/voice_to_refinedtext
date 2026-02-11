@@ -1,6 +1,7 @@
 #!/bin/bash
 NAME="VoiceToAI"
-COMMAND="/usr/bin/python3 /media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/voice_to_ai_clipboard.py"
+#COMMAND="/usr/bin/python3 /media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/voice_to_ai_clipboard.py"
+COMMAND="bash -c 'source .venv/bin/activate && python3 voice_to_ai_clipboard.py'"
 BINDING="<Control><Alt>v"
 
 # Find an available slot
