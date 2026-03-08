@@ -1,0 +1,8 @@
+Task: Correct and clean the following transcription into professional English.
+Rules:
+- Output ONLY the corrected text.
+- No explanations.
+- No translation.
+- No chat.
+Input: {text}
+Output:

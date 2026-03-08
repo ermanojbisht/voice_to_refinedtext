@@ -100,44 +100,41 @@ print("📝 Raw text:", text)
 
 # ---- LANGUAGE DETECTION & PROMPT SELECTION ----
 lang = detect_lang(text)
+if lang not in ["hi", "en"]:
+    lang = "en"  # Default to English if detection is ambiguous
 print(f"🌍 Detected Language: {lang}")
 
-if lang == 'hi':
-    # Hindi prompt
-    prompt = f"""
-कार्य: बोले गए पाठ को साफ़ और स्पष्ट रूप में दोबारा लिखना।
+# Resolve prompt and stops from directory structure
+prompts_dir = os.path.join(script_dir, "prompts")
+model_subdir = OLLAMA_MODEL.replace("/", "_").replace(":", "_") # Fallback to underscore-based names
+# Try exact match, then try the underscore version
+model_path = os.path.join(prompts_dir, OLLAMA_MODEL)
+if not os.path.exists(model_path):
+    model_path = os.path.join(prompts_dir, model_subdir)
 
-कठोर नियम:
-1. इनपुट भाषा हिंदी है।
-2. आउटपुट केवल देवनागरी हिंदी में हो।
-3. अनुवाद (Translation) न करें।
-4. दोहराव और अनावश्यक शब्द (जैसे 'uh', 'um', 'मतलब') हटाएँ।
-5. व्याकरण और विराम चिह्नों को सही करें।
-6. केवल सुधारा हुआ पाठ ही दें। कोई अतिरिक्त टिप्पणी न करें।
+# Default to "default" if model folder doesn't exist
+if not os.path.exists(model_path):
+    model_path = os.path.join(prompts_dir, "default")
 
-इनपुट पाठ:
-{text}
+prompt_file = os.path.join(model_path, f"{lang}.txt")
 
-आउटपुट:
-"""
+# Read the prompt
+if os.path.exists(prompt_file):
+    with open(prompt_file, "r") as f:
+        prompt_template = f.read()
 else:
-    # English/Default prompt
-    prompt = f"""
-Task: Clean and professionally rewrite the following speech transcription.
+    # Fallback to absolute default
+    prompt_template = "{text}"
 
-STRICT RULES:
-1. The input language is ENGLISH.
-2. Output MUST be in ENGLISH ONLY. 
-3. DO NOT translate to any other language.
-4. Remove filler words (uh, um, like, okay, actually) and fix grammar/punctuation.
-5. If technical terms are used (like 'web.php', 'routes'), keep them intact.
-6. Output ONLY the refined text. No introductions or conclusions.
+prompt = prompt_template.format(text=text)
 
-INPUT TEXT:
-{text}
+# Load stops
+stops_path = os.path.join(prompts_dir, "stops.json")
+with open(stops_path, "r") as f:
+    stops_data = json.load(f)
 
-REFINED TEXT:
-"""
+# Get stops for model or default
+stop_tokens = stops_data.get(OLLAMA_MODEL, stops_data.get(model_subdir, stops_data["default"]))[lang]
 
 response = requests.post(
     f"{OLLAMA_HOST}/api/generate",
@@ -146,7 +143,8 @@ response = requests.post(
         "prompt": prompt,
         "stream": False,
         "temperature": TEMPERATURE,
-        "top_p": 0.9
+        "top_p": 0.9,
+        "stop": stop_tokens
     }
 )
 
@@ -157,6 +155,20 @@ if "error" in response_json:
     final_text = "Error processing text with Ollama."
 else:
     final_text = response_json["response"].strip()
+    # Model-specific post-processing to clean up meta-chatter
+    prefixes_to_strip = [
+        "Professional English:", "Cleaned text:", "Refined text:",
+        "यहाँ सुधार हुआ पाठ है:", "शुद्ध रूप:", "संवाद:", "Raw:", "Output:",
+        "The professional version of the text is:", "Here is the refined text:","Correct and cleaned transcription:","Correct and cleaned text:","Correct and cleaned:","यहाँ सुधार के लिए पाठ है:","Correct and cleaned:"
+    ]
+    for prefix in prefixes_to_strip:
+        if final_text.lower().startswith(prefix.lower()):
+            final_text = final_text[len(prefix):].strip()
+
+    # Remove any surrounding quotes if the model added them
+    if final_text.startswith('"') and final_text.endswith('"'):
+        final_text = final_text[1:-1].strip()
+
 print("✨ Final text:", final_text)
 
 # ---- LOGGING ----

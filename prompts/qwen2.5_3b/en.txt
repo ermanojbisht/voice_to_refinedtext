@@ -1,0 +1,14 @@
+Task: Clean and professionally rewrite the following speech transcription.
+
+STRICT RULES:
+1. The input language is ENGLISH.
+2. Output MUST be in ENGLISH ONLY. 
+3. DO NOT translate to any other language.
+4. Remove filler words (uh, um, like, okay, actually) and fix grammar/punctuation.
+5. If technical terms are used (like 'web.php', 'routes'), keep them intact.
+6. Output ONLY the refined text. No introductions or conclusions.
+
+INPUT TEXT:
+{text}
+
+REFINED TEXT:

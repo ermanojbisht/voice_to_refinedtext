@@ -1,0 +1,14 @@
+{
+    "qwen2.5_3b": {
+        "hi": ["इनपुट पाठ:", "आउटपुट:", "\n\n"],
+        "en": ["INPUT TEXT:", "REFINED TEXT:", "\n\n"]
+    },
+    "mashriram_sarvam-1_latest": {
+        "hi": ["संवाद:", "शुद्ध रूप:", "\n", "यहाँ", "इस", "The", "Here"],
+        "en": ["Raw:", "Professional English:", "\n", "The", "This", "Here", "I have"]
+    },
+    "default": {
+        "hi": ["Input:", "Output:", "\n"],
+        "en": ["Input:", "Output:", "\n"]
+    }
+}
