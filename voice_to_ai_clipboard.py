@@ -156,7 +156,7 @@ if "error" in response_json:
     print(f"Error from Ollama: {response_json['error']}")
     final_text = "Error processing text with Ollama."
 else:
-    final_text = response_json["response"]
+    final_text = response_json["response"].strip()
 print("✨ Final text:", final_text)
 
 # ---- LOGGING ----
@@ -180,8 +180,8 @@ if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 0:
 
 log_data.append(log_entry)
 
-with open(log_file_path, 'w') as f:
-    json.dump(log_data, f, indent=4)
+with open(log_file_path, 'w', encoding='utf-8') as f:
+    json.dump(log_data, f, indent=4, ensure_ascii=False)
 
 print("📝 Logged to log.json")
 

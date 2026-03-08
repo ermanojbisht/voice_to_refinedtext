@@ -1,7 +1,7 @@
 {
     "SAMPLE_RATE": 16000,
     "WHISPER_MODEL": "large-v3-turbo",
-    "OLLAMA_MODEL": "qwen2.5:3b",
+    "OLLAMA_MODEL": "mashriram/sarvam-1:latest",
     "OLLAMA_HOST": "http://localhost:11434",
     "SILENCE_THRESHOLD": 300,
     "SILENCE_DURATION": 2.0,
