@@ -1,143 +1,116 @@
 # Voice-to-Refined Text AI Assistant Setup Guide
 
-This guide provides instructions for setting up a fully local, offline-capable voice-to-text AI assistant on Ubuntu, which converts spoken language into refined text using Whisper and Ollama, and automatically copies it to the clipboard via a global hotkey.
+This guide provides detailed instructions for setting up a fully local, offline-capable voice-to-text AI assistant on Ubuntu. The system converts spoken language (English or Hindi) into refined, professional text using Whisper and Ollama, then automatically copies it to the clipboard.
 
 ## 1. System Requirements
 
-*   **Operating System:** Ubuntu 20.04 (or newer compatible versions)
+*   **Operating System:** Ubuntu 20.04 (or newer)
 *   **Hardware:**
     *   Microphone for audio input.
-    *   Sufficient CPU/GPU resources for running Whisper (STT) and Ollama (LLM). Model sizes can be adjusted based on available hardware.
-*   **Software:**
-    *   Python 3.8+
-    *   `pip` (Python package installer)
-    *   `git` (for cloning repositories)
-    *   `xclip` (for clipboard integration)
-    *   `ollama` (local LLM server)
-    *   GNOME Desktop Environment (for hotkey configuration via `gsettings`)
+    *   8GB+ RAM recommended (depending on the Ollama models used).
+*   **System Dependencies:**
+    *   `python3`, `pip`, `python3-tk` (for GUIs)
+    *   `xclip` (for clipboard management)
+    *   `xbindkeys` (for reliable global hotkeys)
+    *   `pulseaudio-utils` (for `paplay` sound feedback)
+    *   `ollama` (the local AI engine)
 
-## 2. Python Dependencies
+## 2. Installation
 
-The following Python packages are required. They will be installed into a virtual environment.
-
-```
-anyio==4.12.1
-av==16.1.0
-certifi==2026.1.4
-cffi==2.0.0
-charset-normalizer==3.4.4
-click==8.3.1
-ctranslate2==4.7.1
-faster-whisper==1.2.1
-filelock==3.20.3
-flatbuffers==25.12.19
-fsspec==2026.2.0
-h11==0.16.0
-hf-xet==1.2.0
-httpcore==1.0.9
-httpx==0.28.1
-huggingface_hub==1.4.1
-idna==3.11
-langdetect==1.0.9
-mpmath==1.3.0
-numpy==2.4.2
-onnxruntime==1.24.1
-packaging==26.0
-protobuf==6.33.5
-pycparser==3.0
-PyYAML==6.0.3
-requests==2.32.5
-scipy==1.17.0
-setuptools==82.0.0
-shellingham==1.5.4
-six==1.17.0
-sounddevice==0.5.5
-sympy==1.14.0
-tokenizers==0.22.2
-tqdm==4.67.3
-typer-slim==0.21.1
-typing_extensions==4.15.0
-urllib3==2.6.3
-```
-
-## 3. Setup Process
-
-Follow these steps to set up the Voice-to-Refined Text AI Assistant on a new Ubuntu system.
-
-### 3.1. Install System Dependencies
-
-Open a terminal and run the following commands:
-
+### 2.1. Install System Packages
 ```bash
 sudo apt update
-sudo apt install python3-pip python3-venv git xclip
+sudo apt install python3-pip python3-venv python3-tk xclip xbindkeys pulseaudio-utils
 ```
 
-### 3.2. Install Ollama
-
-If you don't have Ollama installed, follow the instructions on the [Ollama website](https://ollama.ai/download/linux) or use the following command:
-
+### 2.2. Install Ollama & Models
+Install Ollama via the official script:
 ```bash
-curl -fsSL https://ollama.ai/install.sh | sh
+curl -fsSL https://ollama.com/install.sh | sh
+```
+Download the recommended models for high-quality English and Hindi refinement:
+```bash
+# Optimized English model (Fast)
+ollama pull qwen3.5:0.8b
+
+# High-quality Hindi model
+ollama pull mashriram/sarvam-1:latest
 ```
 
-After installation, ensure Ollama is running and download a model (e.g., `qwen2.5:3b`):
-
+### 2.3. Project Setup
+Clone the project and set up the virtual environment:
 ```bash
-ollama pull qwen2.5:3b
-```
-
-### 3.3. Clone the Repository and Set Up Python Environment
-
-Clone your project repository (assuming it's hosted on GitHub or similar):
-
-```bash
-git clone <your-repository-url> voice_to_refinedtext
-cd voice_to_refinedtext
-```
-
-Create and activate a Python virtual environment:
-
-```bash
+cd /media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Install the Python dependencies:
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3.4. Configure the Python Script
+## 3. Configuration
 
-Ensure your `voice_to_ai_clipboard.py` script is located in the `voice_to_refinedtext` directory. You might want to customize the `MODEL_SIZE` for Whisper or `OLLAMA_MODEL` within the script.
+### 3.1. Language-Specific Models
+The system now supports different models for different languages. Configure them in `config.json`:
+```json
+{
+    "OLLAMA_MODELS": {
+        "en": "qwen3.5:0.8b",
+        "hi": "mashriram/sarvam-1:latest"
+    },
+    "OLLAMA_HOST": "http://localhost:11434",
+    "TEMPERATURE": 0.1
+}
+```
 
-### 3.5. Configure Global Hotkey (GNOME)
+### 3.2. Prompt & Stop Customization
+*   **Prompts**: Custom instructions for each model are stored in `prompts/{model_name}/{lang}.txt`.
+*   **Stops**: To prevent models from "hallucinating" or continuing past the result, stop tokens are defined in `prompts/stops.json`.
 
-This step needs to be done manually through the graphical user interface.
+## 4. Usage Modes
 
-1.  **Open Settings:** Go to "Settings" -> "Keyboard" -> "Keyboard Shortcuts".
-2.  **Add Custom Shortcut:** Scroll down to the bottom and click the "+" button to add a custom shortcut.
-3.  **Fill in the details:**
-    *   **Name:** `VoiceToAI`
-    *   **Command:** `bash -c 'source /home/dell/Documents/voice_to_refinedtext/.venv/bin/activate && python3 /home/dell/Documents/voice_to_refinedtext/voice_to_ai_clipboard.py'`
-        *   **Important:** Ensure the absolute path to your project directory (`/home/dell/Documents/voice_to_refinedtext/`) is correct in the command.
-    *   **Shortcut:** Click on "Set Shortcut..." and press `Control+Alt+V` (or your desired key combination).
-4.  **Click Add:** Close the settings.
+### Mode 1: Full GUI (Interactive)
+Launch the main application window to see visual feedback, pulsing recording indicators, and an "Analyzing" progress bar.
+```bash
+python3 main_gui.py
+```
+*   **Start/Stop**: Control the recording manually or let silence detection handle it.
+*   **Result**: View and edit the refined text before copying.
+*   **Settings**: Quickly access configuration via the "Settings" button.
 
-### 3.6. Test the Hotkey
+### Mode 2: Background Hotkey (Seamless)
+Trigger the recording from anywhere in Ubuntu using a hotkey.
 
-After configuring the hotkey, try pressing `Control+Alt+V`. Speak into your microphone for a few seconds. The processed text should be automatically copied to your clipboard. You can paste it into any application to verify.
+#### Setup with xbindkeys:
+1. Create/Edit your configuration: `nano ~/.xbindkeysrc`
+2. Add the following entry (adjust paths as needed):
+   ```bash
+   # AI Voice Refiner Hotkey
+   "python3 /media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/voice_to_ai_clipboard.py"
+     Control+Alt+v
+   ```
+3. Restart xbindkeys:
+   ```bash
+   killall xbindkeys && xbindkeys
+   ```
 
-## 4. Troubleshooting
+## 5. Maintenance & Debugging
 
-*   **Hotkey not working:** Double-check the command and keybinding in GNOME settings. Ensure the paths are absolute and correct.
-*   **Script errors:** Run the `voice_to_ai_clipboard.py` script directly from the terminal to see any error messages:
-    ```bash
-    cd /home/dell/Documents/voice_to_refinedtext
-    source .venv/bin/activate
-    python3 voice_to_ai_clipboard.py
-    ```
-*   **Ollama not running:** Ensure the Ollama server is running. You can check its status or restart it.
-*   **Microphone issues:** Verify your microphone input settings in Ubuntu's sound settings.
+### 5.1. Configuration GUI
+If you prefer not to edit JSON files manually, run the dedicated settings tool:
+```bash
+python3 config_gui.py
+```
+This allows you to select models from a list of what's currently installed in your Ollama.
+
+### 5.2. Testing Models
+Use the `compare_models.py` script to test how different models handle the same input text without recording audio:
+```bash
+python3 compare_models.py
+```
+
+### 5.3. Logs
+All transcriptions and refinements are logged with timestamps in `log.json` for future reference.
+
+## 6. Common Issues
+*   **NameError/Undefined Variables**: Ensure you are using the latest version of `utils.py` and `voice_to_ai_clipboard.py`, as the model selection logic was recently updated to be dynamic.
+*   **Ollama Timeout**: If the "Analyzing" phase takes too long, check if Ollama is under heavy load or if you need a smaller model (e.g., `qwen2.5-coder:1.5b`).
+*   **No Result**: Check `prompts/stops.json`. If a model is not listed, it defaults to `\n` as a stop token, which can sometimes stop the response prematurely. Use `\n\n` for safer results.
