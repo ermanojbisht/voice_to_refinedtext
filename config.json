@@ -14,6 +14,7 @@
     "SILENCE_DURATION": 2.0,
     "TEMPERATURE": 0.0,
     "MODE": "refine",
-    "SAVE_TO_MARKDOWN": true,
-    "MARKDOWN_PATH": "~/Documents/VoiceNotes"
+    "SAVE_TO_MARKDOWN": false,
+    "MARKDOWN_PATH": "~/Documents/VoiceNotes",
+    "DIRECT_TYPING": true
 }

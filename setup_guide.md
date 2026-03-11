@@ -14,6 +14,7 @@ This guide provides detailed instructions for setting up a fully local, offline-
     *   `xbindkeys` (for reliable global hotkeys)
     *   `pulseaudio-utils` (for `paplay` sound feedback)
     *   `ollama` (the local AI engine)
+    *   `python3-tk` 
 
 ## 2. Installation (Automatic)
 
@@ -32,7 +33,7 @@ The system now supports different models for different languages. Configure them
 ```json
 {
     "OLLAMA_MODELS": {
-        "en": "qwen3.5:0.8b",
+        "en": "qwen2.5:3b",
         "hi": "mashriram/sarvam-1:latest"
     },
     "OLLAMA_HOST": "http://localhost:11434",
