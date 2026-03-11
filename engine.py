@@ -9,6 +9,8 @@ from faster_whisper import WhisperModel
 import utils
 import datetime
 import json
+import time
+from pynput.keyboard import Controller
 
 class VoiceEngine:
     """Central engine for recording, transcribing, and refining voice."""
@@ -18,6 +20,7 @@ class VoiceEngine:
         self.config = utils.load_config(self.script_dir)
         self.stop_event = threading.Event()
         self._whisper_model = None  # Lazy load
+        self.keyboard = Controller()
 
     @property
     def whisper_model(self):
@@ -166,3 +169,14 @@ class VoiceEngine:
     def stop_recording(self):
         """Force stops the recording process."""
         self.stop_event.set()
+
+    def type_text(self, text):
+        """Simulates keyboard typing to insert text at the current cursor position."""
+        if not text:
+            return
+        try:
+            # Small delay to ensure the user has switched focus if needed
+            time.sleep(0.5)
+            self.keyboard.type(text)
+        except Exception as e:
+            print(f"Error while typing: {e}")

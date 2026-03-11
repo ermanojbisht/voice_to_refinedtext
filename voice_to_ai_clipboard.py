@@ -33,7 +33,12 @@ def main():
     subprocess.run("xclip -selection clipboard", input=final_text.encode(), shell=True)
     subprocess.run(["paplay", os.path.join(script_dir, "sounds", "complete.oga")])
     
-    print("📋 Copied to clipboard.")
+    # 5. Direct Typing if enabled
+    if engine.config.get("DIRECT_TYPING"):
+        print("⌨️ Typing to cursor...")
+        engine.type_text(final_text)
+    
+    print("📋 Process complete.")
 
 if __name__ == "__main__":
     main()

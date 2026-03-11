@@ -95,8 +95,12 @@ class VoiceAssistantTray:
                 # Success sound & logging
                 self.engine.log(raw_text, final_text)
                 subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "complete.oga")])
+
+                # 3. Direct Typing if enabled
+                if self.engine.config.get("DIRECT_TYPING"):
+                    self.engine.type_text(final_text)
             
-            # 3. Return to Idle State
+            # 4. Return to Idle State
             self.is_processing = False
             self.update_icon("idle")
             

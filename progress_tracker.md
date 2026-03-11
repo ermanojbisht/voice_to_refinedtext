@@ -24,8 +24,8 @@
 | Hindi ➔ English Translate Mode | ✅ | Complete |
 | Obsidian Saving | ✅ | Complete |
 | **Integration (Phase 5)** | | |
-| Direct Text Typing | 📅 | Planned |
-| One-Click Installer | 📅 | Planned |
+| Direct Text Typing | ✅ | Complete |
+| One-Click Installer | ✅ | Complete |
 
 ---
 

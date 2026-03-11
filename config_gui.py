@@ -132,10 +132,14 @@ class ConfigApp:
         ttk.Label(frame, text="Markdown Path:").grid(row=16, column=0, sticky=tk.W, pady=5, padx=20)
         self.md_path_var = tk.StringVar(value=self.config.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
         ttk.Entry(frame, textvariable=self.md_path_var, width=30).grid(row=16, column=1, sticky=(tk.W, tk.E), pady=5)
+
+        ttk.Label(frame, text="Direct Typing:").grid(row=17, column=0, sticky=tk.W, pady=5, padx=20)
+        self.direct_typing_var = tk.BooleanVar(value=self.config.get("DIRECT_TYPING", False))
+        ttk.Checkbutton(frame, variable=self.direct_typing_var).grid(row=17, column=1, sticky=tk.W, pady=5)
         
         # Buttons Frame
         btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=17, column=0, columnspan=2, pady=40)
+        btn_frame.grid(row=18, column=0, columnspan=2, pady=40)
 
         ttk.Button(btn_frame, text="Save Settings", command=self.save_settings).pack(side=tk.LEFT, padx=10)
         ttk.Button(btn_frame, text="Cancel", command=self.root.destroy).pack(side=tk.LEFT, padx=10)
@@ -170,7 +174,8 @@ class ConfigApp:
                 "TEMPERATURE": float(self.temp_var.get()),
                 "MODE": self.mode_var.get(),
                 "SAVE_TO_MARKDOWN": self.save_md_var.get(),
-                "MARKDOWN_PATH": self.md_path_var.get()
+                "MARKDOWN_PATH": self.md_path_var.get(),
+                "DIRECT_TYPING": self.direct_typing_var.get()
             }
             save_config(new_config)
             self.root.destroy()

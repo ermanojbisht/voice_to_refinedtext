@@ -15,38 +15,17 @@ This guide provides detailed instructions for setting up a fully local, offline-
     *   `pulseaudio-utils` (for `paplay` sound feedback)
     *   `ollama` (the local AI engine)
 
-## 2. Installation
+## 2. Installation (Automatic)
 
-### 2.1. Install System Packages
+The easiest way to set up the system is using the provided `install.sh` script. This script handles system packages, Ollama, AI models, and hotkey configuration in one go.
+
 ```bash
-sudo apt update
-sudo apt install python3-pip python3-venv python3-tk xclip xbindkeys pulseaudio-utils
+cd voice_to_refinedtext
+chmod +x install.sh
+./install.sh
 ```
 
-### 2.2. Install Ollama & Models
-Install Ollama via the official script:
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-Download the recommended models for high-quality English and Hindi refinement:
-```bash
-# Optimized English model (Fast)
-ollama pull qwen3.5:0.8b
-
-# High-quality Hindi model
-ollama pull mashriram/sarvam-1:latest
-```
-
-### 2.3. Project Setup
-Clone the project and set up the virtual environment:
-```bash
-cd /media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## 3. Configuration
+## 3. Installation (Manual)
 
 ### 3.1. Language-Specific Models
 The system now supports different models for different languages. Configure them in `config.json`:
