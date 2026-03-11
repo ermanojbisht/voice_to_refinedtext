@@ -134,8 +134,11 @@ class VoiceAssistantGUI:
                 self.status_queue.put(("error", "No speech detected."))
                 return
 
-            # 3. Refine
-            self.status_queue.put(("status", "✨ Refining..."))
+            # 3. Refine/Translate
+            mode = self.engine.config.get("MODE", "refine")
+            status_msg = "🌍 Translating..." if mode == "translate" else "✨ Refining..."
+            self.status_queue.put(("status", status_msg))
+            
             final_text = self.engine.refine(raw_text)
             
             # 4. Finalize

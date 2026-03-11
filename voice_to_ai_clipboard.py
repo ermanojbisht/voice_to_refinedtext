@@ -24,7 +24,8 @@ def main():
         sys.exit(0)
 
     # 3. Refine
-    print("✨ Refining...")
+    mode = engine.config.get("MODE", "refine")
+    print(f"{'🌍 Translating' if mode == 'translate' else '✨ Refining'}...")
     final_text = engine.refine(raw_text)
     print(f"✅ Final: {final_text}")
 
