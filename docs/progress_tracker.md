@@ -18,8 +18,10 @@
 | Decouple `main_gui.py` | ✅ | Complete |
 | Decouple `voice_to_ai_clipboard.py`| ✅ | Complete |
 | **Presence (Phase 3)** | | |
-| Tray Icon Integration | ✅ | Complete |
+| Tray Icon Integration | ✅ | Complete (Fixed clickable icons on Wayland) |
 | Pulse Animation Optimization | ✅ | Complete |
+| **Maintenance** | | |
+| Fix Tray Termination Error | ✅ | Implemented signal handlers & robust hotkeys |
 | **Advanced (Phase 4)** | | |
 | Hindi ➔ English Translate Mode | ✅ | Complete |
 | Obsidian Saving | ✅ | Complete |

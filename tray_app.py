@@ -9,6 +9,7 @@ import time
 import json
 from engine import VoiceEngine
 import sys
+import signal
 
 # ---- TRAY ICON MANAGER ----
 
@@ -20,6 +21,7 @@ class VoiceAssistantTray:
         # Current app states
         self.is_recording = False
         self.is_processing = False
+        self.running = True
         
         # Generate initial icons
         self.icons = {
@@ -43,10 +45,35 @@ class VoiceAssistantTray:
             )
         )
         
-        # Global Hotkey Listener (Ctrl + Alt + V)
-        self.hotkey = keyboard.GlobalHotKeys({
-            '<ctrl>+<alt>+v': self.toggle_recording
-        })
+        # Hotkey tracking
+        self.pressed_keys = set()
+        self.hotkey_combo = {keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char('v')}
+        self.hotkey_combo_alt = {keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char('v')}
+        
+        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+
+    def on_press(self, key):
+        if key == keyboard.Key.ctrl or key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+            self.pressed_keys.add(keyboard.Key.ctrl_l if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl else keyboard.Key.ctrl_r)
+        elif key == keyboard.Key.alt or key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
+            self.pressed_keys.add(keyboard.Key.alt_l if key == keyboard.Key.alt_l or key == keyboard.Key.alt else keyboard.Key.alt_r)
+        elif hasattr(key, 'char') and key.char == 'v':
+            self.pressed_keys.add(keyboard.KeyCode.from_char('v'))
+        
+        # Check if combo is pressed
+        if all(k in self.pressed_keys for k in [keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char('v')]) or \
+           all(k in self.pressed_keys for k in [keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char('v')]):
+            self.toggle_recording()
+
+    def on_release(self, key):
+        if key == keyboard.Key.ctrl or key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+            self.pressed_keys.discard(keyboard.Key.ctrl_l)
+            self.pressed_keys.discard(keyboard.Key.ctrl_r)
+        elif key == keyboard.Key.alt or key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
+            self.pressed_keys.discard(keyboard.Key.alt_l)
+            self.pressed_keys.discard(keyboard.Key.alt_r)
+        elif hasattr(key, 'char') and key.char == 'v':
+            self.pressed_keys.discard(keyboard.KeyCode.from_char('v'))
 
     def create_status_icon(self, color):
         """Generates a simple 64x64 circle icon for the tray."""
@@ -63,7 +90,7 @@ class VoiceAssistantTray:
     def toggle_recording(self):
         """The main action triggered by the hotkey or menu."""
         if not self.is_recording and not self.is_processing:
-            # Start background task in a new thread so we don't block the hotkey listener
+            # Start background task in a new thread so we don't block the listener
             threading.Thread(target=self.run_full_process, daemon=True).start()
         elif self.is_recording:
             # Signal the engine to stop recording immediately
@@ -112,11 +139,11 @@ class VoiceAssistantTray:
 
     def open_gui(self):
         """Launches the main GUI dashboard."""
-        subprocess.Popen(["python3", os.path.join(self.script_dir, "main_gui.py")])
+        subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
 
     def open_settings(self):
         """Launches the settings window."""
-        subprocess.Popen(["python3", os.path.join(self.script_dir, "config_gui.py")])
+        subprocess.Popen([sys.executable, os.path.join(self.script_dir, "config_gui.py")])
 
     def cycle_mode(self, icon, item):
         """Toggles between Refine and Translate modes."""
@@ -131,16 +158,29 @@ class VoiceAssistantTray:
         # Force redraw menu label
         self.icon.update_menu()
 
-    def exit_app(self):
-        """Cleans up and exits the application."""
-        self.hotkey.stop()
-        self.icon.stop()
-        sys.exit(0)
+    def exit_app(self, icon=None, item=None):
+        """Signals the application components to stop."""
+        print("Stopping application...")
+        self.running = False
+        if self.listener:
+            self.listener.stop()
+        if self.icon:
+            self.icon.stop()
 
     def run(self):
         """Starts the tray icon and the hotkey listener."""
-        self.hotkey.start() # Runs in background
-        self.icon.run()     # This blocks until app is closed
+        # Setup signal handler for clean exit
+        signal.signal(signal.SIGINT, lambda sig, frame: self.exit_app())
+        signal.signal(signal.SIGTERM, lambda sig, frame: self.exit_app())
+
+        try:
+            self.listener.start() # Runs in background
+            print("Tray application is running. Use the menu or Ctrl+Alt+V.")
+            self.icon.run()       # This blocks until self.icon.stop() is called
+        except Exception as e:
+            print(f"Error in main loop: {e}")
+        finally:
+            self.exit_app()
 
 if __name__ == "__main__":
     app = VoiceAssistantTray()

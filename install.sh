@@ -11,7 +11,8 @@ echo "🚀 Starting AI Voice Refiner Installation..."
 # 1. Install System Dependencies
 echo "📦 Installing system packages (sudo required)..."
 sudo apt update
-sudo apt install -y python3-pip python3-venv python3-tk xclip xbindkeys pulseaudio-utils curl
+sudo apt install -y python3-pip python3-venv python3-tk xclip xbindkeys pulseaudio-utils curl \
+    python3-gi gir1.2-ayatanaappindicator3-0.1
 
 # 2. Install Ollama if not present
 if ! command -v ollama &> /dev/null; then
@@ -39,11 +40,17 @@ echo "📥 Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 5. Make Scripts Executable
+# 5. Link System GObject (gi) to Venv
+# This is required for pystray to use the AppIndicator backend on Ubuntu/GNOME
+echo "🔗 Linking system GObject (gi) to virtual environment..."
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+ln -sf /usr/lib/python3/dist-packages/gi "$(pwd)/$VENV_DIR/lib/python$PYTHON_VERSION/site-packages/"
+
+# 6. Make Scripts Executable
 echo "🔐 Setting file permissions..."
 chmod +x voice_to_ai_clipboard.py main_gui.py tray_app.py config_gui.py engine.py
 
-# 6. Configure Global Hotkey (Ctrl+Alt+V)
+# 7. Configure Global Hotkey (Ctrl+Alt+V)
 echo "⌨️ Configuring global hotkey..."
 XBINDKEYS_CONFIG="$HOME/.xbindkeysrc"
 SCRIPT_PATH="$(pwd)/voice_to_ai_clipboard.py"
@@ -70,8 +77,8 @@ echo ""
 echo "===================================================="
 echo "🎉 INSTALLATION COMPLETE!"
 echo "===================================================="
-echo "1. Run the Tray App: python3 tray_app.py"
-echo "2. Run the Dashboard: python3 main_gui.py"
+echo "1. Run the Tray App: .venv/bin/python tray_app.py"
+echo "2. Run the Dashboard: .venv/bin/python main_gui.py"
 echo "3. Use the Hotkey: Press Ctrl+Alt+V from anywhere"
 echo ""
 echo "Note: Ensure Ollama is running in the background."
