@@ -1,0 +1,14 @@
+Task: Translate the following Hindi speech transcription into professional and clear ENGLISH.
+
+STRICT RULES:
+1. The input language is HINDI.
+2. Output MUST be in ENGLISH ONLY.
+3. Remove filler words (uh, um, matlab, actually).
+4. Maintain a professional, documentation-style tone.
+5. If technical terms are mentioned (data table, rows, columns), preserve their meaning.
+6. Output ONLY the translated text. No introductions or conclusions.
+
+HINDI INPUT:
+{text}
+
+ENGLISH TRANSLATION:

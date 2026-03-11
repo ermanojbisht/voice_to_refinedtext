@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import threading
+import numpy as np
+import sounddevice as sd
+import scipy.io.wavfile as wav
+from faster_whisper import WhisperModel
+import utils
+import datetime
+import json
+
+class VoiceEngine:
+    """Central engine for recording, transcribing, and refining voice."""
+    
+    def __init__(self, script_dir):
+        self.script_dir = script_dir
+        self.config = utils.load_config(self.script_dir)
+        self.stop_event = threading.Event()
+        self._whisper_model = None  # Lazy load
+
+    @property
+    def whisper_model(self):
+        """Lazy loads the Whisper model to save memory when not in use."""
+        if self._whisper_model is None:
+            model_size = self.config.get("WHISPER_MODEL", "large-v3-turbo")
+            self._whisper_model = WhisperModel(model_size, compute_type="int8")
+        return self._whisper_model
+
+    def record(self, on_start=None, on_end=None):
+        """Records audio with silence detection and manual stop support."""
+        samplerate = self.config.get("SAMPLE_RATE", 16000)
+        threshold = self.config.get("SILENCE_THRESHOLD", 300)
+        silence_dur = self.config.get("SILENCE_DURATION", 2.0)
+        chunk_size = 1024
+        
+        audio_buffer = []
+        silent_chunks = 0
+        self.stop_event.clear()
+        
+        if on_start: on_start()
+        
+        # Start sound
+        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "start.oga")])
+        
+        with sd.InputStream(samplerate=samplerate, channels=1, dtype='int16', blocksize=chunk_size) as stream:
+            while not self.stop_event.is_set():
+                chunk, _ = stream.read(chunk_size)
+                audio_buffer.append(chunk)
+                
+                energy = np.sqrt(np.mean(chunk.astype(float)**2))
+                if energy < threshold:
+                    silent_chunks += 1
+                    if (silent_chunks * chunk_size / samplerate) >= silence_dur:
+                        break
+                else:
+                    silent_chunks = 0
+        
+        # End sound
+        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "end.oga")])
+        if on_end: on_end()
+        
+        audio = np.concatenate(audio_buffer)
+        wav_path = os.path.join(self.script_dir, "input.wav")
+        wav.write(wav_path, samplerate, audio)
+        return wav_path
+
+    def transcribe(self, wav_path):
+        """Converts audio file to raw text with a hint to use Devanagari for Hindi."""
+        # The initial_prompt trick forces Whisper to use Devanagari instead of Urdu script
+        initial_prompt = "नमस्ते, यह एक हिंदी ट्रांसक्रिप्शन है।" 
+        segments, _ = self.whisper_model.transcribe(
+            wav_path, 
+            initial_prompt=initial_prompt
+        )
+        return " ".join(seg.text for seg in segments)
+
+    def refine(self, text, mode=None):
+        """Sends text to Ollama for refinement/translation based on language."""
+        if not text.strip():
+            return "No speech detected."
+
+        lang = utils.detect_lang(text)
+
+        # Use provided mode or fall back to config
+        run_mode = mode or self.config.get("MODE", "refine")
+
+        # Select model based on mode
+        if run_mode == "translate":
+            model_name = utils.get_translate_model(self.config, lang)
+        else:
+            model_name = utils.get_model_for_lang(self.config, lang)
+
+        # Resolve prompt based on mode (e.g., translate_hi.txt)
+        prompt, stops = utils.get_prompt_and_stops(self.script_dir, model_name, text, lang, mode=run_mode)
+
+        response = utils.call_ollama(
+            self.config.get("OLLAMA_HOST"), model_name, prompt, stops, 
+            self.config.get("TEMPERATURE", 0.1)
+        )
+
+        if "error" in response:
+            result = f"Error: {response['error']}"
+        else:
+            result = utils.clean_response(response.get("response", ""))
+
+        # Log immediately with more metadata
+        self.log(text, result, lang=lang, mode=run_mode, model=model_name)
+        return result
+
+    def log(self, raw_text, final_text, lang="unknown", mode="unknown", model="unknown"):
+        """Logs the session to log.json with full metadata."""
+        now = datetime.datetime.now()
+        timestamp = now.isoformat()
+        
+        log_entry = {
+            "timestamp": timestamp,
+            "mode": mode,
+            "lang": lang,
+            "model": model,
+            "raw_text": raw_text,
+            "final_text": final_text
+        }
+        
+        # 1. Save to JSON log
+        log_file = os.path.join(self.script_dir, "log.json")
+        data = []
+        if os.path.exists(log_file) and os.path.getsize(log_file) > 0:
+            with open(log_file, 'r') as f:
+                try: data = json.load(f)
+                except: data = []
+        data.append(log_entry)
+        with open(log_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+
+        # 2. Save to Markdown if enabled
+        if self.config.get("SAVE_TO_MARKDOWN"):
+            self.save_markdown(log_entry, now)
+
+    def save_markdown(self, entry, now):
+        """Saves a single note to a Markdown file."""
+        raw_path = self.config.get("MARKDOWN_PATH", "~/Documents/VoiceNotes")
+        folder = os.path.expanduser(raw_path)
+        
+        if not os.path.exists(folder):
+            os.makedirs(folder, exist_ok=True)
+            
+        filename = now.strftime("%Y-%m-%d_%H%M%S.md")
+        filepath = os.path.join(folder, filename)
+        
+        content = f"""# Voice Note - {now.strftime("%Y-%m-%d %H:%M:%S")}
+**Mode**: {entry['mode']}
+**Language**: {entry['lang']}
+**Model**: {entry['model']}
+
+## Refined Text
+{entry['final_text']}
+
+---
+## Raw Transcription
+{entry['raw_text']}
+"""
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+    def stop_recording(self):
+        """Force stops the recording process."""
+        self.stop_event.set()

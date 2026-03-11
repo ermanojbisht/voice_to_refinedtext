@@ -14,38 +14,64 @@ def load_config(script_dir):
         "SAMPLE_RATE": 16000,
         "WHISPER_MODEL": "large-v3-turbo",
         "OLLAMA_MODELS": {
-            "en": "qwen2.5:3b",
+            "en": "qwen3.5:0.8b",
             "hi": "mashriram/sarvam-1:latest"
+        },
+        "OLLAMA_TRANSLATE_MODELS": {
+            "to_en": "qwen2.5:3b",
+            "to_hi": "mashriram/sarvam-1:latest"
         },
         "OLLAMA_HOST": "http://localhost:11434",
         "SILENCE_THRESHOLD": 300,
         "SILENCE_DURATION": 2,
-        "TEMPERATURE": 0.1
+        "TEMPERATURE": 0.1,
+        "MODE": "refine",  # Options: "refine", "translate"
+        "SAVE_TO_MARKDOWN": False,
+        "MARKDOWN_PATH": "~/Documents/VoiceNotes"
     }
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
-            user_config = json.load(f)
-            # Merge user config with defaults to ensure all keys exist
-            default_config.update(user_config)
-            return default_config
+            try:
+                user_config = json.load(f)
+                # Handle dictionary merge for nested configs
+                for key in ["OLLAMA_MODELS", "OLLAMA_TRANSLATE_MODELS"]:
+                    if key in user_config and isinstance(user_config[key], dict):
+                        default_config[key].update(user_config[key])
+                        user_config.pop(key)
+                
+                # Merge remaining user config
+                default_config.update(user_config)
+                return default_config
+            except:
+                return default_config
     return default_config
 
 def get_model_for_lang(config, lang):
-    """Returns the correct model for the detected language."""
+    """Returns the correct model for the detected language in 'refine' mode."""
     models = config.get("OLLAMA_MODELS", {})
     # Fallback order: Language specific -> Global OLLAMA_MODEL key -> Hardcoded default
     return models.get(lang, config.get("OLLAMA_MODEL", "qwen2.5:3b"))
 
+def get_translate_model(config, source_lang):
+    """Returns the correct model for translation based on the target language."""
+    # If source is Hindi, target is English. If source is English, target is Hindi.
+    target_key = "to_en" if source_lang == "hi" else "to_hi"
+    trans_models = config.get("OLLAMA_TRANSLATE_MODELS", {})
+    return trans_models.get(target_key, get_model_for_lang(config, source_lang))
+
 def detect_lang(text):
-    """Detects if text is Hindi or English."""
+    """Detects if text is Hindi, Urdu, or English."""
     try:
         lang = detect(text)
-        return lang if lang in ["hi", "en"] else "en"
+        # Treat Urdu (ur) as Hindi (hi) because the spoken language is the same
+        if lang in ["hi", "ur"]:
+            return "hi"
+        return "en" if lang == "en" else "en"
     except:
         return "en"
 
-def get_prompt_and_stops(script_dir, model_name, text, lang):
-    """Resolves the correct prompt template and stop tokens for a model."""
+def get_prompt_and_stops(script_dir, model_name, text, lang, mode="refine"):
+    """Resolves the correct prompt template and stop tokens for a model and mode."""
     prompts_dir = os.path.join(script_dir, "prompts")
     model_subdir = model_name.replace("/", "_").replace(":", "_")
     
@@ -56,13 +82,21 @@ def get_prompt_and_stops(script_dir, model_name, text, lang):
     if not os.path.exists(model_path):
         model_path = os.path.join(prompts_dir, "default")
 
-    # Read prompt
-    prompt_file = os.path.join(model_path, f"{lang}.txt")
+    # Read prompt - support mode-specific prompts like translate_hi.txt
+    prefix = f"{mode}_" if mode != "refine" else ""
+    prompt_file = os.path.join(model_path, f"{prefix}{lang}.txt")
+    
     if os.path.exists(prompt_file):
         with open(prompt_file, "r") as f:
             prompt_template = f.read()
     else:
-        prompt_template = "{text}"
+        # Fallback to standard lang prompt if mode-specific is missing
+        fallback_file = os.path.join(model_path, f"{lang}.txt")
+        if os.path.exists(fallback_file):
+            with open(fallback_file, "r") as f:
+                prompt_template = f.read()
+        else:
+            prompt_template = "{text}"
     
     prompt = prompt_template.format(text=text)
 

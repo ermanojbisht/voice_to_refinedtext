@@ -1,0 +1,3 @@
+Task: Translate ENGLISH to HINDI. Output ONLY the translation.
+ENGLISH: {text}
+HINDI:

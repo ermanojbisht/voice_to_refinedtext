@@ -1,9 +1,2 @@
-Task: Correct and clean the following transcription into professional Hindi.
-Rules:
-- Output ONLY the corrected text.
-- No explanations.
-- No English.
-- No alternatives.
-- No translation.
-Input: {text}
-Output:
+संवाद: {text}
+शुद्ध हिंदी:

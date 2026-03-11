@@ -5,37 +5,14 @@ import json
 import os
 import subprocess
 import requests
+import utils
 
 # Path to config file
 script_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(script_dir, "config.json")
 
 def load_config():
-    default_config = {
-        "SAMPLE_RATE": 16000,
-        "WHISPER_MODEL": "large-v3-turbo",
-        "OLLAMA_MODELS": {
-            "en": "qwen3.5:0.8b",
-            "hi": "mashriram/sarvam-1:latest"
-        },
-        "OLLAMA_HOST": "http://localhost:11434",
-        "SILENCE_THRESHOLD": 300,
-        "SILENCE_DURATION": 2,
-        "TEMPERATURE": 0.1
-    }
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f:
-            try:
-                user_config = json.load(f)
-                # Handle old single model config for migration
-                if "OLLAMA_MODEL" in user_config and "OLLAMA_MODELS" not in user_config:
-                    model = user_config.pop("OLLAMA_MODEL")
-                    user_config["OLLAMA_MODELS"] = {"en": model, "hi": model}
-                
-                return {**default_config, **user_config}
-            except:
-                return default_config
-    return default_config
+    return utils.load_config(script_dir)
 
 def save_config(config):
     with open(config_path, "w") as f:
@@ -61,90 +38,118 @@ class ConfigApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Voice Assistant Settings")
-        self.root.geometry("520x650") # Wider window
+        self.root.geometry("550x800")
         
         self.config = load_config()
         
         # UI Elements
-        frame = ttk.Frame(root, padding="20")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        root.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1) # Make second column expandable
+        canvas = tk.Canvas(root, bg="#1e1e2e", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        frame = scrollable_frame
         
-        # Whisper Model
-        ttk.Label(frame, text="Whisper Model:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        # Section: Whisper
+        self.add_section_header(frame, "🎙 Speech-to-Text", 0)
+        
+        ttk.Label(frame, text="Whisper Model:").grid(row=1, column=0, sticky=tk.W, pady=5, padx=20)
         self.whisper_var = tk.StringVar(value=self.config["WHISPER_MODEL"])
         whisper_models = ["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"]
         self.whisper_cb = ttk.Combobox(frame, textvariable=self.whisper_var, values=whisper_models, width=30)
-        self.whisper_cb.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.whisper_cb.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
         
-        # Ollama Host
-        ttk.Label(frame, text="Ollama Host:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.host_var = tk.StringVar(value=self.config["OLLAMA_HOST"])
-        self.host_entry = ttk.Entry(frame, textvariable=self.host_var, width=30)
-        self.host_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
-        self.host_var.trace_add("write", self.update_models)
-
-        # Ollama Model (English)
-        ttk.Label(frame, text="Ollama (English):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        # Section: Refinement Models
+        self.add_section_header(frame, "✨ Refinement Models (Cleanup)", 2)
+        
+        ttk.Label(frame, text="English Refiner:").grid(row=3, column=0, sticky=tk.W, pady=5, padx=20)
         self.ollama_en_var = tk.StringVar(value=self.config["OLLAMA_MODELS"].get("en", ""))
         self.ollama_en_cb = ttk.Combobox(frame, textvariable=self.ollama_en_var, width=30)
-        self.ollama_en_cb.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.ollama_en_cb.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        # Ollama Model (Hindi)
-        ttk.Label(frame, text="Ollama (Hindi):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Hindi Refiner:").grid(row=4, column=0, sticky=tk.W, pady=5, padx=20)
         self.ollama_hi_var = tk.StringVar(value=self.config["OLLAMA_MODELS"].get("hi", ""))
         self.ollama_hi_cb = ttk.Combobox(frame, textvariable=self.ollama_hi_var, width=30)
-        self.ollama_hi_cb.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
-        
-        self.update_models()
-        
-        # Silence Threshold
-        ttk.Label(frame, text="Silence Threshold:").grid(row=4, column=0, sticky=tk.W, pady=5)
-        self.threshold_var = tk.IntVar(value=self.config["SILENCE_THRESHOLD"])
-        self.threshold_scale = ttk.Scale(frame, from_=50, to=1000, variable=self.threshold_var, orient=tk.HORIZONTAL)
-        self.threshold_scale.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
-        self.threshold_label = ttk.Label(frame, text=str(self.config["SILENCE_THRESHOLD"]))
-        self.threshold_label.grid(row=4, column=2, padx=5)
-        self.threshold_var.trace_add("write", lambda *args: self.threshold_label.config(text=str(self.threshold_var.get())))
+        self.ollama_hi_cb.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        # Silence Duration
-        ttk.Label(frame, text="Silence Duration (s):").grid(row=5, column=0, sticky=tk.W, pady=5)
-        self.duration_var = tk.DoubleVar(value=self.config["SILENCE_DURATION"])
-        self.duration_entry = ttk.Entry(frame, textvariable=self.duration_var, width=30)
-        self.duration_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), pady=5)
+        # Section: Translation Models
+        self.add_section_header(frame, "🌍 Translation Models", 5)
+        
+        ttk.Label(frame, text="To English:").grid(row=6, column=0, sticky=tk.W, pady=5, padx=20)
+        self.trans_en_var = tk.StringVar(value=self.config["OLLAMA_TRANSLATE_MODELS"].get("to_en", ""))
+        self.trans_en_cb = ttk.Combobox(frame, textvariable=self.trans_en_var, width=30)
+        self.trans_en_cb.grid(row=6, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        # Temperature
-        ttk.Label(frame, text="AI Temperature:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="To Hindi:").grid(row=7, column=0, sticky=tk.W, pady=5, padx=20)
+        self.trans_hi_var = tk.StringVar(value=self.config["OLLAMA_TRANSLATE_MODELS"].get("to_hi", ""))
+        self.trans_hi_cb = ttk.Combobox(frame, textvariable=self.trans_hi_var, width=30)
+        self.trans_hi_cb.grid(row=7, column=1, sticky=(tk.W, tk.E), pady=5)
+
+        # Section: AI Parameters
+        self.add_section_header(frame, "⚙️ AI Parameters", 8)
+
+        ttk.Label(frame, text="Ollama Host:").grid(row=9, column=0, sticky=tk.W, pady=5, padx=20)
+        self.host_var = tk.StringVar(value=self.config["OLLAMA_HOST"])
+        self.host_entry = ttk.Entry(frame, textvariable=self.host_var, width=30)
+        self.host_entry.grid(row=9, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.host_var.trace_add("write", self.update_models)
+
+        ttk.Label(frame, text="AI Temperature:").grid(row=10, column=0, sticky=tk.W, pady=5, padx=20)
         self.temp_var = tk.DoubleVar(value=self.config["TEMPERATURE"])
         self.temp_entry = ttk.Entry(frame, textvariable=self.temp_var, width=30)
-        self.temp_entry.grid(row=6, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.temp_entry.grid(row=10, column=1, sticky=(tk.W, tk.E), pady=5)
 
+        ttk.Label(frame, text="Default Mode:").grid(row=11, column=0, sticky=tk.W, pady=5, padx=20)
+        self.mode_var = tk.StringVar(value=self.config.get("MODE", "refine"))
+        self.mode_cb = ttk.Combobox(frame, textvariable=self.mode_var, values=["refine", "translate"], width=30)
+        self.mode_cb.grid(row=11, column=1, sticky=(tk.W, tk.E), pady=5)
+
+        # Section: Audio
+        self.add_section_header(frame, "🔉 Audio Settings", 12)
+
+        ttk.Label(frame, text="Silence Threshold:").grid(row=13, column=0, sticky=tk.W, pady=5, padx=20)
+        self.threshold_var = tk.IntVar(value=self.config["SILENCE_THRESHOLD"])
+        self.threshold_scale = ttk.Scale(frame, from_=50, to=1000, variable=self.threshold_var, orient=tk.HORIZONTAL)
+        self.threshold_scale.grid(row=13, column=1, sticky=(tk.W, tk.E), pady=5)
+
+        # Section: Storage
+        self.add_section_header(frame, "📁 Storage & Backup", 14)
+
+        ttk.Label(frame, text="Save to Markdown:").grid(row=15, column=0, sticky=tk.W, pady=5, padx=20)
+        self.save_md_var = tk.BooleanVar(value=self.config.get("SAVE_TO_MARKDOWN", False))
+        ttk.Checkbutton(frame, variable=self.save_md_var).grid(row=15, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(frame, text="Markdown Path:").grid(row=16, column=0, sticky=tk.W, pady=5, padx=20)
+        self.md_path_var = tk.StringVar(value=self.config.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
+        ttk.Entry(frame, textvariable=self.md_path_var, width=30).grid(row=16, column=1, sticky=(tk.W, tk.E), pady=5)
+        
         # Buttons Frame
         btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=7, column=0, columnspan=2, pady=30)
+        btn_frame.grid(row=17, column=0, columnspan=2, pady=40)
 
-        # Save Button
-        self.save_btn = ttk.Button(btn_frame, text="Save Settings", command=self.save_settings)
-        self.save_btn.grid(row=0, column=0, padx=10)
+        ttk.Button(btn_frame, text="Save Settings", command=self.save_settings).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text="Cancel", command=self.root.destroy).pack(side=tk.LEFT, padx=10)
 
-        # Cancel Button
-        self.cancel_btn = ttk.Button(btn_frame, text="Cancel", command=self.root.destroy)
-        self.cancel_btn.grid(row=0, column=1, padx=10)
+        self.update_models()
+
+    def add_section_header(self, frame, text, row):
+        header = ttk.Label(frame, text=text, font=("Inter", 11, "bold"), foreground="#89b4fa")
+        header.grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(20, 10))
 
     def update_models(self, *args):
         models = get_ollama_models(self.host_var.get())
-        self.ollama_en_cb["values"] = models
-        self.ollama_hi_cb["values"] = models
-        
-        # Reset if model not found in current list
-        if self.ollama_en_var.get() not in models and models:
-             if "qwen3.5:0.8b" in models: self.ollama_en_var.set("qwen3.5:0.8b")
-             else: self.ollama_en_var.set(models[0])
-             
-        if self.ollama_hi_var.get() not in models and models:
-             if "mashriram/sarvam-1:latest" in models: self.ollama_hi_var.set("mashriram/sarvam-1:latest")
-             else: self.ollama_hi_var.set(models[0])
+        for cb in [self.ollama_en_cb, self.ollama_hi_cb, self.trans_en_cb, self.trans_hi_cb]:
+            cb["values"] = models
 
     def save_settings(self):
         try:
@@ -155,17 +160,27 @@ class ConfigApp:
                     "en": self.ollama_en_var.get(),
                     "hi": self.ollama_hi_var.get()
                 },
+                "OLLAMA_TRANSLATE_MODELS": {
+                    "to_en": self.trans_en_var.get(),
+                    "to_hi": self.trans_hi_var.get()
+                },
                 "OLLAMA_HOST": self.host_var.get(),
                 "SILENCE_THRESHOLD": self.threshold_var.get(),
-                "SILENCE_DURATION": self.duration_var.get(),
-                "TEMPERATURE": self.temp_var.get()
+                "SILENCE_DURATION": float(self.config["SILENCE_DURATION"]),
+                "TEMPERATURE": float(self.temp_var.get()),
+                "MODE": self.mode_var.get(),
+                "SAVE_TO_MARKDOWN": self.save_md_var.get(),
+                "MARKDOWN_PATH": self.md_path_var.get()
             }
             save_config(new_config)
-            self.root.destroy() # Close after save
+            self.root.destroy()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save settings: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
+    style = ttk.Style()
+    # Basic dark theme for the settings
+    root.configure(bg="#1e1e2e")
     app = ConfigApp(root)
     root.mainloop()

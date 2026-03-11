@@ -1,0 +1,12 @@
+Task: Translate the following English speech transcription into professional and clear HINDI.
+
+STRICT RULES:
+1. Input is ENGLISH.
+2. Output MUST be in HINDI ONLY (Devanagari script).
+3. Remove filler words.
+4. Output ONLY the translated text.
+
+INPUT (ENGLISH):
+{text}
+
+शुद्ध हिंदी अनुवाद:
