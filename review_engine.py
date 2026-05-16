@@ -36,6 +36,8 @@ def load_review_config(script_dir):
         "review_expiry_hours": 1,
         "last_n_days_context": 1,
         "voice_narration": True,
+        "tts_engine": "espeak",   # "espeak" or "piper"
+        "piper_model": "",        # path to .onnx model file (only used when tts_engine="piper")
         "review_steps": [
             {
                 "step_id": 1,
@@ -167,10 +169,16 @@ def is_review_active(script_dir):
         _rlog("is_review_active → False (active=False in state)")
         return False, None
 
-    today = datetime.date.today().isoformat()
-    if state.get("date") != today:
-        _rlog(f"is_review_active → False (date mismatch: state={state.get('date')} today={today})")
-        return False, None
+    # Check that the SESSION was started today, not that the note date matches today.
+    # This allows reviews for past dates (state["date"] may be any date the user chose).
+    try:
+        started_date = datetime.datetime.fromisoformat(state["started_at"]).date().isoformat()
+        today = datetime.date.today().isoformat()
+        if started_date != today:
+            _rlog(f"is_review_active → False (session started on {started_date}, not today)")
+            return False, None
+    except Exception as e:
+        _rlog(f"is_review_active: started_at parse error (ignored): {e}")
 
     config = load_review_config(script_dir)
     expiry_hours = config.get("review_expiry_hours", 1)
@@ -320,23 +328,37 @@ def _fill_section(file_path, section_name, text):
 
 # ── Core review functions ─────────────────────────────────────────────────────
 
-def initialize_review(script_dir):
+def initialize_review(script_dir, date_str=None):
+    """Initialise a new review session.
+
+    date_str: YYYY-MM-DD string for the note date. Defaults to today.
+              Use this to backfill a review for a past date.
+    """
     init_logging(script_dir)
     _rlog("=" * 50)
     _rlog("initialize_review called")
     config = load_review_config(script_dir)
 
+    # Resolve the note date (may differ from today for past-date reviews)
+    if date_str is None:
+        date_str = datetime.date.today().isoformat()
+    try:
+        note_date = datetime.date.fromisoformat(date_str)
+    except ValueError:
+        _rlog(f"initialize_review: invalid date_str '{date_str}', falling back to today")
+        note_date = datetime.date.today()
+        date_str = note_date.isoformat()
+
     vault_paths = config.get("vault_paths", {})
     daily_notes_base = os.path.expanduser(vault_paths.get("daily_notes", "~/learning_vault/My Daily Notes"))
     wellness_base = os.path.expanduser(vault_paths.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
 
-    # Pre-create today's year/month directories
-    today = datetime.date.today()
-    year, month = today.strftime("%Y"), today.strftime("%B")
+    # Pre-create the note date's year/month directories
+    year, month = note_date.strftime("%Y"), note_date.strftime("%B")
     try:
         os.makedirs(os.path.join(daily_notes_base, year, month), exist_ok=True)
         os.makedirs(os.path.join(wellness_base, year, month), exist_ok=True)
-        _rlog("Vault year/month directories ensured")
+        _rlog(f"Vault directories ensured for {date_str}")
     except Exception as e:
         _rlog(f"ERROR creating vault dirs: {e}")
 
@@ -344,14 +366,14 @@ def initialize_review(script_dir):
     state = {
         "active": True,
         "current_step_index": 0,
-        "date": now.date().isoformat(),
-        "started_at": now.isoformat(),
+        "date": date_str,           # the note date (may be any date)
+        "started_at": now.isoformat(),  # always now — used for expiry/staleness checks
         "last_written": None,
         "awaiting_more": False,
         "accumulated_raw": []
     }
     _save_state(state)
-    _rlog(f"Review initialized. Steps: {len(config.get('review_steps', []))}")
+    _rlog(f"Review initialized for {date_str}. Steps: {len(config.get('review_steps', []))}")
     send_step_notification(state, config)
 
 
@@ -568,8 +590,13 @@ def check_startup_state(script_dir):
     if state is None:
         return "none", None, None
 
+    # Expire if the SESSION (started_at) is from a previous day, not the note date.
+    try:
+        started_date = datetime.datetime.fromisoformat(state["started_at"]).date().isoformat()
+    except Exception:
+        started_date = state.get("date", "")
     today = datetime.date.today().isoformat()
-    if state.get("date") != today:
+    if started_date != today:
         try:
             if os.path.exists(STATE_PATH):
                 os.remove(STATE_PATH)
@@ -596,24 +623,107 @@ def check_startup_state(script_dir):
 
 # ── Notifications & narration ─────────────────────────────────────────────────
 
-def narrate(text, config, blocking=False):
-    """Speak text via espeak-ng. Silently skips if disabled or not installed.
+# Cache the best available espeak voice so we don't probe the filesystem every call
+_espeak_voice_cache = None
 
-    blocking=True  — waits for speech to finish before returning.
-                     Use this before starting a recording so the mic does not
-                     capture the narration audio as user speech.
-    blocking=False — fire-and-forget (default, suitable for status messages).
+
+def _best_espeak_voice():
+    """Return the best available espeak-ng voice. Prefers mbrola (more natural)."""
+    global _espeak_voice_cache
+    if _espeak_voice_cache is not None:
+        return _espeak_voice_cache
+    # mbrola US/UK voices — check whether the data file actually exists
+    for data_file, voice_id in [
+        ("/usr/share/mbrola/us2/us2", "mb-us2"),  # American male  (clear, neutral)
+        ("/usr/share/mbrola/us1/us1", "mb-us1"),  # American female
+        ("/usr/share/mbrola/us3/us3", "mb-us3"),  # American male
+        ("/usr/share/mbrola/en1/en1", "mb-en1"),  # British male
+    ]:
+        if os.path.exists(data_file):
+            _rlog(f"narrate: mbrola voice available — using {voice_id}")
+            _espeak_voice_cache = voice_id
+            return voice_id
+    _espeak_voice_cache = "en-us"
+    return "en-us"
+
+
+def _narrate_espeak(text, blocking):
+    """Speak via espeak-ng with tuned settings. Mbrola preferred if installed."""
+    voice = _best_espeak_voice()
+    if voice.startswith("mb-"):
+        # mbrola voices: good defaults; speed 145 works well with mbrola
+        cmd = ["espeak-ng", "-v", voice, "-s", "145", "-a", "90", text]
+    else:
+        # Plain espeak: lower pitch (-p 38) + small word gap (-g 3) make it
+        # sound noticeably less robotic than the defaults
+        cmd = ["espeak-ng", "-v", voice, "-s", "135", "-p", "38", "-g", "3", "-a", "90", text]
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if blocking:
+        proc.wait()
+
+
+def _narrate_piper(text, config, blocking):
+    """Speak via piper neural TTS (much more natural; requires piper + a model file).
+
+    Falls back to espeak if piper is not installed or the model file is missing.
+    """
+    import tempfile, threading as _t
+    model = os.path.expanduser(config.get("piper_model", ""))
+    if not model or not os.path.exists(model):
+        _rlog("narrate/piper: model not found — falling back to espeak")
+        _narrate_espeak(text, blocking)
+        return
+    try:
+        tmp_path = tempfile.mktemp(suffix=".wav")
+        result = subprocess.run(
+            ["piper", "--model", model, "--output_file", tmp_path],
+            input=text.encode(),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15
+        )
+        if result.returncode != 0 or not os.path.exists(tmp_path):
+            _rlog("narrate/piper: piper failed — falling back to espeak")
+            _narrate_espeak(text, blocking)
+            return
+        play = subprocess.Popen(["paplay", tmp_path],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if blocking:
+            play.wait()
+        # Clean up the temp wav after playback (in background if non-blocking)
+        def _cleanup():
+            play.wait()
+            try: os.unlink(tmp_path)
+            except Exception: pass
+        _t.Thread(target=_cleanup, daemon=True).start()
+    except FileNotFoundError:
+        _rlog("narrate/piper: piper not installed — falling back to espeak")
+        _narrate_espeak(text, blocking)
+    except Exception as e:
+        _rlog(f"narrate/piper: error ({e}) — falling back to espeak")
+        _narrate_espeak(text, blocking)
+
+
+def narrate(text, config, blocking=False):
+    """Speak text using the configured TTS engine.
+
+    Engine priority (set via review_config.json "tts_engine"):
+      "piper"  — neural TTS, natural-sounding; needs piper installed + "piper_model" path
+      "espeak" — espeak-ng (default); uses mbrola if installed, otherwise tuned espeak
+
+    blocking=True  — wait for speech to finish before returning.
+                     Always pass True before opening the microphone so the TTS
+                     audio is not captured as user speech.
+    blocking=False — fire-and-forget (default).
     """
     if not config.get("voice_narration", True):
         return
+    engine = config.get("tts_engine", "espeak")
     try:
-        proc = subprocess.Popen(
-            ["espeak-ng", "-s", "145", "-a", "90", text],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        if blocking:
-            proc.wait()
+        if engine == "piper":
+            _narrate_piper(text, config, blocking)
+        else:
+            _narrate_espeak(text, blocking)
     except FileNotFoundError:
         pass  # espeak-ng not installed — silently skip
     except Exception as e:

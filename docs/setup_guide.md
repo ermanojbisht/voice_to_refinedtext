@@ -19,7 +19,7 @@ This guide covers setting up the fully local, offline-capable voice-to-text AI a
 | Package | Purpose |
 |---|---|
 | `python3`, `python3-pip`, `python3-venv` | Python runtime |
-| `python3-tk` | GUI windows (dashboard, settings) |
+| `python3-tk` | Base tkinter required by customtkinter |
 | `xclip` | Clipboard management |
 | `pulseaudio-utils` | `paplay` sound feedback (start/end chimes) |
 | `espeak-ng` | **Voice narration** for Evening Review step prompts |

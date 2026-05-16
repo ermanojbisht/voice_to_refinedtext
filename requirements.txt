@@ -7,21 +7,14 @@ scipy==1.11.4
 numpy==1.26.2
 
 # AI & API
-requests==2.32.2
-ollama==0.4.4
+requests>=2.32.0
+ollama>=0.4.4
 langdetect==1.0.9
 
-# UI & Background (Tray & Hotkeys)
+# UI & Background (Tray, Hotkeys, Modern Widgets)
 pystray==0.19.5
-Pillow==12.1.1
+Pillow>=10.0.0
 pynput==1.8.1
 python-xlib>=0.29
-
-# Utilities
-certifi==2020.6.20
-charset-normalizer==3.3.2
-idna==3.3
-urllib3==1.26.18
-typing_extensions==4.15.0
-customtkinter==5.2.2
-darkdetect==0.8.0
+customtkinter>=5.2.0
+darkdetect>=0.8.0

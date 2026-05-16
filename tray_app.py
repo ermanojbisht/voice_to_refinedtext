@@ -289,11 +289,51 @@ class VoiceAssistantTray:
 
     # ── Review controls ───────────────────────────────────────────────────────
 
+    def _ask_review_date(self):
+        """Show a small dialog so the user can pick the review date.
+        Returns a YYYY-MM-DD string, or None if the user cancelled."""
+        import tkinter as tk
+        from tkinter import simpledialog, messagebox
+        today = datetime.date.today().isoformat()
+        root = tk.Tk()
+        root.withdraw()
+        root.lift()
+        root.attributes("-topmost", True)
+        answer = simpledialog.askstring(
+            "Evening Review — Date",
+            f"Review date (YYYY-MM-DD).\nPress OK to use today ({today}):",
+            initialvalue=today,
+            parent=root,
+        )
+        if answer is None:          # user clicked Cancel
+            root.destroy()
+            return None
+        date_str = answer.strip() or today
+        try:
+            datetime.date.fromisoformat(date_str)
+            root.destroy()
+            return date_str
+        except ValueError:
+            messagebox.showerror(
+                "Invalid Date",
+                f"'{date_str}' is not a valid date.\nUse YYYY-MM-DD (e.g. {today}).",
+                parent=root,
+            )
+            root.destroy()
+            return None
+
     def start_review(self, icon=None, item=None):
         import review_engine
         _tlog("start_review called")
+
+        date_str = self._ask_review_date()
+        if date_str is None:
+            _tlog("start_review: user cancelled date selection")
+            return
+
+        _tlog(f"start_review: review date = {date_str}")
         self.review_config = review_engine.load_review_config(self.script_dir)
-        review_engine.initialize_review(self.script_dir)
+        review_engine.initialize_review(self.script_dir, date_str=date_str)
         active, state = review_engine.is_review_active(self.script_dir)
         if state is None:
             state = review_engine._load_state()

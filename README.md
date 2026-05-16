@@ -301,7 +301,7 @@ voice_to_refinedtext/
 | Disk | ~5 GB for models |
 | Microphone | Any USB or built-in mic |
 | Python | 3.10+ |
-| Key packages | `espeak-ng`, `pulseaudio-utils`, `xclip`, `python3-tk` |
+| Key packages | `espeak-ng`, `pulseaudio-utils`, `xclip`, `python3-tk` (base for customtkinter) |
 | Tray support | `gir1.2-ayatanaappindicator3-0.1` + `gi` symlink in venv |
 
 Install all system dependencies in one command:
