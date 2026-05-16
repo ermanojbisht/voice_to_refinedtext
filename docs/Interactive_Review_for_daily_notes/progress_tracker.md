@@ -15,7 +15,7 @@
 | `get_current_step()` | ✅ | Returns current step dict from config |
 | `append_to_note()` | ✅ | Append-only, template formatting, file isolation |
 | `advance_step()` | ✅ | Increments index, fires next notification |
-| `skip_step()` | ✅ | Advances without writing |
+| `skip_step()` | ✅ | Advances without writing; writes `skip_default` to note if step defines one |
 | `redo_step()` | ✅ | Removes last block from Markdown, re-prompts |
 | `cancel_review()` | ✅ | Deletes state file, sends notification |
 | `complete_review()` | ✅ | AI summary, prepend to daily note, cleanup |
@@ -69,6 +69,8 @@
 | Add `narrate(text, config)` using `espeak-ng` (non-blocking) | ✅ | Silently skips if not installed |
 | Add `"voice_narration": true` to `review_config.json` | ✅ | Config toggle |
 | Wire narration at: step start, processing, saved, next, skip, complete, cancel | ✅ | |
+| Piper neural TTS support | ✅ | `tts_engine: piper` + `piper_model` path; falls back to espeak if model missing |
+| TTS engine selector in Settings GUI | ✅ | Dropdown + piper model path field; disables path field when espeak selected |
 
 ---
 
@@ -78,7 +80,7 @@
 | :--- | :--- | :--- |
 | Read last N days of Obsidian notes | 📅 | N configurable, default 1, range 1-7 |
 | LLM generates contextual follow-up questions | 📅 | Prepended to step prompts |
-| Config-based note template | 📅 | User edits their own `.md` template file |
+| Config-based note template | ✅ | `templates/daily_note.md` + `templates/wellness_note.md`; `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; hardcoded fallback if file missing |
 | Desktop launcher (`EveningReview.desktop`) | 📅 | Single-click from app drawer |
 | Review history & streak tracking | 📅 | |
 | Weekly/monthly summary generation | 📅 | |

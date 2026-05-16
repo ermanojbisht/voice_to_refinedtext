@@ -1,5 +1,9 @@
 # 📈 Progress Tracker: AI Voice Refiner
 
+> **Evening Review** has its own dedicated tracker:
+> [`docs/Interactive_Review_for_daily_notes/progress_tracker.md`](Interactive_Review_for_daily_notes/progress_tracker.md)
+> The sections below cover only the core Voice Refiner (Phases 1–5).
+
 | Task | Status | Note |
 | :--- | :--- | :--- |
 | **Foundation (Phase 1)** | | |
