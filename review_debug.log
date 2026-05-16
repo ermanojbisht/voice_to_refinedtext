@@ -1,0 +1,578 @@
+[2026-05-16 00:44:21] [tray] ==================================================
+[2026-05-16 00:44:21] [tray] VoiceAssistantTray starting
+[2026-05-16 00:44:21] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 00:44:41] [review_engine] cancel_review called
+[2026-05-16 00:44:41] [review_engine] State file deleted
+[2026-05-16 00:44:41] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 00:44:54] [tray] ==================================================
+[2026-05-16 00:44:54] [tray] VoiceAssistantTray starting
+[2026-05-16 00:44:54] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 00:45:07] [tray] start_review called
+[2026-05-16 00:45:07] [review_engine] ==================================================
+[2026-05-16 00:45:07] [review_engine] initialize_review called
+[2026-05-16 00:45:07] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 00:45:07] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 00:45:07] [review_engine] Vault directories ensured
+[2026-05-16 00:45:07] [review_engine] State saved: step=0, active=True
+[2026-05-16 00:45:07] [review_engine] Review initialized. Steps: 4
+[2026-05-16 00:45:07] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 00:45:07] [review_engine] is_review_active → True (step=0)
+[2026-05-16 00:45:07] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T00:45:07.467810', 'last_written': None}
+[2026-05-16 00:48:24] [tray] ==================================================
+[2026-05-16 00:48:24] [tray] VoiceAssistantTray starting
+[2026-05-16 00:48:24] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 00:50:47] [tray] ==================================================
+[2026-05-16 00:50:47] [tray] VoiceAssistantTray starting
+[2026-05-16 00:50:47] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 00:51:01] [tray] start_review called
+[2026-05-16 00:51:01] [review_engine] ==================================================
+[2026-05-16 00:51:01] [review_engine] initialize_review called
+[2026-05-16 00:51:01] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 00:51:01] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 00:51:01] [review_engine] Vault directories ensured
+[2026-05-16 00:51:01] [review_engine] State saved: step=0, active=True
+[2026-05-16 00:51:01] [review_engine] Review initialized. Steps: 4
+[2026-05-16 00:51:01] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 00:51:01] [review_engine] is_review_active → True (step=0)
+[2026-05-16 00:51:01] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T00:51:01.003343', 'last_written': None}
+[2026-05-16 00:58:33] [tray] skip_review_step called
+[2026-05-16 00:58:33] [review_engine] is_review_active → True (step=0)
+[2026-05-16 00:58:33] [review_engine] skip_step: 0 → 1 (total=4)
+[2026-05-16 00:58:33] [review_engine] State saved: step=1, active=True
+[2026-05-16 00:58:33] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 00:58:33] [review_engine] is_review_active → True (step=1)
+[2026-05-16 00:58:33] [tray] skip_review_step: still_active=True
+[2026-05-16 00:59:01] [tray] skip_review_step called
+[2026-05-16 00:59:01] [review_engine] is_review_active → True (step=1)
+[2026-05-16 00:59:01] [review_engine] skip_step: 1 → 2 (total=4)
+[2026-05-16 00:59:01] [review_engine] State saved: step=2, active=True
+[2026-05-16 00:59:01] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 00:59:01] [review_engine] is_review_active → True (step=2)
+[2026-05-16 00:59:01] [tray] skip_review_step: still_active=True
+[2026-05-16 00:59:04] [tray] skip_review_step called
+[2026-05-16 00:59:04] [review_engine] is_review_active → True (step=2)
+[2026-05-16 00:59:04] [review_engine] skip_step: 2 → 3 (total=4)
+[2026-05-16 00:59:04] [review_engine] State saved: step=3, active=True
+[2026-05-16 00:59:04] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 00:59:05] [review_engine] is_review_active → True (step=3)
+[2026-05-16 00:59:05] [tray] skip_review_step: still_active=True
+[2026-05-16 00:59:11] [tray] skip_review_step called
+[2026-05-16 00:59:11] [review_engine] is_review_active → True (step=3)
+[2026-05-16 00:59:11] [review_engine] skip_step: 3 → 4 (total=4)
+[2026-05-16 00:59:11] [review_engine] skip_step: last step skipped, calling complete_review
+[2026-05-16 00:59:11] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 00:59:11] [review_engine] complete_review: state file deleted
+[2026-05-16 00:59:11] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 00:59:11] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 00:59:11] [review_engine] complete_review: background summary thread started
+[2026-05-16 00:59:11] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 00:59:11] [review_engine] _generate_and_prepend_summary: daily note not found, skipping
+[2026-05-16 00:59:11] [review_engine] is_review_active → False (no state file)
+[2026-05-16 00:59:11] [tray] skip_review_step: still_active=False
+[2026-05-16 00:59:11] [tray] _review_finished called
+[2026-05-16 01:02:52] [tray] ==================================================
+[2026-05-16 01:02:52] [tray] VoiceAssistantTray starting
+[2026-05-16 01:02:52] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:03:03] [tray] start_review called
+[2026-05-16 01:03:03] [review_engine] ==================================================
+[2026-05-16 01:03:03] [review_engine] initialize_review called
+[2026-05-16 01:03:03] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 01:03:03] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 01:03:03] [review_engine] Vault directories ensured
+[2026-05-16 01:03:03] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:03:03] [review_engine] Review initialized. Steps: 4
+[2026-05-16 01:03:03] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:03:03] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:03:03] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T01:03:03.063695', 'last_written': None}
+[2026-05-16 01:03:44] [tray] skip_review_step called
+[2026-05-16 01:03:44] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:03:44] [review_engine] skip_step: 0 → 1 (total=4)
+[2026-05-16 01:03:44] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:03:44] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:03:44] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:03:44] [tray] skip_review_step: still_active=True
+[2026-05-16 01:03:48] [tray] skip_review_step called
+[2026-05-16 01:03:48] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:03:48] [review_engine] skip_step: 1 → 2 (total=4)
+[2026-05-16 01:03:48] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:03:48] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:03:48] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:03:48] [tray] skip_review_step: still_active=True
+[2026-05-16 01:03:52] [tray] skip_review_step called
+[2026-05-16 01:03:52] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:03:52] [review_engine] skip_step: 2 → 3 (total=4)
+[2026-05-16 01:03:52] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:03:52] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:03:53] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:03:53] [tray] skip_review_step: still_active=True
+[2026-05-16 01:04:19] [tray] skip_review_step called
+[2026-05-16 01:04:19] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:04:19] [review_engine] skip_step: 3 → 4 (total=4)
+[2026-05-16 01:04:19] [review_engine] skip_step: last step skipped, calling complete_review
+[2026-05-16 01:04:19] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:04:19] [review_engine] complete_review: state file deleted
+[2026-05-16 01:04:19] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 01:04:19] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 01:04:19] [review_engine] complete_review: background summary thread started
+[2026-05-16 01:04:19] [review_engine] _generate_and_prepend_summary: daily note not found, skipping
+[2026-05-16 01:04:19] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:04:19] [review_engine] is_review_active → False (no state file)
+[2026-05-16 01:04:19] [tray] skip_review_step: still_active=False
+[2026-05-16 01:04:19] [tray] _review_finished called
+[2026-05-16 01:07:08] [tray] ==================================================
+[2026-05-16 01:07:08] [tray] VoiceAssistantTray starting
+[2026-05-16 01:07:08] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:07:17] [tray] start_review called
+[2026-05-16 01:07:17] [review_engine] ==================================================
+[2026-05-16 01:07:17] [review_engine] initialize_review called
+[2026-05-16 01:07:17] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 01:07:17] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 01:07:17] [review_engine] Vault directories ensured
+[2026-05-16 01:07:17] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:07:17] [review_engine] Review initialized. Steps: 4
+[2026-05-16 01:07:17] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:07:17] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:07:17] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T01:07:17.939901', 'last_written': None}
+[2026-05-16 01:07:51] [tray] skip_review_step called
+[2026-05-16 01:07:51] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:07:51] [review_engine] skip_step: 0 → 1 (total=4)
+[2026-05-16 01:07:51] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:07:51] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:07:51] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:07:51] [tray] skip_review_step: still_active=True
+[2026-05-16 01:07:54] [tray] skip_review_step called
+[2026-05-16 01:07:54] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:07:54] [review_engine] skip_step: 1 → 2 (total=4)
+[2026-05-16 01:07:54] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:07:54] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:07:54] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:07:54] [tray] skip_review_step: still_active=True
+[2026-05-16 01:07:56] [tray] skip_review_step called
+[2026-05-16 01:07:56] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:07:56] [review_engine] skip_step: 2 → 3 (total=4)
+[2026-05-16 01:07:56] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:07:56] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:07:56] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:07:56] [tray] skip_review_step: still_active=True
+[2026-05-16 01:08:03] [tray] skip_review_step called
+[2026-05-16 01:08:03] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:08:03] [review_engine] skip_step: 3 → 4 (total=4)
+[2026-05-16 01:08:03] [review_engine] skip_step: last step skipped, calling complete_review
+[2026-05-16 01:08:03] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:08:03] [review_engine] complete_review: created empty daily note at /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:08:03] [review_engine] complete_review: state file deleted
+[2026-05-16 01:08:03] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 01:08:03] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 01:08:03] [review_engine] complete_review: background summary thread started
+[2026-05-16 01:08:03] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:08:03] [review_engine] is_review_active → False (no state file)
+[2026-05-16 01:08:03] [tray] skip_review_step: still_active=False
+[2026-05-16 01:08:03] [tray] _review_finished called
+[2026-05-16 01:08:04] [review_engine] _generate_and_prepend_summary: summary prepended (91 chars)
+[2026-05-16 01:08:04] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'
+[2026-05-16 01:12:03] [tray] ==================================================
+[2026-05-16 01:12:03] [tray] VoiceAssistantTray starting
+[2026-05-16 01:12:03] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:13:00] [tray] start_review called
+[2026-05-16 01:13:00] [review_engine] ==================================================
+[2026-05-16 01:13:00] [review_engine] initialize_review called
+[2026-05-16 01:13:00] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 01:13:00] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 01:13:00] [review_engine] Vault directories ensured
+[2026-05-16 01:13:00] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:13:00] [review_engine] Review initialized. Steps: 4
+[2026-05-16 01:13:00] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:13:00] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:13:00] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T01:13:00.535207', 'last_written': None}
+[2026-05-16 01:17:57] [tray] skip_review_step called
+[2026-05-16 01:17:57] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:17:57] [review_engine] skip_step: 0 → 1 (total=4)
+[2026-05-16 01:17:57] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:17:57] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:17:57] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:17:57] [tray] skip_review_step: still_active=True
+[2026-05-16 01:18:03] [tray] skip_review_step called
+[2026-05-16 01:18:03] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:18:03] [review_engine] skip_step: 1 → 2 (total=4)
+[2026-05-16 01:18:03] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:18:03] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:18:03] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:18:03] [tray] skip_review_step: still_active=True
+[2026-05-16 01:18:05] [tray] skip_review_step called
+[2026-05-16 01:18:05] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:18:05] [review_engine] skip_step: 2 → 3 (total=4)
+[2026-05-16 01:18:05] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:18:05] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:18:05] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:18:05] [tray] skip_review_step: still_active=True
+[2026-05-16 01:18:34] [tray] skip_review_step called
+[2026-05-16 01:18:34] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:18:34] [review_engine] skip_step: 3 → 4 (total=4)
+[2026-05-16 01:18:34] [review_engine] skip_step: last step skipped, calling complete_review
+[2026-05-16 01:18:34] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:18:34] [review_engine] complete_review: created empty daily note at /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:18:34] [review_engine] complete_review: state file deleted
+[2026-05-16 01:18:34] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 01:18:34] [review_engine] complete_review: background summary thread started
+[2026-05-16 01:18:34] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 01:18:34] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:18:34] [review_engine] is_review_active → False (no state file)
+[2026-05-16 01:18:34] [tray] skip_review_step: still_active=False
+[2026-05-16 01:18:34] [tray] _review_finished called
+[2026-05-16 01:18:34] [review_engine] _generate_and_prepend_summary: summary prepended (92 chars)
+[2026-05-16 01:18:34] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'
+[2026-05-16 01:20:24] [tray] ==================================================
+[2026-05-16 01:20:24] [tray] VoiceAssistantTray starting
+[2026-05-16 01:20:24] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:20:29] [tray] start_review called
+[2026-05-16 01:20:29] [review_engine] ==================================================
+[2026-05-16 01:20:29] [review_engine] initialize_review called
+[2026-05-16 01:20:29] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 01:20:29] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 01:20:29] [review_engine] Vault directories ensured
+[2026-05-16 01:20:29] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:20:29] [review_engine] Review initialized. Steps: 4
+[2026-05-16 01:20:29] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:20:29] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:20:29] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T01:20:29.135777', 'last_written': None}
+[2026-05-16 01:21:02] [tray] redo_review_step called
+[2026-05-16 01:21:02] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:21:02] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:21:02] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:21:02] [tray] redo_review_step: still_active=True
+[2026-05-16 01:21:51] [tray] redo_review_step called
+[2026-05-16 01:21:51] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:21:51] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:21:51] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:21:51] [tray] redo_review_step: still_active=True
+[2026-05-16 01:23:29] [tray] ==================================================
+[2026-05-16 01:23:29] [tray] VoiceAssistantTray starting
+[2026-05-16 01:23:29] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:31:24] [tray] ==================================================
+[2026-05-16 01:31:24] [tray] VoiceAssistantTray starting
+[2026-05-16 01:31:24] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:36:10] [tray] ==================================================
+[2026-05-16 01:36:10] [tray] VoiceAssistantTray starting
+[2026-05-16 01:36:10] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:38:53] [tray] ==================================================
+[2026-05-16 01:38:53] [tray] VoiceAssistantTray starting
+[2026-05-16 01:38:53] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:38:56] [tray] run_full_process started. is_in_review=True
+[2026-05-16 01:38:56] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:39:23] [tray] Transcription done. text_len=56 preview=' Okay, then all those meeting ends up to you thing. Bye.'
+[2026-05-16 01:39:23] [tray] Routing: REVIEW MODE
+[2026-05-16 01:39:23] [tray] _handle_review_step called
+[2026-05-16 01:39:23] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:39:23] [tray] Current step: 'Focus Word' idx=0 refine=True is_continuation=False
+[2026-05-16 01:39:23] [tray] Calling engine.refine for step 'Focus Word'
+[2026-05-16 01:39:23] [tray] final_text preview: 'Okay, then, all those meetings end up being your thing. Bye.'
+[2026-05-16 01:39:23] [review_engine] append_to_note: step='Focus Word' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 01:39:23] [review_engine] append_to_note: text='Okay, then, all those meetings end up being your thing. Bye.'
+[2026-05-16 01:39:23] [review_engine] append_to_note: SUCCESS wrote 82 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:39:23] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:39:23] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:39:23] [review_engine] NOTIFY: 'Evening Review — Step 1/4 Saved' — ''Focus Word' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 01:39:23] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 01:39:46] [tray] next_step_review called
+[2026-05-16 01:39:46] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:39:46] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:39:46] [review_engine] advance_step: 0 → 1 (total=4)
+[2026-05-16 01:39:46] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:39:46] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:39:46] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:39:46] [tray] next_step_review: still_active=True
+[2026-05-16 01:39:52] [tray] run_full_process started. is_in_review=True
+[2026-05-16 01:39:52] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:40:01] [tray] Transcription done. text_len=36 preview=' नमस्ते, यह एक है। नमस्ते, यह एक है।'
+[2026-05-16 01:40:01] [tray] Routing: REVIEW MODE
+[2026-05-16 01:40:01] [tray] _handle_review_step called
+[2026-05-16 01:40:01] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:40:01] [tray] Current step: 'Achievements' idx=1 refine=True is_continuation=False
+[2026-05-16 01:40:01] [tray] Calling engine.refine for step 'Achievements'
+[2026-05-16 01:40:03] [tray] final_text preview: 'नमस्ते, यह एक है। नमस्ते, यह एक है।'
+[2026-05-16 01:40:03] [review_engine] append_to_note: step='Achievements' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 01:40:03] [review_engine] append_to_note: text='नमस्ते, यह एक है। नमस्ते, यह एक है।'
+[2026-05-16 01:40:03] [review_engine] append_to_note: SUCCESS wrote 60 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:40:03] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:40:03] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:40:03] [review_engine] NOTIFY: 'Evening Review — Step 2/4 Saved' — ''Achievements' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 01:40:03] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 01:40:18] [tray] next_step_review called
+[2026-05-16 01:40:18] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:40:18] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:40:18] [review_engine] advance_step: 1 → 2 (total=4)
+[2026-05-16 01:40:18] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:40:18] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:40:18] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:40:18] [tray] next_step_review: still_active=True
+[2026-05-16 01:40:23] [tray] skip_review_step called
+[2026-05-16 01:40:23] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:40:23] [review_engine] skip_step: 2 → 3 (total=4)
+[2026-05-16 01:40:23] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:40:23] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:40:23] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:40:23] [tray] skip_review_step: still_active=True
+[2026-05-16 01:40:32] [tray] run_full_process started. is_in_review=True
+[2026-05-16 01:40:32] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:40:42] [tray] Transcription done. text_len=68 preview=' On healthy ground, everything is okay. I don't find anything wrong.'
+[2026-05-16 01:40:42] [tray] Routing: REVIEW MODE
+[2026-05-16 01:40:42] [tray] _handle_review_step called
+[2026-05-16 01:40:42] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:40:42] [tray] Current step: 'Wellness Log' idx=3 refine=False is_continuation=False
+[2026-05-16 01:40:42] [tray] Skipping refinement for step 'Wellness Log' (refine=False)
+[2026-05-16 01:40:42] [tray] final_text preview: ' On healthy ground, everything is okay. I don't find anything wrong.'
+[2026-05-16 01:40:42] [review_engine] append_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026-05-16.md'
+[2026-05-16 01:40:42] [review_engine] append_to_note: text_preview=' On healthy ground, everything is okay. I don't find anythin...' 
+[2026-05-16 01:40:42] [review_engine] append_to_note: SUCCESS wrote 108 chars to /home/manoj/learning_vault/My Daily Notes/Wellness/2026-05-16.md
+[2026-05-16 01:40:42] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:40:42] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:40:42] [review_engine] NOTIFY: 'Evening Review — Step 4/4 Saved' — ''Wellness Log' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 01:40:42] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 01:41:15] [tray] next_step_review called
+[2026-05-16 01:41:15] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:41:15] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:41:15] [review_engine] advance_step: 3 → 4 (total=4)
+[2026-05-16 01:41:15] [review_engine] advance_step: last step done, calling complete_review
+[2026-05-16 01:41:15] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:41:15] [review_engine] complete_review: daily note already exists, will append summary
+[2026-05-16 01:41:15] [review_engine] complete_review: state file deleted
+[2026-05-16 01:41:15] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 01:41:15] [review_engine] complete_review: background summary thread started
+[2026-05-16 01:41:15] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 01:41:15] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:41:15] [review_engine] is_review_active → False (no state file)
+[2026-05-16 01:41:15] [tray] next_step_review: still_active=False
+[2026-05-16 01:41:15] [tray] _review_finished called
+[2026-05-16 01:41:17] [review_engine] _generate_and_prepend_summary: summary prepended (189 chars)
+[2026-05-16 01:41:17] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'
+[2026-05-16 01:42:26] [tray] start_review called
+[2026-05-16 01:42:26] [review_engine] ==================================================
+[2026-05-16 01:42:26] [review_engine] initialize_review called
+[2026-05-16 01:42:26] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 01:42:26] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 01:42:26] [review_engine] Vault directories ensured
+[2026-05-16 01:42:26] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:42:26] [review_engine] Review initialized. Steps: 4
+[2026-05-16 01:42:26] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:42:26] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:42:26] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T01:42:26.733927', 'last_written': None, 'awaiting_more': False}
+[2026-05-16 01:42:30] [tray] run_full_process started. is_in_review=True
+[2026-05-16 01:42:30] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 01:42:34] [tray] Transcription done. text_len=19 preview=' प्रांसक्रिप्शन है।'
+[2026-05-16 01:42:34] [tray] Routing: REVIEW MODE
+[2026-05-16 01:42:34] [tray] _handle_review_step called
+[2026-05-16 01:42:34] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:42:34] [tray] Current step: 'Focus Word' idx=0 refine=True is_continuation=False
+[2026-05-16 01:42:34] [tray] Calling engine.refine for step 'Focus Word'
+[2026-05-16 01:42:38] [tray] final_text preview: 'प्रिंसीपल, हिंदीमध्ये "प्रिमुख्य" असा अर्थ आहे.'
+[2026-05-16 01:42:38] [review_engine] append_to_note: step='Focus Word' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 01:42:38] [review_engine] append_to_note: text='प्रिंसीपल, हिंदीमध्ये "प्रिमुख्य" असा अर्थ आहे.'
+[2026-05-16 01:42:38] [review_engine] append_to_note: SUCCESS wrote 69 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:42:38] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:42:38] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:42:38] [review_engine] NOTIFY: 'Evening Review — Step 1/4 Saved' — ''Focus Word' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 01:42:38] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 01:46:06] [tray] next_step_review called
+[2026-05-16 01:46:06] [review_engine] is_review_active → True (step=0)
+[2026-05-16 01:46:06] [review_engine] State saved: step=0, active=True
+[2026-05-16 01:46:06] [review_engine] advance_step: 0 → 1 (total=4)
+[2026-05-16 01:46:06] [review_engine] State saved: step=1, active=True
+[2026-05-16 01:46:06] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 01:46:06] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:46:06] [tray] next_step_review: still_active=True
+[2026-05-16 01:46:13] [tray] skip_review_step called
+[2026-05-16 01:46:13] [review_engine] is_review_active → True (step=1)
+[2026-05-16 01:46:13] [review_engine] skip_step: 1 → 2 (total=4)
+[2026-05-16 01:46:13] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:46:13] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:46:13] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:46:13] [tray] skip_review_step: still_active=True
+[2026-05-16 01:46:23] [tray] run_full_process started. is_in_review=True
+[2026-05-16 01:46:23] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 01:46:35] [tray] Transcription done. text_len=28 preview=' द्राफ्टलेटर, मस्तरप्लाइलेटर'
+[2026-05-16 01:46:35] [tray] Routing: REVIEW MODE
+[2026-05-16 01:46:35] [tray] _handle_review_step called
+[2026-05-16 01:46:35] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:46:35] [tray] Current step: 'Tomorrow's Priorities' idx=2 refine=True is_continuation=False
+[2026-05-16 01:46:35] [tray] Calling engine.refine for step 'Tomorrow's Priorities'
+[2026-05-16 01:46:36] [tray] final_text preview: 'येथे एक संभाषण आहे ज्यात 'ड्राफ्टलेटर' आणि 'मास्टरप्लाईलेटर' या दोन पात्रांचा सम'
+[2026-05-16 01:46:36] [review_engine] append_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 01:46:36] [review_engine] append_to_note: text_preview='येथे एक संभाषण आहे ज्यात 'ड्राफ्टलेटर' आणि 'मास्टरप्लाईलेटर'...' 
+[2026-05-16 01:46:36] [review_engine] append_to_note: SUCCESS wrote 581 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:46:36] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:46:36] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:46:36] [review_engine] NOTIFY: 'Evening Review — Step 3/4 Saved' — ''Tomorrow's Priorities' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 01:46:36] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 01:46:46] [tray] next_step_review called
+[2026-05-16 01:46:46] [review_engine] is_review_active → True (step=2)
+[2026-05-16 01:46:46] [review_engine] State saved: step=2, active=True
+[2026-05-16 01:46:46] [review_engine] advance_step: 2 → 3 (total=4)
+[2026-05-16 01:46:46] [review_engine] State saved: step=3, active=True
+[2026-05-16 01:46:46] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 01:46:46] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:46:46] [tray] next_step_review: still_active=True
+[2026-05-16 01:46:57] [tray] skip_review_step called
+[2026-05-16 01:46:57] [review_engine] is_review_active → True (step=3)
+[2026-05-16 01:46:57] [review_engine] skip_step: 3 → 4 (total=4)
+[2026-05-16 01:46:57] [review_engine] skip_step: last step skipped, calling complete_review
+[2026-05-16 01:46:57] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 01:46:57] [review_engine] complete_review: daily note already exists, will append summary
+[2026-05-16 01:46:57] [review_engine] complete_review: state file deleted
+[2026-05-16 01:46:57] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 01:46:57] [review_engine] complete_review: background summary thread started
+[2026-05-16 01:46:57] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 01:46:57] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 01:46:57] [review_engine] is_review_active → False (no state file)
+[2026-05-16 01:46:57] [tray] skip_review_step: still_active=False
+[2026-05-16 01:46:57] [tray] _review_finished called
+[2026-05-16 01:47:00] [review_engine] _generate_and_prepend_summary: summary prepended (364 chars)
+[2026-05-16 01:47:00] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'
+[2026-05-16 07:44:52] [tray] ==================================================
+[2026-05-16 07:44:52] [tray] VoiceAssistantTray starting
+[2026-05-16 07:44:52] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 07:45:04] [tray] start_review called
+[2026-05-16 07:45:04] [review_engine] ==================================================
+[2026-05-16 07:45:04] [review_engine] initialize_review called
+[2026-05-16 07:45:04] [review_engine] Daily notes dir: /home/manoj/learning_vault/My Daily Notes
+[2026-05-16 07:45:04] [review_engine] Wellness dir: /home/manoj/learning_vault/My Daily Notes/Wellness
+[2026-05-16 07:45:04] [review_engine] Vault directories ensured
+[2026-05-16 07:45:04] [review_engine] State saved: step=0, active=True
+[2026-05-16 07:45:04] [review_engine] Review initialized. Steps: 4
+[2026-05-16 07:45:04] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 07:45:04] [review_engine] is_review_active → True (step=0)
+[2026-05-16 07:45:04] [tray] start_review: is_review_active=True, state={'active': True, 'current_step_index': 0, 'date': '2026-05-16', 'started_at': '2026-05-16T07:45:04.392059', 'last_written': None, 'awaiting_more': False}
+[2026-05-16 07:45:38] [tray] run_full_process started. is_in_review=True
+[2026-05-16 07:45:38] [review_engine] NOTIFY: 'Evening Review — Step 1/4' — 'Step 1/4: Speak today's core focus word or overarching theme.'
+[2026-05-16 07:48:21] [tray] Transcription done. text_len=1476 preview=' Yeah, okay, actually today I have did the first I discussed one question that m'
+[2026-05-16 07:48:21] [tray] Routing: REVIEW MODE
+[2026-05-16 07:48:21] [tray] _handle_review_step called
+[2026-05-16 07:48:21] [review_engine] is_review_active → True (step=0)
+[2026-05-16 07:48:21] [tray] Current step: 'Focus Word' idx=0 refine=True is_continuation=False
+[2026-05-16 07:48:21] [tray] Calling engine.refine for step 'Focus Word'
+[2026-05-16 07:48:25] [tray] final_text preview: 'Today, I discussed the first question posed by my chief engineer regarding the g'
+[2026-05-16 07:48:25] [review_engine] append_to_note: step='Focus Word' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 07:48:25] [review_engine] append_to_note: text_preview='Today, I discussed the first question posed by my chief engi...' 
+[2026-05-16 07:48:25] [review_engine] append_to_note: SUCCESS wrote 1244 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 07:48:25] [review_engine] State saved: step=0, active=True
+[2026-05-16 07:48:25] [review_engine] State saved: step=0, active=True
+[2026-05-16 07:48:25] [review_engine] NOTIFY: 'Evening Review — Step 1/4 Saved' — ''Focus Word' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 07:48:25] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 07:49:57] [tray] next_step_review called
+[2026-05-16 07:49:57] [review_engine] is_review_active → True (step=0)
+[2026-05-16 07:49:57] [review_engine] State saved: step=0, active=True
+[2026-05-16 07:49:57] [review_engine] advance_step: 0 → 1 (total=4)
+[2026-05-16 07:49:57] [review_engine] State saved: step=1, active=True
+[2026-05-16 07:49:57] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 07:49:57] [review_engine] is_review_active → True (step=1)
+[2026-05-16 07:49:57] [tray] next_step_review: still_active=True
+[2026-05-16 07:50:10] [tray] run_full_process started. is_in_review=True
+[2026-05-16 07:50:10] [review_engine] NOTIFY: 'Evening Review — Step 2/4' — 'Step 2/4: What did you accomplish, build, or unblock today?'
+[2026-05-16 07:50:51] [tray] Transcription done. text_len=212 preview=' It's Got Talent,섯 दिशु लेक्ष भी, गए। रधिटसीघ स्क्रेवरिभ और सीनिन  बजब्ट्रेप्ट्ठ'
+[2026-05-16 07:50:51] [tray] Routing: REVIEW MODE
+[2026-05-16 07:50:51] [tray] _handle_review_step called
+[2026-05-16 07:50:51] [review_engine] is_review_active → True (step=1)
+[2026-05-16 07:50:51] [tray] Current step: 'Achievements' idx=1 refine=True is_continuation=False
+[2026-05-16 07:50:51] [tray] Calling engine.refine for step 'Achievements'
+[2026-05-16 07:50:53] [tray] final_text preview: 'हिंदी का अनुवादः यह प्रतिभा है, सेठ भी, चले गए। रधिटसीघ स्क्रेवरिभ और सीनिन, चले'
+[2026-05-16 07:50:53] [review_engine] append_to_note: step='Achievements' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 07:50:53] [review_engine] append_to_note: text_preview='हिंदी का अनुवादः यह प्रतिभा है, सेठ भी, चले गए। रधिटसीघ स्क्...' 
+[2026-05-16 07:50:53] [review_engine] append_to_note: SUCCESS wrote 149 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 07:50:53] [review_engine] State saved: step=1, active=True
+[2026-05-16 07:50:53] [review_engine] State saved: step=1, active=True
+[2026-05-16 07:50:53] [review_engine] NOTIFY: 'Evening Review — Step 2/4 Saved' — ''Achievements' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 07:50:53] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 07:51:32] [tray] next_step_review called
+[2026-05-16 07:51:32] [review_engine] is_review_active → True (step=1)
+[2026-05-16 07:51:32] [review_engine] State saved: step=1, active=True
+[2026-05-16 07:51:32] [review_engine] advance_step: 1 → 2 (total=4)
+[2026-05-16 07:51:32] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:51:32] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 07:51:32] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:51:32] [tray] next_step_review: still_active=True
+[2026-05-16 07:51:45] [tray] run_full_process started. is_in_review=True
+[2026-05-16 07:51:45] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 07:51:49] [tray] Transcription done. text_len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 07:51:49] [tray] Routing: REVIEW MODE
+[2026-05-16 07:51:49] [tray] _handle_review_step called
+[2026-05-16 07:51:49] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:51:49] [tray] Current step: 'Tomorrow's Priorities' idx=2 refine=True is_continuation=False
+[2026-05-16 07:51:49] [tray] Calling engine.refine for step 'Tomorrow's Priorities'
+[2026-05-16 07:51:50] [tray] final_text preview: '1. हेलो.
+2. नमस्ते।
+3. (तुम) कैसे हो?
+4. ठीक है.
+5. (तुम) कैसे हो?'
+[2026-05-16 07:51:50] [review_engine] append_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 07:51:50] [review_engine] append_to_note: text_preview='1. हेलो.
+2. नमस्ते।
+3. (तुम) कैसे हो?
+4. ठीक है.
+5. (तुम) कै...' 
+[2026-05-16 07:51:50] [review_engine] append_to_note: SUCCESS wrote 95 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 07:51:50] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:51:50] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:51:50] [review_engine] NOTIFY: 'Evening Review — Step 3/4 Saved' — ''Tomorrow's Priorities' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 07:51:50] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 07:52:08] [tray] redo_review_step called
+[2026-05-16 07:52:08] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:52:08] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:52:08] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 07:52:08] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:52:08] [tray] redo_review_step: still_active=True
+[2026-05-16 07:52:13] [tray] run_full_process started. is_in_review=True
+[2026-05-16 07:52:13] [review_engine] NOTIFY: 'Evening Review — Step 3/4' — 'Step 3/4: What tasks need immediate attention tomorrow?'
+[2026-05-16 07:53:06] [tray] Transcription done. text_len=393 preview=' I think one meeting is on Monday about the bridges to be constructed under the '
+[2026-05-16 07:53:06] [tray] Routing: REVIEW MODE
+[2026-05-16 07:53:06] [tray] _handle_review_step called
+[2026-05-16 07:53:06] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:53:06] [tray] Current step: 'Tomorrow's Priorities' idx=2 refine=True is_continuation=False
+[2026-05-16 07:53:06] [tray] Calling engine.refine for step 'Tomorrow's Priorities'
+[2026-05-16 07:53:09] [tray] final_text preview: 'There will be a meeting on Monday to discuss the bridges to be constructed under'
+[2026-05-16 07:53:09] [review_engine] append_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026-05-16.md'
+[2026-05-16 07:53:09] [review_engine] append_to_note: text_preview='There will be a meeting on Monday to discuss the bridges to ...' 
+[2026-05-16 07:53:09] [review_engine] append_to_note: SUCCESS wrote 464 chars to /home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 07:53:09] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:53:09] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:53:09] [review_engine] NOTIFY: 'Evening Review — Step 3/4 Saved' — ''Tomorrow's Priorities' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 07:53:09] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 07:54:26] [tray] next_step_review called
+[2026-05-16 07:54:26] [review_engine] is_review_active → True (step=2)
+[2026-05-16 07:54:26] [review_engine] State saved: step=2, active=True
+[2026-05-16 07:54:26] [review_engine] advance_step: 2 → 3 (total=4)
+[2026-05-16 07:54:26] [review_engine] State saved: step=3, active=True
+[2026-05-16 07:54:26] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 07:54:26] [review_engine] is_review_active → True (step=3)
+[2026-05-16 07:54:26] [tray] next_step_review: still_active=True
+[2026-05-16 07:54:36] [tray] run_full_process started. is_in_review=True
+[2026-05-16 07:54:36] [review_engine] NOTIFY: 'Evening Review — Step 4/4' — 'Step 4/4: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 07:55:08] [tray] Transcription done. text_len=260 preview=' I have faced a little of health issues that around 2 p.m. I have been some savo'
+[2026-05-16 07:55:08] [tray] Routing: REVIEW MODE
+[2026-05-16 07:55:08] [tray] _handle_review_step called
+[2026-05-16 07:55:08] [review_engine] is_review_active → True (step=3)
+[2026-05-16 07:55:08] [tray] Current step: 'Wellness Log' idx=3 refine=False is_continuation=False
+[2026-05-16 07:55:08] [tray] Skipping refinement for step 'Wellness Log' (refine=False)
+[2026-05-16 07:55:08] [tray] final_text preview: ' I have faced a little of health issues that around 2 p.m. I have been some savo'
+[2026-05-16 07:55:08] [review_engine] append_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026-05-16.md'
+[2026-05-16 07:55:08] [review_engine] append_to_note: text_preview=' I have faced a little of health issues that around 2 p.m. I...' 
+[2026-05-16 07:55:08] [review_engine] append_to_note: SUCCESS wrote 300 chars to /home/manoj/learning_vault/My Daily Notes/Wellness/2026-05-16.md
+[2026-05-16 07:55:08] [review_engine] State saved: step=3, active=True
+[2026-05-16 07:55:08] [review_engine] State saved: step=3, active=True
+[2026-05-16 07:55:08] [review_engine] NOTIFY: 'Evening Review — Step 4/4 Saved' — ''Wellness Log' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 07:55:08] [tray] _handle_review_step: set awaiting_more=True, waiting for user to click Next Step
+[2026-05-16 07:55:37] [tray] next_step_review called
+[2026-05-16 07:55:37] [review_engine] is_review_active → True (step=3)
+[2026-05-16 07:55:37] [review_engine] State saved: step=3, active=True
+[2026-05-16 07:55:37] [review_engine] advance_step: 3 → 4 (total=4)
+[2026-05-16 07:55:37] [review_engine] advance_step: last step done, calling complete_review
+[2026-05-16 07:55:37] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026-05-16.md
+[2026-05-16 07:55:37] [review_engine] complete_review: daily note already exists, will append summary
+[2026-05-16 07:55:37] [review_engine] complete_review: state file deleted
+[2026-05-16 07:55:37] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 07:55:37] [review_engine] _generate_and_prepend_summary: starting background summary generation
+[2026-05-16 07:55:37] [review_engine] complete_review: background summary thread started
+[2026-05-16 07:55:37] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 07:55:37] [review_engine] is_review_active → False (no state file)
+[2026-05-16 07:55:37] [tray] next_step_review: still_active=False
+[2026-05-16 07:55:37] [tray] _review_finished called
+[2026-05-16 07:55:38] [review_engine] _generate_and_prepend_summary: summary prepended (361 chars)
+[2026-05-16 07:55:38] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'

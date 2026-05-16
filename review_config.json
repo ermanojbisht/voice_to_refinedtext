@@ -1,0 +1,47 @@
+{
+  "vault_paths": {
+    "base_vault": "~/learning_vault",
+    "daily_notes": "~/learning_vault/My Daily Notes",
+    "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
+  },
+  "review_expiry_hours": 1,
+  "last_n_days_context": 1,
+  "review_steps": [
+    {
+      "step_id": 1,
+      "section_name": "Focus Word",
+      "prompt_notification": "Step 1/4: Speak today's core focus word or overarching theme.",
+      "markdown_template": "### \ud83d\udccc Focus Word\n**{{text}}**\n",
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true
+    },
+    {
+      "step_id": 2,
+      "section_name": "Achievements",
+      "prompt_notification": "Step 2/4: What did you accomplish, build, or unblock today?",
+      "markdown_template": "### \ud83d\udee0\ufe0f Key Achievements\n{{text}}\n",
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true
+    },
+    {
+      "step_id": 3,
+      "section_name": "Tomorrow's Priorities",
+      "prompt_notification": "Step 3/4: What tasks need immediate attention tomorrow?",
+      "markdown_template": "### \u23f3 Tomorrow's Priorities\n{{text}}\n",
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true
+    },
+    {
+      "step_id": 4,
+      "section_name": "Wellness Log",
+      "prompt_notification": "Step 4/4: Any wellness or personal reflections? (Speak or Skip).",
+      "markdown_template": "### \ud83e\udde0 Wellness Log\n*{{timestamp}}*: {{text}}\n",
+      "isolate_file": true,
+      "skippable": true,
+      "refine": false
+    }
+  ]
+}

@@ -130,22 +130,47 @@ def clean_response(text):
     """Strips <think> tags, prefixes, and surrounding quotes."""
     if not text:
         return ""
-    
+
     text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
     prefixes_to_strip = [
         "Professional English:", "Cleaned text:", "Refined text:",
         "यहाँ सुधार हुआ पाठ है:", "शुद्ध रूप:", "संवाद:", "Raw:", "Output:",
         "The professional version of the text is:", "Here is the refined text:",
-        "Correct and cleaned transcription:", "Correct and cleaned text:", 
+        "Correct and cleaned transcription:", "Correct and cleaned text:",
         "Correct and cleaned:", "यहाँ सुधार के लिए पाठ है:"
     ]
-    
+
     for prefix in prefixes_to_strip:
         if text.lower().startswith(prefix.lower()):
             text = text[len(prefix):].strip()
 
     if text.startswith('"') and text.endswith('"'):
         text = text[1:-1].strip()
-        
+
     return text
+
+
+def load_review_config(script_dir):
+    config_path = os.path.join(script_dir, "review_config.json")
+    default_config = {
+        "vault_paths": {
+            "base_vault": "~/learning_vault",
+            "daily_notes": "~/learning_vault/My Daily Notes",
+            "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
+        },
+        "review_expiry_hours": 1,
+        "last_n_days_context": 1,
+        "review_steps": []
+    }
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                user_config = json.load(f)
+            if "vault_paths" in user_config and isinstance(user_config["vault_paths"], dict):
+                default_config["vault_paths"].update(user_config["vault_paths"])
+                user_config.pop("vault_paths")
+            default_config.update(user_config)
+        except Exception:
+            pass
+    return default_config

@@ -30,27 +30,37 @@ class VoiceEngine:
             self._whisper_model = WhisperModel(model_size, compute_type="int8")
         return self._whisper_model
 
-    def record(self, on_start=None, on_end=None):
+    def record(self, on_start=None, on_end=None, pre_record_notification=None):
         """Records audio with silence detection and manual stop support."""
         samplerate = self.config.get("SAMPLE_RATE", 16000)
         threshold = self.config.get("SILENCE_THRESHOLD", 300)
         silence_dur = self.config.get("SILENCE_DURATION", 2.0)
         chunk_size = 1024
-        
+
         audio_buffer = []
         silent_chunks = 0
         self.stop_event.clear()
-        
+
+        if pre_record_notification:
+            try:
+                subprocess.run(
+                    ["notify-send", "-i", "dialog-information", "Evening Review", pre_record_notification],
+                    timeout=5,
+                    check=False
+                )
+            except Exception:
+                pass
+
         if on_start: on_start()
-        
+
         # Start sound
-        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "start.oga")])
-        
+        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "start.oga")], check=False)
+
         with sd.InputStream(samplerate=samplerate, channels=1, dtype='int16', blocksize=chunk_size) as stream:
             while not self.stop_event.is_set():
                 chunk, _ = stream.read(chunk_size)
                 audio_buffer.append(chunk)
-                
+
                 energy = np.sqrt(np.mean(chunk.astype(float)**2))
                 if energy < threshold:
                     silent_chunks += 1
@@ -58,11 +68,11 @@ class VoiceEngine:
                         break
                 else:
                     silent_chunks = 0
-        
+
         # End sound
-        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "end.oga")])
+        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "end.oga")], check=False)
         if on_end: on_end()
-        
+
         audio = np.concatenate(audio_buffer)
         wav_path = os.path.join(self.script_dir, "input.wav")
         wav.write(wav_path, samplerate, audio)
@@ -165,6 +175,33 @@ class VoiceEngine:
 """
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
+
+    def get_raw_transcription(self, wav_path):
+        return self.transcribe(wav_path)
+
+    def run_pipeline(self, mode=None, on_start=None, on_end=None):
+        import review_engine
+        wav_path = self.record(on_start=on_start, on_end=on_end)
+        raw_text = self.transcribe(wav_path)
+        if not raw_text.strip():
+            return raw_text, "", False
+
+        active, state = review_engine.is_review_active(self.script_dir)
+        if active:
+            config = review_engine.load_review_config(self.script_dir)
+            step = review_engine.get_current_step(state, config)
+            if step and step.get("refine", True):
+                final_text = self.refine(raw_text, mode=mode)
+            else:
+                final_text = raw_text
+            review_engine.append_to_note(self.script_dir, config, step, final_text, state)
+            _, state = review_engine.is_review_active(self.script_dir)
+            if state:
+                review_engine.advance_step(self.script_dir, state, config)
+            return raw_text, final_text, True
+        else:
+            final_text = self.refine(raw_text, mode=mode)
+            return raw_text, final_text, False
 
     def stop_recording(self):
         """Force stops the recording process."""
