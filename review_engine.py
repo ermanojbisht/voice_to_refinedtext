@@ -7,6 +7,7 @@ import subprocess
 
 STATE_PATH = "/tmp/review_state.json"
 _LOG_FILE = None  # set by init_logging()
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def init_logging(script_dir):
     global _LOG_FILE
@@ -112,6 +113,7 @@ def load_review_config(script_dir):
                 "isolate_file": False,
                 "skippable": True,
                 "refine": True,
+                "skip_default": "only office",
                 "structure_prompt": (
                     "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}"
                 )
@@ -229,17 +231,43 @@ def _ordinal(n):
     return f"{n}{['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]}"
 
 
+def _render_template(template_path, tokens):
+    """Read a template file and substitute {{token}} placeholders.
+
+    Falls back to returning None if the file doesn't exist, so callers can
+    supply a hardcoded fallback string.
+    """
+    if not os.path.exists(template_path):
+        return None
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        for key, value in tokens.items():
+            content = content.replace("{{" + key + "}}", value)
+        return content
+    except Exception as e:
+        _rlog(f"_render_template: failed to read {template_path}: {e}")
+        return None
+
+
 def _create_wellness_note(file_path, date_str):
-    """Create a simple wellness note file for isolated wellness entries."""
+    """Create a wellness note using templates/wellness_note.md (with hardcoded fallback)."""
     now = datetime.datetime.now()
     now_str = now.strftime(f"%A {_ordinal(now.day)} %B %Y %H:%M:%S")
-    content = (
-        f"---\n"
-        f"creation date: {date_str}\n"
-        f"modification date: {now_str}\n"
-        f"---\n\n"
-        f"# Wellness — {date_str}\n\n"
-    )
+    tokens = {"date": date_str, "mod_date": now_str}
+
+    template_path = os.path.join(_SCRIPT_DIR, "templates", "wellness_note.md")
+    content = _render_template(template_path, tokens)
+    if content is None:
+        content = (
+            f"---\n"
+            f"creation date: {date_str}\n"
+            f"modification date: {now_str}\n"
+            f"---\n\n"
+            f"# Wellness — {date_str}\n\n"
+        )
+        _rlog("_create_wellness_note: template file not found, using hardcoded fallback")
+
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -247,25 +275,36 @@ def _create_wellness_note(file_path, date_str):
 
 
 def _create_daily_note(file_path, date_str):
-    """Create a new daily note with full Obsidian-compatible template."""
+    """Create a daily note using templates/daily_note.md (with hardcoded fallback)."""
     dt = datetime.date.fromisoformat(date_str)
     prev_day = (dt - datetime.timedelta(days=1)).isoformat()
     next_day = (dt + datetime.timedelta(days=1)).isoformat()
     now = datetime.datetime.now()
     now_str = now.strftime(f"%A {_ordinal(now.day)} %B %Y %H:%M:%S")
+    tokens = {
+        "date":     date_str,
+        "prev_day": prev_day,
+        "next_day": next_day,
+        "mod_date": now_str,
+    }
 
-    content = (
-        f"---\n"
-        f"creation date: {date_str}\n"
-        f"modification date: {now_str}\n"
-        f"---\n\n"
-        f"<< [[{prev_day}]] | [[{next_day}]] >>\n\n"
-        f"# {date_str}\n\n"
-        f"### Audio\n\n"
-        f"### Meeting\n\n"
-        f"### Movement\n\n"
-        f"## Evening Review\n\n"
-    )
+    template_path = os.path.join(_SCRIPT_DIR, "templates", "daily_note.md")
+    content = _render_template(template_path, tokens)
+    if content is None:
+        content = (
+            f"---\n"
+            f"creation date: {date_str}\n"
+            f"modification date: {now_str}\n"
+            f"---\n\n"
+            f"<< [[{prev_day}]] | [[{next_day}]] >>\n\n"
+            f"# {date_str}\n\n"
+            f"### Audio\n\n"
+            f"### Meeting\n\n"
+            f"### Movement\n\n"
+            f"## Evening Review\n\n"
+        )
+        _rlog("_create_daily_note: template file not found, using hardcoded fallback")
+
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -458,6 +497,13 @@ def advance_step(script_dir, state, config):
 def skip_step(script_dir, state, config):
     steps = config.get("review_steps", [])
     prev = state.get("current_step_index", 0)
+    current_step = steps[prev] if prev < len(steps) else {}
+
+    # Write skip_default to the note before advancing (e.g. Movement → "only office")
+    skip_default = current_step.get("skip_default", "").strip()
+    if skip_default:
+        _rlog(f"skip_step: writing skip_default '{skip_default}' for step '{current_step.get('section_name')}'")
+        write_step_to_note(script_dir, config, current_step, skip_default, state)
 
     state["current_step_index"] = prev + 1
     state["last_written"] = None
