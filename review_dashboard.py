@@ -11,7 +11,8 @@ import sys
 import threading
 import subprocess
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+import customtkinter as ctk
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
@@ -39,8 +40,8 @@ class ReviewDashboard:
     def __init__(self, root):
         self.root = root
         self.root.title("Evening Review")
-        self.root.geometry("500x580")
-        self.root.configure(bg=BG)
+        self.root.geometry("550x620")
+        self.root.configure(fg_color=BG)
         self.root.resizable(False, True)
 
         self.config = review_engine.load_review_config(script_dir)
@@ -65,30 +66,28 @@ class ReviewDashboard:
 
     def _build_ui(self):
         # Header bar
-        hdr = tk.Frame(self.root, bg=ACCENT, pady=10)
-        hdr.pack(fill=tk.X)
-        tk.Label(hdr, text="🌙  Evening Review", bg=ACCENT, fg=BG,
-                 font=("Sans", 14, "bold")).pack(side=tk.LEFT, padx=16)
-        tk.Label(hdr, text="powered by AI Voice Refiner", bg=ACCENT, fg=BG,
-                 font=("Sans", 9)).pack(side=tk.RIGHT, padx=16)
+        hdr = ctk.CTkFrame(self.root, fg_color=ACCENT, corner_radius=0, height=50)
+        hdr.pack(fill=ctk.X)
+        hdr.pack_propagate(False)
+        ctk.CTkLabel(hdr, text="🌙 Evening Review", text_color=BG,
+                     font=("Inter", 18, "bold")).pack(side=ctk.LEFT, padx=20)
+        ctk.CTkLabel(hdr, text="powered by AI Voice Refiner", text_color=BG,
+                     font=("Inter", 12)).pack(side=ctk.RIGHT, padx=20)
 
         # Subtitle (current step description)
-        self.subtitle_var = tk.StringVar(value="Initialising…")
-        tk.Label(self.root, textvariable=self.subtitle_var, bg=BG, fg=TEXT,
-                 font=("Sans", 11), anchor="w").pack(fill=tk.X, padx=20, pady=(10, 2))
+        self.subtitle_var = ctk.StringVar(value="Initialising…")
+        ctk.CTkLabel(self.root, textvariable=self.subtitle_var, fg_color="transparent", text_color=TEXT,
+                     font=("Inter", 14), anchor="w").pack(fill=ctk.X, padx=24, pady=(20, 5))
 
         # Progress bar
-        prog_frame = tk.Frame(self.root, bg=BG)
-        prog_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
-        self.prog_canvas = tk.Canvas(prog_frame, height=8, bg=OVERLAY,
-                                     highlightthickness=0)
-        self.prog_canvas.pack(fill=tk.X)
-        self.prog_rect = self.prog_canvas.create_rectangle(0, 0, 0, 8,
-                                                            fill=GREEN, width=0)
+        self.prog_canvas = ctk.CTkProgressBar(self.root, height=8, fg_color=OVERLAY,
+                                     progress_color=GREEN, corner_radius=4)
+        self.prog_canvas.pack(fill=ctk.X, padx=24, pady=(0, 15))
+        self.prog_canvas.set(0)
 
         # Steps list
-        steps_frame = tk.Frame(self.root, bg=BG)
-        steps_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+        steps_frame = ctk.CTkScrollableFrame(self.root, fg_color="transparent")
+        steps_frame.pack(fill=ctk.BOTH, expand=True, padx=16)
 
         self.row_frames    = []
         self.icon_labels   = []
@@ -96,73 +95,68 @@ class ReviewDashboard:
         self.status_labels = []
 
         for step in self.steps:
-            row = tk.Frame(steps_frame, bg=SURFACE, pady=9, padx=12)
-            row.pack(fill=tk.X, pady=3)
+            row = ctk.CTkFrame(steps_frame, fg_color=SURFACE, corner_radius=8)
+            row.pack(fill=ctk.X, pady=4, padx=4)
 
-            # Plain font — emoji glyphs render via the OS on Linux
-            icon_lbl = tk.Label(row, text="○", bg=SURFACE, fg=SUBTLE,
-                                font=("Sans", 14), width=3, anchor="center")
-            icon_lbl.pack(side=tk.LEFT)
+            icon_lbl = ctk.CTkLabel(row, text="○", fg_color="transparent", text_color=SUBTLE,
+                                font=("Inter", 16), width=40, anchor="center")
+            icon_lbl.pack(side=ctk.LEFT, pady=8)
 
-            name_lbl = tk.Label(row, text=step["section_name"], bg=SURFACE,
-                                fg=SUBTLE, font=("Sans", 11, "bold"), anchor="w")
-            name_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            name_lbl = ctk.CTkLabel(row, text=step["section_name"], fg_color="transparent",
+                                text_color=SUBTLE, font=("Inter", 13, "bold"), anchor="w")
+            name_lbl.pack(side=ctk.LEFT, fill=ctk.X, expand=True, pady=8)
 
-            status_lbl = tk.Label(row, text="Pending", bg=SURFACE,
-                                  fg=SUBTLE, font=("Sans", 10), width=16, anchor="e")
-            status_lbl.pack(side=tk.RIGHT)
+            status_lbl = ctk.CTkLabel(row, text="Pending", fg_color="transparent",
+                                  text_color=SUBTLE, font=("Inter", 12), width=120, anchor="e")
+            status_lbl.pack(side=ctk.RIGHT, padx=12, pady=8)
 
             self.row_frames.append(row)
             self.icon_labels.append(icon_lbl)
             self.name_labels.append(name_lbl)
             self.status_labels.append(status_lbl)
 
-        # Divider
-        tk.Frame(self.root, bg=OVERLAY, height=1).pack(fill=tk.X, padx=20, pady=8)
-
         # Primary buttons (Record + Next Step)
-        btn_row1 = tk.Frame(self.root, bg=BG)
-        btn_row1.pack(fill=tk.X, padx=20, pady=(0, 6))
+        btn_row1 = ctk.CTkFrame(self.root, fg_color="transparent")
+        btn_row1.pack(fill=ctk.X, padx=24, pady=(15, 8))
 
-        self.record_btn = tk.Button(
-            btn_row1, text="🎤  Record", command=self._do_record,
-            bg=ACCENT, fg=BG, font=("Sans", 12, "bold"),
-            relief=tk.FLAT, padx=18, pady=9, cursor="hand2", bd=0
+        self.record_btn = ctk.CTkButton(
+            btn_row1, text="🎤 Record", command=self._do_record,
+            fg_color=ACCENT, text_color=BG, font=("Inter", 14, "bold"),
+            hover_color="#b4befe", corner_radius=8, height=40
         )
-        self.record_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.record_btn.pack(side=ctk.LEFT, expand=True, fill=ctk.X, padx=(0, 8))
 
-        self.next_btn = tk.Button(
-            btn_row1, text="▶  Next Step", command=self._do_next,
-            bg=GREEN, fg=BG, font=("Sans", 12, "bold"),
-            relief=tk.FLAT, padx=18, pady=9, cursor="hand2", bd=0,
-            state=tk.DISABLED
+        self.next_btn = ctk.CTkButton(
+            btn_row1, text="▶ Next Step", command=self._do_next,
+            fg_color=GREEN, text_color=BG, font=("Inter", 14, "bold"),
+            hover_color="#89dceb", corner_radius=8, height=40, state="disabled"
         )
-        self.next_btn.pack(side=tk.LEFT)
+        self.next_btn.pack(side=ctk.LEFT, expand=True, fill=ctk.X)
 
         # Secondary buttons (Skip, Redo, Cancel)
-        btn_row2 = tk.Frame(self.root, bg=BG)
-        btn_row2.pack(fill=tk.X, padx=20, pady=(0, 14))
+        btn_row2 = ctk.CTkFrame(self.root, fg_color="transparent")
+        btn_row2.pack(fill=ctk.X, padx=24, pady=(0, 20))
 
-        self.skip_btn = tk.Button(
-            btn_row2, text="⏭  Skip", command=self._do_skip,
-            bg=OVERLAY, fg=TEXT, font=("Sans", 11),
-            relief=tk.FLAT, padx=12, pady=6, cursor="hand2", bd=0
+        self.skip_btn = ctk.CTkButton(
+            btn_row2, text="⏭ Skip", command=self._do_skip,
+            fg_color=OVERLAY, text_color=TEXT, font=("Inter", 12),
+            hover_color=SURFACE, corner_radius=6, height=32, width=80
         )
-        self.skip_btn.pack(side=tk.LEFT, padx=(0, 6))
+        self.skip_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-        self.redo_btn = tk.Button(
-            btn_row2, text="↩  Redo", command=self._do_redo,
-            bg=OVERLAY, fg=TEXT, font=("Sans", 11),
-            relief=tk.FLAT, padx=12, pady=6, cursor="hand2", bd=0
+        self.redo_btn = ctk.CTkButton(
+            btn_row2, text="↩ Redo", command=self._do_redo,
+            fg_color=OVERLAY, text_color=TEXT, font=("Inter", 12),
+            hover_color=SURFACE, corner_radius=6, height=32, width=80
         )
-        self.redo_btn.pack(side=tk.LEFT, padx=(0, 6))
+        self.redo_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-        self.cancel_btn = tk.Button(
-            btn_row2, text="✕  Cancel Review", command=self._do_cancel,
-            bg=RED, fg=BG, font=("Sans", 11, "bold"),
-            relief=tk.FLAT, padx=12, pady=6, cursor="hand2", bd=0
+        self.cancel_btn = ctk.CTkButton(
+            btn_row2, text="✕ Cancel", command=self._do_cancel,
+            fg_color=RED, text_color=BG, font=("Inter", 12, "bold"),
+            hover_color="#f5c2e7", corner_radius=6, height=32, width=80
         )
-        self.cancel_btn.pack(side=tk.RIGHT)
+        self.cancel_btn.pack(side=ctk.RIGHT)
 
     # ── Live polling ───────────────────────────────────────────────────────────
 
@@ -220,10 +214,8 @@ class ReviewDashboard:
             self.subtitle_var.set(f"All {total} steps complete — wrapping up…")
 
         # Progress bar
-        self.root.update_idletasks()
-        w = self.prog_canvas.winfo_width() or 460
-        filled = int(w * idx / total) if total else 0
-        self.prog_canvas.coords(self.prog_rect, 0, 0, filled, 8)
+        filled = idx / total if total else 0
+        self.prog_canvas.set(filled)
 
         # Step rows
         for i in range(len(self.steps)):
@@ -233,56 +225,54 @@ class ReviewDashboard:
             st_lbl   = self.status_labels[i]
 
             if i < idx:
-                icon_lbl.config(text="✅", fg=GREEN, bg=SURFACE)
-                name_lbl.config(fg=SUBTLE, bg=SURFACE)
-                st_lbl.config(text="Saved", fg=GREEN, bg=SURFACE)
-                frame.config(bg=SURFACE)
+                icon_lbl.configure(text="✅", text_color=GREEN)
+                name_lbl.configure(text_color=SUBTLE)
+                st_lbl.configure(text="Saved", text_color=GREEN)
+                frame.configure(fg_color=SURFACE)
 
             elif i == idx:
-                frame.config(bg=OVERLAY)
-                icon_lbl.config(bg=OVERLAY)
-                name_lbl.config(bg=OVERLAY, fg=TEXT)
-                st_lbl.config(bg=OVERLAY)
+                frame.configure(fg_color=OVERLAY)
+                name_lbl.configure(text_color=TEXT)
 
                 if busy:
-                    icon_lbl.config(text="⏳", fg=YELLOW)
-                    st_lbl.config(text="Processing…", fg=YELLOW)
+                    icon_lbl.configure(text="⏳", text_color=YELLOW)
+                    st_lbl.configure(text="Processing…", text_color=YELLOW)
                 elif awaiting:
-                    icon_lbl.config(text="✓", fg=ACCENT)
-                    st_lbl.config(text=f"{clips} clip{'s' if clips != 1 else ''} · ready", fg=ACCENT)
+                    icon_lbl.configure(text="✓", text_color=ACCENT)
+                    st_lbl.configure(text=f"{clips} clip{'s' if clips != 1 else ''} · ready", text_color=ACCENT)
                 else:
-                    icon_lbl.config(text="🎤", fg=RED)
-                    st_lbl.config(text="Speak now", fg=RED)
+                    icon_lbl.configure(text="🎤", text_color=RED)
+                    st_lbl.configure(text="Speak now", text_color=RED)
 
             else:
-                icon_lbl.config(text="○", fg=SUBTLE, bg=SURFACE)
-                name_lbl.config(fg=SUBTLE, bg=SURFACE)
-                st_lbl.config(text="Pending", fg=SUBTLE, bg=SURFACE)
-                frame.config(bg=SURFACE)
+                icon_lbl.configure(text="○", text_color=SUBTLE)
+                name_lbl.configure(text_color=SUBTLE)
+                st_lbl.configure(text="Pending", text_color=SUBTLE)
+                frame.configure(fg_color=SURFACE)
 
         # Button states
-        self.record_btn.config(
-            state=tk.DISABLED if busy else tk.NORMAL,
-            text="⏳  Processing…" if busy else "🎤  Record",
-            bg=OVERLAY if busy else ACCENT
+        self.record_btn.configure(
+            state="disabled" if busy else "normal",
+            text="⏳ Processing…" if busy else "🎤 Record",
+            fg_color=OVERLAY if busy else ACCENT
         )
-        self.next_btn.config(state=tk.NORMAL if (awaiting and not busy) else tk.DISABLED)
-        self.skip_btn.config(state=tk.DISABLED if busy else tk.NORMAL)
-        self.redo_btn.config(state=tk.DISABLED if busy else tk.NORMAL)
+        self.next_btn.configure(state="normal" if (awaiting and not busy) else "disabled")
+        self.skip_btn.configure(state="disabled" if busy else "normal")
+        self.redo_btn.configure(state="disabled" if busy else "normal")
 
     def _show_complete(self):
         self._review_done = True  # stop the polling loop
-        self.subtitle_var.set("✅  Evening Review complete!")
+        self.subtitle_var.set("✅ Evening Review complete!")
         for i in range(len(self.steps)):
-            self.icon_labels[i].config(text="✅", fg=GREEN, bg=SURFACE)
-            self.name_labels[i].config(fg=SUBTLE, bg=SURFACE)
-            self.status_labels[i].config(text="Done", fg=GREEN, bg=SURFACE)
-            self.row_frames[i].config(bg=SURFACE)
-        self.prog_canvas.coords(self.prog_rect, 0, 0, 9999, 8)
+            self.icon_labels[i].configure(text="✅", text_color=GREEN)
+            self.name_labels[i].configure(text_color=SUBTLE)
+            self.status_labels[i].configure(text="Done", text_color=GREEN)
+            self.row_frames[i].configure(fg_color=SURFACE)
+        self.prog_canvas.set(1.0)
         for btn in (self.record_btn, self.next_btn, self.skip_btn, self.redo_btn):
-            btn.config(state=tk.DISABLED)
-        self.cancel_btn.config(
-            text="Close", bg=OVERLAY, fg=TEXT,
+            btn.configure(state="disabled")
+        self.cancel_btn.configure(
+            text="Close", fg_color=OVERLAY, text_color=TEXT,
             command=self.root.destroy
         )
 
@@ -410,12 +400,8 @@ class ReviewDashboard:
 
 
 def main():
-    root = tk.Tk()
-    style = ttk.Style(root)
-    try:
-        style.theme_use("clam")
-    except Exception:
-        pass
+    ctk.set_appearance_mode("dark")
+    root = ctk.CTk()
 
     # Bring window to front so it's not hidden behind other windows
     root.lift()

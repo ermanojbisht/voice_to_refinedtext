@@ -23,3 +23,5 @@ charset-normalizer==3.3.2
 idna==3.3
 urllib3==1.26.18
 typing_extensions==4.15.0
+customtkinter==5.2.2
+darkdetect==0.8.0

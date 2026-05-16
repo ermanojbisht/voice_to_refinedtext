@@ -7,7 +7,8 @@ import os
 import json
 import subprocess
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+import customtkinter as ctk
 
 import requests
 import utils
@@ -22,9 +23,7 @@ review_config_path = os.path.join(script_dir, "review_config.json")
 def load_main_config():
     return utils.load_config(script_dir)
 
-
 def load_review_config_raw():
-    """Return the raw review_config.json dict (or {} if missing)."""
     if os.path.exists(review_config_path):
         try:
             with open(review_config_path, "r", encoding="utf-8") as f:
@@ -32,7 +31,6 @@ def load_review_config_raw():
         except Exception:
             pass
     return {}
-
 
 def get_ollama_models(host="http://localhost:11434"):
     try:
@@ -48,7 +46,6 @@ def get_ollama_models(host="http://localhost:11434"):
     except Exception:
         return ["qwen2.5:3b", "qwen3:0.6b", "gemma3:1b"]
 
-
 # ── Palette ────────────────────────────────────────────────────────────────────
 BG      = "#1e1e2e"
 SURFACE = "#313244"
@@ -57,57 +54,19 @@ TEXT    = "#cdd6f4"
 SUBTLE  = "#6c7086"
 GREEN   = "#a6e3a1"
 
-
-# ── Scrollable frame helper ────────────────────────────────────────────────────
-
-def _make_scrollable(parent):
-    """Return (outer_frame, inner_frame).
-    Pack outer_frame; grid widgets into inner_frame.
-    Mouse-wheel is only active when the pointer is over this canvas,
-    so two scrollable tabs don't fight each other."""
-    outer = tk.Frame(parent, bg=BG)
-    canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
-    sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
-    inner = tk.Frame(canvas, bg=BG)
-
-    inner.bind("<Configure>",
-               lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-    canvas.create_window((0, 0), window=inner, anchor="nw")
-    canvas.configure(yscrollcommand=sb.set)
-
-    canvas.pack(side="left", fill="both", expand=True)
-    sb.pack(side="right", fill="y")
-
-    # Bind mouse-wheel only while the pointer is inside this canvas
-    def _on_wheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", _on_wheel))
-    canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
-
-    return outer, inner
-
-
 # ── Section header helper ──────────────────────────────────────────────────────
 
 def _section(frame, text, row):
-    lbl = tk.Label(frame, text=text, font=("Inter", 11, "bold"),
-                   fg=ACCENT, bg=BG, anchor="w")
-    lbl.grid(row=row, column=0, columnspan=2, sticky="w",
-             padx=20, pady=(20, 6))
-
+    lbl = ctk.CTkLabel(frame, text=text, font=("Inter", 14, "bold"), text_color=ACCENT)
+    lbl.grid(row=row, column=0, columnspan=2, sticky="w", padx=20, pady=(20, 6))
 
 def _label(frame, text, row, col=0):
-    tk.Label(frame, text=text, fg=TEXT, bg=BG,
-             font=("Inter", 10), anchor="w").grid(
+    ctk.CTkLabel(frame, text=text, text_color=TEXT, font=("Inter", 12)).grid(
         row=row, column=col, sticky="w", padx=20, pady=4)
 
-
 def _note(frame, text, row):
-    tk.Label(frame, text=text, fg=SUBTLE, bg=BG,
-             font=("Inter", 9), anchor="w").grid(
+    ctk.CTkLabel(frame, text=text, text_color=SUBTLE, font=("Inter", 11)).grid(
         row=row, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
-
 
 # ── Main application ───────────────────────────────────────────────────────────
 
@@ -115,8 +74,8 @@ class ConfigApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Voice Assistant — Settings")
-        self.root.geometry("580x700")
-        self.root.configure(bg=BG)
+        self.root.geometry("650x780")
+        self.root.configure(fg_color=BG)
 
         self.main_cfg   = load_main_config()
         self.review_raw = load_review_config_raw()
@@ -124,242 +83,178 @@ class ConfigApp:
         self._build_ui()
         self._load_ollama_models()
 
-    # ── Tab shell ──────────────────────────────────────────────────────────────
-
     def _build_ui(self):
-        style = ttk.Style()
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
-        style.configure("TNotebook",        background=BG, borderwidth=0)
-        style.configure("TNotebook.Tab",    background=SURFACE, foreground=TEXT,
-                        padding=[14, 6], font=("Inter", 10))
-        style.map("TNotebook.Tab",
-                  background=[("selected", ACCENT)],
-                  foreground=[("selected", BG)])
-        style.configure("TFrame",           background=BG)
-        style.configure("TLabel",           background=BG, foreground=TEXT)
-        style.configure("TCheckbutton",     background=BG, foreground=TEXT)
-        style.configure("TCombobox",        fieldbackground=SURFACE, foreground=TEXT)
-        style.configure("TEntry",           fieldbackground=SURFACE, foreground=TEXT)
-        style.configure("TScrollbar",       background=SURFACE)
-        style.configure("TSpinbox",         fieldbackground=SURFACE, foreground=TEXT)
+        self.tabview = ctk.CTkTabview(self.root, fg_color=SURFACE, segmented_button_selected_color=ACCENT, segmented_button_selected_hover_color="#b4befe")
+        self.tabview.pack(fill="both", expand=True, padx=20, pady=(10, 20))
 
-        nb = ttk.Notebook(self.root)
-        nb.pack(fill="both", expand=True, padx=0, pady=0)
+        self.tab1 = self.tabview.add("🎙 Voice Refiner")
+        self.tab2 = self.tabview.add("🌙 Evening Review")
 
-        # Tab 1 — Voice Refiner
-        tab1_outer, tab1_inner = _make_scrollable(nb)
-        nb.add(tab1_outer, text="🎙  Voice Refiner")
-        self._build_voice_tab(tab1_inner)
+        # Scrollable frames for tabs
+        self.scroll1 = ctk.CTkScrollableFrame(self.tab1, fg_color="transparent")
+        self.scroll1.pack(fill="both", expand=True)
+        self._build_voice_tab(self.scroll1)
 
-        # Tab 2 — Evening Review
-        tab2_outer, tab2_inner = _make_scrollable(nb)
-        nb.add(tab2_outer, text="🌙  Evening Review")
-        self._build_review_tab(tab2_inner)
+        self.scroll2 = ctk.CTkScrollableFrame(self.tab2, fg_color="transparent")
+        self.scroll2.pack(fill="both", expand=True)
+        self._build_review_tab(self.scroll2)
 
         # Save / Cancel bar
-        bar = tk.Frame(self.root, bg=SURFACE, pady=10)
-        bar.pack(fill="x", side="bottom")
-        tk.Button(bar, text="Save All Settings", command=self._save_all,
-                  bg=ACCENT, fg=BG, font=("Inter", 11, "bold"),
-                  relief=tk.FLAT, padx=20, pady=6, cursor="hand2").pack(side=tk.LEFT, padx=16)
-        tk.Button(bar, text="Cancel", command=self.root.destroy,
-                  bg=SURFACE, fg=TEXT, font=("Inter", 11),
-                  relief=tk.FLAT, padx=16, pady=6, cursor="hand2").pack(side=tk.LEFT)
+        bar = ctk.CTkFrame(self.root, fg_color="transparent")
+        bar.pack(fill="x", side="bottom", pady=(0, 20), padx=20)
 
-    # ── Tab 1: Voice Refiner ───────────────────────────────────────────────────
+        ctk.CTkButton(bar, text="Save All Settings", command=self._save_all,
+                  fg_color=ACCENT, text_color=BG, font=("Inter", 14, "bold"),
+                  hover_color="#b4befe", corner_radius=8, height=40).pack(side=ctk.LEFT, padx=(0, 10))
+        
+        ctk.CTkButton(bar, text="Cancel", command=self.root.destroy,
+                  fg_color="#45475a", text_color=TEXT, font=("Inter", 14),
+                  hover_color="#585b70", corner_radius=8, height=40).pack(side=ctk.LEFT)
 
     def _build_voice_tab(self, f):
         f.columnconfigure(1, weight=1)
 
-        # ── STT
         _section(f, "🎙  Speech-to-Text", 0)
         _label(f, "Whisper Model:", 1)
-        self.whisper_var = tk.StringVar(value=self.main_cfg.get("WHISPER_MODEL", "large-v3-turbo"))
-        ttk.Combobox(f, textvariable=self.whisper_var, width=30,
-                     values=["tiny", "base", "small", "medium",
-                             "large-v2", "large-v3", "large-v3-turbo"]
+        self.whisper_var = ctk.StringVar(value=self.main_cfg.get("WHISPER_MODEL", "large-v3-turbo"))
+        ctk.CTkComboBox(f, variable=self.whisper_var, width=250,
+                     values=["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"]
                      ).grid(row=1, column=1, sticky="we", padx=20, pady=4)
 
-        # ── Refinement models
         _section(f, "✨  Refinement Models", 2)
         _label(f, "English Refiner:", 3)
-        self.en_model_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("en", ""))
-        self.en_cb = ttk.Combobox(f, textvariable=self.en_model_var, width=30)
+        self.en_model_var = ctk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("en", ""))
+        self.en_cb = ctk.CTkComboBox(f, variable=self.en_model_var, width=250)
         self.en_cb.grid(row=3, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Hindi Refiner:", 4)
-        self.hi_model_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("hi", ""))
-        self.hi_cb = ttk.Combobox(f, textvariable=self.hi_model_var, width=30)
+        self.hi_model_var = ctk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("hi", ""))
+        self.hi_cb = ctk.CTkComboBox(f, variable=self.hi_model_var, width=250)
         self.hi_cb.grid(row=4, column=1, sticky="we", padx=20, pady=4)
 
-        # ── Translation models
         _section(f, "🌍  Translation Models", 5)
         _label(f, "→ English:", 6)
-        self.to_en_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_en", ""))
-        self.to_en_cb = ttk.Combobox(f, textvariable=self.to_en_var, width=30)
+        self.to_en_var = ctk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_en", ""))
+        self.to_en_cb = ctk.CTkComboBox(f, variable=self.to_en_var, width=250)
         self.to_en_cb.grid(row=6, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "→ Hindi:", 7)
-        self.to_hi_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_hi", ""))
-        self.to_hi_cb = ttk.Combobox(f, textvariable=self.to_hi_var, width=30)
+        self.to_hi_var = ctk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_hi", ""))
+        self.to_hi_cb = ctk.CTkComboBox(f, variable=self.to_hi_var, width=250)
         self.to_hi_cb.grid(row=7, column=1, sticky="we", padx=20, pady=4)
 
-        # ── AI Parameters
         _section(f, "⚙️  AI Parameters", 8)
         _label(f, "Ollama Host:", 9)
-        self.host_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_HOST", "http://localhost:11434"))
-        host_entry = ttk.Entry(f, textvariable=self.host_var, width=30)
+        self.host_var = ctk.StringVar(value=self.main_cfg.get("OLLAMA_HOST", "http://localhost:11434"))
+        host_entry = ctk.CTkEntry(f, textvariable=self.host_var, width=250)
         host_entry.grid(row=9, column=1, sticky="we", padx=20, pady=4)
         self.host_var.trace_add("write", lambda *_: self._load_ollama_models())
 
         _label(f, "Temperature:", 10)
-        self.temp_var = tk.DoubleVar(value=self.main_cfg.get("TEMPERATURE", 0.1))
-        ttk.Entry(f, textvariable=self.temp_var, width=30).grid(row=10, column=1,
-                                                                  sticky="we", padx=20, pady=4)
+        self.temp_var = ctk.DoubleVar(value=self.main_cfg.get("TEMPERATURE", 0.1))
+        ctk.CTkEntry(f, textvariable=self.temp_var, width=250).grid(row=10, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Default Mode:", 11)
-        self.mode_var = tk.StringVar(value=self.main_cfg.get("MODE", "refine"))
-        ttk.Combobox(f, textvariable=self.mode_var,
-                     values=["refine", "translate"], width=30
-                     ).grid(row=11, column=1, sticky="we", padx=20, pady=4)
+        self.mode_var = ctk.StringVar(value=self.main_cfg.get("MODE", "refine"))
+        ctk.CTkComboBox(f, variable=self.mode_var, values=["refine", "translate"], width=250).grid(row=11, column=1, sticky="we", padx=20, pady=4)
 
-        # ── Audio
         _section(f, "🔉  Audio Settings", 12)
         _label(f, "Silence Threshold:", 13)
-        self.threshold_var = tk.IntVar(value=self.main_cfg.get("SILENCE_THRESHOLD", 300))
-        ttk.Scale(f, from_=50, to=1000, variable=self.threshold_var,
-                  orient="horizontal").grid(row=13, column=1, sticky="we", padx=20, pady=4)
+        self.threshold_var = ctk.IntVar(value=self.main_cfg.get("SILENCE_THRESHOLD", 300))
+        ctk.CTkSlider(f, from_=50, to=1000, variable=self.threshold_var).grid(row=13, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Silence Duration (s):", 14)
-        self.silence_dur_var = tk.DoubleVar(value=self.main_cfg.get("SILENCE_DURATION", 2.0))
-        ttk.Entry(f, textvariable=self.silence_dur_var, width=30).grid(row=14, column=1,
-                                                                        sticky="we", padx=20, pady=4)
+        self.silence_dur_var = ctk.DoubleVar(value=self.main_cfg.get("SILENCE_DURATION", 2.0))
+        ctk.CTkEntry(f, textvariable=self.silence_dur_var, width=250).grid(row=14, column=1, sticky="we", padx=20, pady=4)
 
-        # ── Storage
         _section(f, "📁  Storage & Output", 15)
         _label(f, "Save to Markdown:", 16)
         self.save_md_var = tk.BooleanVar(value=self.main_cfg.get("SAVE_TO_MARKDOWN", False))
-        ttk.Checkbutton(f, variable=self.save_md_var).grid(row=16, column=1,
-                                                            sticky="w", padx=20, pady=4)
+        ctk.CTkCheckBox(f, text="", variable=self.save_md_var).grid(row=16, column=1, sticky="w", padx=20, pady=4)
 
         _label(f, "Markdown Path:", 17)
-        self.md_path_var = tk.StringVar(value=self.main_cfg.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
-        ttk.Entry(f, textvariable=self.md_path_var, width=30).grid(row=17, column=1,
-                                                                    sticky="we", padx=20, pady=4)
+        self.md_path_var = ctk.StringVar(value=self.main_cfg.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
+        ctk.CTkEntry(f, textvariable=self.md_path_var, width=250).grid(row=17, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Direct Typing:", 18)
         self.direct_typing_var = tk.BooleanVar(value=self.main_cfg.get("DIRECT_TYPING", False))
-        ttk.Checkbutton(f, variable=self.direct_typing_var).grid(row=18, column=1,
-                                                                  sticky="w", padx=20, pady=4)
+        ctk.CTkCheckBox(f, text="", variable=self.direct_typing_var).grid(row=18, column=1, sticky="w", padx=20, pady=4)
         _note(f, "Types refined text directly at cursor position after processing.", 19)
-
-        # Spacer at bottom for scroll comfort
-        tk.Frame(f, bg=BG, height=30).grid(row=20, column=0, columnspan=2)
-
-    # ── Tab 2: Evening Review ──────────────────────────────────────────────────
 
     def _build_review_tab(self, f):
         f.columnconfigure(1, weight=1)
 
         vp = self.review_raw.get("vault_paths", {})
 
-        # ── Vault Paths
         _section(f, "📂  Obsidian Vault Paths", 0)
         _note(f, "Use ~ for home directory. Folders are created automatically.", 1)
 
         _label(f, "Base Vault:", 2)
-        self.vault_base_var = tk.StringVar(value=vp.get("base_vault", "~/learning_vault"))
-        ttk.Entry(f, textvariable=self.vault_base_var, width=38).grid(row=2, column=1,
-                                                                       sticky="we", padx=20, pady=4)
+        self.vault_base_var = ctk.StringVar(value=vp.get("base_vault", "~/learning_vault"))
+        ctk.CTkEntry(f, textvariable=self.vault_base_var, width=300).grid(row=2, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Daily Notes:", 3)
-        self.vault_daily_var = tk.StringVar(
-            value=vp.get("daily_notes", "~/learning_vault/My Daily Notes"))
-        ttk.Entry(f, textvariable=self.vault_daily_var, width=38).grid(row=3, column=1,
-                                                                        sticky="we", padx=20, pady=4)
+        self.vault_daily_var = ctk.StringVar(value=vp.get("daily_notes", "~/learning_vault/My Daily Notes"))
+        ctk.CTkEntry(f, textvariable=self.vault_daily_var, width=300).grid(row=3, column=1, sticky="we", padx=20, pady=4)
 
         _label(f, "Wellness Notes:", 4)
-        self.vault_well_var = tk.StringVar(
-            value=vp.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
-        ttk.Entry(f, textvariable=self.vault_well_var, width=38).grid(row=4, column=1,
-                                                                       sticky="we", padx=20, pady=4)
+        self.vault_well_var = ctk.StringVar(value=vp.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
+        ctk.CTkEntry(f, textvariable=self.vault_well_var, width=300).grid(row=4, column=1, sticky="we", padx=20, pady=4)
 
-        # ── Review Behaviour
         _section(f, "⚙️  Review Behaviour", 5)
 
         _label(f, "Session Expiry (hours):", 6)
-        self.expiry_var = tk.IntVar(value=self.review_raw.get("review_expiry_hours", 1))
-        ttk.Spinbox(f, from_=1, to=8, textvariable=self.expiry_var, width=8).grid(
-            row=6, column=1, sticky="w", padx=20, pady=4)
+        self.expiry_var = ctk.StringVar(value=str(self.review_raw.get("review_expiry_hours", 1)))
+        ctk.CTkComboBox(f, variable=self.expiry_var, values=["1","2","3","4","5","6","7","8"], width=100).grid(row=6, column=1, sticky="w", padx=20, pady=4)
         _note(f, "Review state expires after this many hours of inactivity.", 7)
 
         _label(f, "Voice Narration:", 8)
         self.narration_var = tk.BooleanVar(value=self.review_raw.get("voice_narration", True))
-        ttk.Checkbutton(f, variable=self.narration_var).grid(row=8, column=1,
-                                                              sticky="w", padx=20, pady=4)
+        ctk.CTkCheckBox(f, text="", variable=self.narration_var).grid(row=8, column=1, sticky="w", padx=20, pady=4)
         _note(f, "Uses espeak-ng to speak step prompts aloud (must be installed).", 9)
 
         _label(f, "Context Days:", 10)
-        self.context_days_var = tk.IntVar(value=self.review_raw.get("last_n_days_context", 1))
-        ttk.Spinbox(f, from_=1, to=7, textvariable=self.context_days_var, width=8).grid(
-            row=10, column=1, sticky="w", padx=20, pady=4)
+        self.context_days_var = ctk.StringVar(value=str(self.review_raw.get("last_n_days_context", 1)))
+        ctk.CTkComboBox(f, variable=self.context_days_var, values=["1","2","3","4","5","6","7"], width=100).grid(row=10, column=1, sticky="w", padx=20, pady=4)
         _note(f, "How many previous days' notes the AI reads for context (Phase 2).", 11)
 
-        # ── Structuring model
         _section(f, "🤖  Step Structuring Model", 12)
         _note(f, "Which Ollama model converts your voice clips into formatted notes.", 13)
         _label(f, "Structuring Model:", 14)
-        self.struct_model_var = tk.StringVar(
-            value=self.review_raw.get("structure_model", ""))
-        self.struct_cb = ttk.Combobox(f, textvariable=self.struct_model_var, width=30)
+        self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
+        self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
         self.struct_cb.grid(row=14, column=1, sticky="we", padx=20, pady=4)
         _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 15)
 
-        # ── Per-step configuration
         _section(f, "📋  Step Configuration", 16)
         _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 17)
 
-        # Table header
-        hdr = tk.Frame(f, bg=SURFACE)
-        hdr.grid(row=18, column=0, columnspan=2, sticky="we", padx=20, pady=(4, 0))
-        for col_text, col_w in [("Step", 20), ("Skippable", 10), ("AI Refine", 10)]:
-            tk.Label(hdr, text=col_text, fg=ACCENT, bg=SURFACE,
-                     font=("Inter", 10, "bold"), width=col_w, anchor="w"
-                     ).pack(side=tk.LEFT, padx=4, pady=4)
+        hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
+        hdr.grid(row=18, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
+            ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
-        # Load steps from review_config defaults merged with user overrides
         full_cfg = review_engine.load_review_config(script_dir)
         self.step_skippable_vars = []
         self.step_refine_vars    = []
         self._step_ids           = []
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
-            row_frame = tk.Frame(f, bg=BG if row_i % 2 == 0 else SURFACE)
-            row_frame.grid(row=19 + row_i, column=0, columnspan=2,
-                           sticky="we", padx=20, pady=1)
+            row_frame = ctk.CTkFrame(f, fg_color="transparent")
+            row_frame.grid(row=19 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
-            tk.Label(row_frame, text=f"{step['step_id']}. {step['section_name']}",
-                     fg=TEXT, bg=row_frame["bg"], font=("Inter", 10),
-                     width=20, anchor="w").pack(side=tk.LEFT, padx=8, pady=5)
+            ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
+                     text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
 
             skip_var = tk.BooleanVar(value=step.get("skippable", True))
-            ttk.Checkbutton(row_frame, variable=skip_var).pack(side=tk.LEFT, padx=28)
+            ctk.CTkCheckBox(row_frame, text="", variable=skip_var, width=100).pack(side=ctk.LEFT, padx=(30, 0))
 
             refine_var = tk.BooleanVar(value=step.get("refine", True))
-            ttk.Checkbutton(row_frame, variable=refine_var).pack(side=tk.LEFT, padx=14)
+            ctk.CTkCheckBox(row_frame, text="", variable=refine_var, width=100).pack(side=ctk.LEFT, padx=(15, 0))
 
             self.step_skippable_vars.append(skip_var)
             self.step_refine_vars.append(refine_var)
             self._step_ids.append(step["step_id"])
-
-        # Spacer
-        spacer_row = 19 + len(full_cfg.get("review_steps", []))
-        tk.Frame(f, bg=BG, height=30).grid(row=spacer_row, column=0, columnspan=2)
-
-    # ── Ollama model loader ────────────────────────────────────────────────────
 
     def _load_ollama_models(self, *_):
         def _fetch():
@@ -371,24 +266,18 @@ class ConfigApp:
 
     def _populate_model_dropdowns(self, models):
         for cb in (self.en_cb, self.hi_cb, self.to_en_cb, self.to_hi_cb):
-            cb["values"] = models
+            cb.configure(values=models)
         if hasattr(self, "struct_cb"):
-            self.struct_cb["values"] = [""] + models
-
-    # ── Save ───────────────────────────────────────────────────────────────────
+            self.struct_cb.configure(values=[""] + models)
 
     def _save_all(self):
         errors = []
-
-        # 1. Save config.json
         try:
             new_main = {
                 "SAMPLE_RATE":              self.main_cfg.get("SAMPLE_RATE", 16000),
                 "WHISPER_MODEL":            self.whisper_var.get(),
-                "OLLAMA_MODELS":            {"en": self.en_model_var.get(),
-                                             "hi": self.hi_model_var.get()},
-                "OLLAMA_TRANSLATE_MODELS":  {"to_en": self.to_en_var.get(),
-                                             "to_hi": self.to_hi_var.get()},
+                "OLLAMA_MODELS":            {"en": self.en_model_var.get(), "hi": self.hi_model_var.get()},
+                "OLLAMA_TRANSLATE_MODELS":  {"to_en": self.to_en_var.get(), "to_hi": self.to_hi_var.get()},
                 "OLLAMA_HOST":              self.host_var.get(),
                 "SILENCE_THRESHOLD":        int(self.threshold_var.get()),
                 "SILENCE_DURATION":         float(self.silence_dur_var.get()),
@@ -403,20 +292,15 @@ class ConfigApp:
         except Exception as e:
             errors.append(f"config.json: {e}")
 
-        # 2. Save review_config.json
         try:
             step_overrides = []
-            for sid, skip_v, refine_v in zip(
-                self._step_ids, self.step_skippable_vars, self.step_refine_vars
-            ):
+            for sid, skip_v, refine_v in zip(self._step_ids, self.step_skippable_vars, self.step_refine_vars):
                 step_overrides.append({
                     "step_id":   sid,
                     "skippable": skip_v.get(),
                     "refine":    refine_v.get(),
                 })
-
             struct_model = self.struct_model_var.get().strip()
-
             new_review = {
                 "vault_paths": {
                     "base_vault":     self.vault_base_var.get().strip(),
@@ -430,20 +314,15 @@ class ConfigApp:
             }
             if struct_model:
                 new_review["structure_model"] = struct_model
-
-            # Preserve any existing keys we don't manage (e.g. custom prompts)
             existing = load_review_config_raw()
             if "review_steps" in existing:
-                # Merge prompts from existing steps into overrides
-                existing_by_id = {s["step_id"]: s for s in existing["review_steps"]
-                                  if "step_id" in s}
+                existing_by_id = {s["step_id"]: s for s in existing["review_steps"] if "step_id" in s}
                 merged_steps = []
                 for s in new_review["review_steps"]:
                     merged = dict(existing_by_id.get(s["step_id"], {}))
                     merged.update(s)
                     merged_steps.append(merged)
                 new_review["review_steps"] = merged_steps
-
             with open(review_config_path, "w", encoding="utf-8") as fh:
                 json.dump(new_review, fh, indent=2, ensure_ascii=False)
         except Exception as e:
@@ -455,8 +334,8 @@ class ConfigApp:
             messagebox.showinfo("Saved", "Settings saved successfully.")
             self.root.destroy()
 
-
 if __name__ == "__main__":
-    root = tk.Tk()
+    ctk.set_appearance_mode("dark")
+    root = ctk.CTk()
     app  = ConfigApp(root)
     root.mainloop()

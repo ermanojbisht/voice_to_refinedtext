@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+import customtkinter as ctk
 import threading
 import queue
 import os
@@ -21,7 +22,7 @@ class VoiceAssistantGUI:
         self.root = root
         self.root.title("AI Voice Refiner")
         self.root.geometry("600x750")
-        self.root.configure(bg=BG_COLOR)
+        self.root.configure(fg_color=BG_COLOR)
         
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.engine = VoiceEngine(self.script_dir)
@@ -34,54 +35,49 @@ class VoiceAssistantGUI:
         self.check_queue()
 
     def setup_ui(self):
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("TFrame", background=BG_COLOR)
-        style.configure("TLabel", background=BG_COLOR, foreground=TEXT_COLOR, font=("Inter", 12))
-        style.configure("Status.TLabel", font=("Inter", 14, "bold"))
-        
-        main_frame = ttk.Frame(self.root, padding="30")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
 
-        self.status_label = ttk.Label(main_frame, text="Ready", style="Status.TLabel")
+        self.status_label = ctk.CTkLabel(main_frame, text="Ready", text_color=TEXT_COLOR, font=("Inter", 16, "bold"))
         self.status_label.pack(pady=(0, 20))
 
         self.canvas = tk.Canvas(main_frame, width=150, height=150, bg=BG_COLOR, highlightthickness=0)
         self.canvas.pack(pady=20)
         self.indicator = self.canvas.create_oval(25, 25, 125, 125, fill=ACCENT_COLOR, outline="")
         
-        self.action_btn = tk.Button(
+        self.action_btn = ctk.CTkButton(
             main_frame, text="Start Recording", 
             command=self.toggle_recording,
-            bg=ACCENT_COLOR, fg=BG_COLOR,
-            font=("Inter", 14, "bold"),
-            relief=tk.FLAT, padx=20, pady=10, cursor="hand2"
+            fg_color=ACCENT_COLOR, text_color=BG_COLOR,
+            font=("Inter", 14, "bold"), hover_color="#b4befe",
+            corner_radius=8, height=45
         )
         self.action_btn.pack(pady=20)
 
-        self.progress = ttk.Progressbar(main_frame, mode='indeterminate', length=300)
+        self.progress = ctk.CTkProgressBar(main_frame, width=300, mode='indeterminate', progress_color=ACCENT_COLOR)
         
-        ttk.Label(main_frame, text="Refined Text:").pack(anchor=tk.W, pady=(20, 5))
-        self.result_text = tk.Text(
-            main_frame, height=10, bg="#313244", fg=TEXT_COLOR,
-            insertbackground=TEXT_COLOR, font=("Inter", 11),
-            padx=10, pady=10, relief=tk.FLAT, wrap=tk.WORD
+        ctk.CTkLabel(main_frame, text="Refined Text:", font=("Inter", 12)).pack(anchor=ctk.W, pady=(20, 5))
+        self.result_text = ctk.CTkTextbox(
+            main_frame, height=150, fg_color="#313244", text_color=TEXT_COLOR,
+            font=("Inter", 13), corner_radius=8, wrap="word"
         )
-        self.result_text.pack(fill=tk.BOTH, expand=True)
+        self.result_text.pack(fill=ctk.BOTH, expand=True)
 
-        footer = ttk.Frame(main_frame)
-        footer.pack(fill=tk.X, pady=(20, 0))
+        footer = ctk.CTkFrame(main_frame, fg_color="transparent")
+        footer.pack(fill=ctk.X, pady=(20, 0))
         
-        tk.Button(footer, text="Copy to Clipboard", command=self.copy_to_clipboard,
-                  bg="#45475a", fg=TEXT_COLOR, relief=tk.FLAT, padx=15).pack(side=tk.LEFT)
+        ctk.CTkButton(footer, text="Copy to Clipboard", command=self.copy_to_clipboard,
+                  fg_color="#45475a", text_color=TEXT_COLOR, hover_color="#585b70",
+                  corner_radius=8, height=35).pack(side=ctk.LEFT)
 
-        tk.Button(footer, text="Settings", command=self.open_settings,
-                  bg="#45475a", fg=TEXT_COLOR, relief=tk.FLAT, padx=15).pack(side=tk.RIGHT)
+        ctk.CTkButton(footer, text="Settings", command=self.open_settings,
+                  fg_color="#45475a", text_color=TEXT_COLOR, hover_color="#585b70",
+                  corner_radius=8, height=35).pack(side=ctk.RIGHT)
 
     def start_voice_process(self):
         self.is_recording = True
-        self.action_btn.config(text="Stop Recording", bg=RECORD_COLOR)
-        self.status_label.config(text="🎙 Listening...", foreground=RECORD_COLOR)
+        self.action_btn.configure(text="Stop Recording", fg_color=RECORD_COLOR, hover_color="#eba0ac")
+        self.status_label.configure(text="🎙 Listening...", text_color=RECORD_COLOR)
         self.result_text.delete("1.0", tk.END)
         
         # Reset animation state
@@ -156,10 +152,10 @@ class VoiceAssistantGUI:
             while True:
                 msg_type, data = self.status_queue.get_nowait()
                 if msg_type == "status":
-                    self.status_label.config(text=data, foreground=ACCENT_COLOR)
+                    self.status_label.configure(text=data, text_color=ACCENT_COLOR)
                 elif msg_type == "progress_start":
-                    self.progress.pack(pady=10); self.progress.start(10)
-                    self.action_btn.config(state=tk.DISABLED, text="Processing...")
+                    self.progress.pack(pady=10); self.progress.start()
+                    self.action_btn.configure(state="disabled", text="Processing...")
                 elif msg_type == "result":
                     self.finish_task(data)
                 elif msg_type == "error":
@@ -170,9 +166,9 @@ class VoiceAssistantGUI:
     def finish_task(self, text, is_error=False):
         self.is_recording = False
         self.progress.stop(); self.progress.pack_forget()
-        self.action_btn.config(state=tk.NORMAL, text="Start Recording", bg=ACCENT_COLOR)
-        self.status_label.config(text="Error" if is_error else "✅ Done!", 
-                                foreground=RECORD_COLOR if is_error else SUCCESS_COLOR)
+        self.action_btn.configure(state="normal", text="Start Recording", fg_color=ACCENT_COLOR, hover_color="#b4befe")
+        self.status_label.configure(text="Error" if is_error else "✅ Done!", 
+                                text_color=RECORD_COLOR if is_error else SUCCESS_COLOR)
         self.result_text.insert(tk.END, text)
 
     def copy_to_clipboard(self):
@@ -185,4 +181,5 @@ class VoiceAssistantGUI:
         subprocess.Popen(["python3", os.path.join(self.script_dir, "config_gui.py")])
 
 if __name__ == "__main__":
-    root = tk.Tk(); app = VoiceAssistantGUI(root); root.mainloop()
+    ctk.set_appearance_mode("dark")
+    root = ctk.CTk(); app = VoiceAssistantGUI(root); root.mainloop()
