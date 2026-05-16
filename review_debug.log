@@ -576,3 +576,514 @@
 [2026-05-16 07:55:37] [tray] _review_finished called
 [2026-05-16 07:55:38] [review_engine] _generate_and_prepend_summary: summary prepended (361 chars)
 [2026-05-16 07:55:38] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to daily note.'
+[2026-05-16 08:39:47] [tray] run_full_process started. is_in_review=False
+[2026-05-16 08:41:05] [tray] Transcription done. text_len=707 preview=' In our system, there is some icon like open dashboard and setting. So setting n'
+[2026-05-16 08:41:05] [tray] Routing: NORMAL MODE
+[2026-05-16 08:41:05] [tray] _run_normal_mode: refining
+[2026-05-16 08:41:08] [tray] _run_normal_mode: refined, len=602
+[2026-05-16 08:49:11] [tray] ==================================================
+[2026-05-16 08:49:11] [tray] VoiceAssistantTray starting
+[2026-05-16 08:49:11] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: What did you accomplish, build, or unblock today?'
+[2026-05-16 08:49:11] [tray] Resumed review session at step 1
+[2026-05-16 08:49:11] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 08:49:31] [review_engine] cancel_review called
+[2026-05-16 08:49:31] [review_engine] State file deleted
+[2026-05-16 08:49:31] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 08:49:31] [tray] _review_finished called
+[2026-05-16 08:49:39] [tray] start_review called
+[2026-05-16 08:49:39] [review_engine] ==================================================
+[2026-05-16 08:49:39] [review_engine] initialize_review called
+[2026-05-16 08:49:39] [review_engine] Vault year/month directories ensured
+[2026-05-16 08:49:39] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 08:49:39] [review_engine] Review initialized. Steps: 6
+[2026-05-16 08:49:39] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:49:39] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:49:48] [tray] run_full_process started. is_in_review=True
+[2026-05-16 08:49:48] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:49:56] [tray] Transcription done: len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 08:49:56] [tray] Routing: REVIEW MODE
+[2026-05-16 08:49:56] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 08:49:56] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:49:56] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 08:49:56] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 08:49:56] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 08:50:07] [tray] redo_review_step called
+[2026-05-16 08:50:07] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:07] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 08:50:07] [review_engine] redo_step: state cleared, re-prompting step
+[2026-05-16 08:50:07] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:50:07] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:09] [tray] run_full_process started. is_in_review=True
+[2026-05-16 08:50:09] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:50:13] [tray] Transcription done: len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 08:50:13] [tray] Routing: REVIEW MODE
+[2026-05-16 08:50:13] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 08:50:13] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:13] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 08:50:13] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 08:50:13] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 08:50:43] [tray] redo_review_step called
+[2026-05-16 08:50:43] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:43] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 08:50:43] [review_engine] redo_step: state cleared, re-prompting step
+[2026-05-16 08:50:43] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:50:43] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:50] [tray] run_full_process started. is_in_review=True
+[2026-05-16 08:50:50] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:50:55] [tray] Transcription done: len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 08:50:55] [tray] Routing: REVIEW MODE
+[2026-05-16 08:50:55] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 08:50:55] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:50:55] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 08:50:55] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 08:50:55] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 08:52:22] [tray] exit_app called
+[2026-05-16 08:52:22] [tray] exit_app called
+[2026-05-16 08:56:02] [tray] ==================================================
+[2026-05-16 08:56:02] [tray] VoiceAssistantTray starting
+[2026-05-16 08:56:02] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:56:03] [tray] Resumed review session at step 0
+[2026-05-16 08:56:03] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 08:56:15] [review_engine] cancel_review called
+[2026-05-16 08:56:15] [review_engine] State file deleted
+[2026-05-16 08:56:15] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 08:56:15] [tray] _review_finished called
+[2026-05-16 08:57:33] [tray] start_review called
+[2026-05-16 08:57:33] [review_engine] ==================================================
+[2026-05-16 08:57:33] [review_engine] initialize_review called
+[2026-05-16 08:57:33] [review_engine] Vault year/month directories ensured
+[2026-05-16 08:57:33] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 08:57:33] [review_engine] Review initialized. Steps: 6
+[2026-05-16 08:57:33] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:57:33] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:57:45] [tray] exit_app called
+[2026-05-16 08:57:45] [tray] exit_app called
+[2026-05-16 08:58:29] [tray] ==================================================
+[2026-05-16 08:58:29] [tray] VoiceAssistantTray starting
+[2026-05-16 08:58:29] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:58:29] [tray] Resumed review session at step 0
+[2026-05-16 08:58:29] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 08:58:38] [tray] run_full_process started. is_in_review=True
+[2026-05-16 08:58:38] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 08:58:46] [tray] Transcription done: len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 08:58:46] [tray] Routing: REVIEW MODE
+[2026-05-16 08:58:46] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 08:58:46] [review_engine] is_review_active → True (step=0)
+[2026-05-16 08:58:46] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 08:58:46] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 08:58:46] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 08:58:49] [tray] exit_app called
+[2026-05-16 08:58:49] [tray] exit_app called
+[2026-05-16 09:01:46] [tray] ==================================================
+[2026-05-16 09:01:46] [tray] VoiceAssistantTray starting
+[2026-05-16 09:01:46] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:01:46] [tray] Resumed review session at step 0
+[2026-05-16 09:01:46] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 09:01:59] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:02:06] [tray] Transcription done: len=28 preview=' एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 09:02:06] [tray] Routing: REVIEW MODE
+[2026-05-16 09:02:06] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:02:06] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:06] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:02:06] [tray] Accumulated clip 2 for step 'Focus Word'
+[2026-05-16 09:02:06] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (2 clips). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:02:12] [tray] redo_review_step called
+[2026-05-16 09:02:12] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:12] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:02:12] [review_engine] redo_step: state cleared, re-prompting step
+[2026-05-16 09:02:12] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:02:12] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:18] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:02:18] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:02:41] [tray] Transcription done: len=53 preview=' यह ट्रांसक्रिप्शन है। विर त्रांसक्रिप्शन के मुझे है।'
+[2026-05-16 09:02:41] [tray] Routing: REVIEW MODE
+[2026-05-16 09:02:41] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:02:41] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:41] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:02:41] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 09:02:41] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:02:54] [tray] redo_review_step called
+[2026-05-16 09:02:54] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:54] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:02:54] [review_engine] redo_step: state cleared, re-prompting step
+[2026-05-16 09:02:54] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:02:54] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:02:59] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:02:59] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:03:20] [tray] Transcription done: len=70 preview=' Actually, today, one one is waiting for budget, bridge, nothing else.'
+[2026-05-16 09:03:20] [tray] Routing: REVIEW MODE
+[2026-05-16 09:03:20] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:03:20] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:03:20] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:03:20] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 09:03:20] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:03:30] [tray] next_step_review called
+[2026-05-16 09:03:30] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:03:30] [tray] _structure_and_advance: started
+[2026-05-16 09:03:30] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:03:30] [tray] _structure_and_advance: structuring 'Focus Word' (1 clips)
+[2026-05-16 09:03:32] [tray] _structure_and_advance: structured preview='Budget'
+[2026-05-16 09:03:32] [review_engine] write_step_to_note: step='Focus Word' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:03:32] [review_engine] _create_daily_note: created /home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md
+[2026-05-16 09:03:32] [review_engine] write_step_to_note: appended 22 chars under Evening Review
+[2026-05-16 09:03:32] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:03:32] [review_engine] advance_step: 0 → 1 (total=6)
+[2026-05-16 09:03:32] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:03:32] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: What did you accomplish, build, or unblock today?'
+[2026-05-16 09:03:32] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:03:32] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:03:32] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:03:38] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:03:38] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: What did you accomplish, build, or unblock today?'
+[2026-05-16 09:04:14] [tray] Transcription done: len=273 preview=' Speaking of..  We have done the from the data commission for the meeting at 4.3'
+[2026-05-16 09:04:14] [tray] Routing: REVIEW MODE
+[2026-05-16 09:04:14] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:04:14] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:04:14] [review_engine] State saved: step=1, awaiting=True
+[2026-05-16 09:04:14] [tray] Accumulated clip 1 for step 'Achievements'
+[2026-05-16 09:04:14] [review_engine] NOTIFY: 'Evening Review — Step 2/6 Recorded' — ''Achievements' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:04:43] [tray] next_step_review called
+[2026-05-16 09:04:43] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:04:43] [tray] _structure_and_advance: started
+[2026-05-16 09:04:43] [review_engine] State saved: step=1, awaiting=True
+[2026-05-16 09:04:43] [tray] _structure_and_advance: structuring 'Achievements' (1 clips)
+[2026-05-16 09:04:44] [tray] _structure_and_advance: structured preview='- Created the data commission presentation for the meeting at 4:30
+- Discussed a'
+[2026-05-16 09:04:44] [review_engine] write_step_to_note: step='Achievements' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:04:44] [review_engine] write_step_to_note: appended 189 chars under Evening Review
+[2026-05-16 09:04:44] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:04:44] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-16 09:04:44] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:04:44] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: What tasks need immediate attention tomorrow?'
+[2026-05-16 09:04:44] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:04:44] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:04:44] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:04:52] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:04:52] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: What tasks need immediate attention tomorrow?'
+[2026-05-16 09:05:17] [tray] Transcription done: len=28 preview=' ग्राफिं समनाटर्स  तो  बार्व'
+[2026-05-16 09:05:17] [tray] Routing: REVIEW MODE
+[2026-05-16 09:05:17] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:05:17] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:05:17] [review_engine] State saved: step=2, awaiting=True
+[2026-05-16 09:05:17] [tray] Accumulated clip 1 for step 'Tomorrow's Priorities'
+[2026-05-16 09:05:17] [review_engine] NOTIFY: 'Evening Review — Step 3/6 Recorded' — ''Tomorrow's Priorities' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:05:36] [tray] next_step_review called
+[2026-05-16 09:05:36] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:05:36] [tray] _structure_and_advance: started
+[2026-05-16 09:05:36] [review_engine] State saved: step=2, awaiting=True
+[2026-05-16 09:05:36] [tray] _structure_and_advance: structuring 'Tomorrow's Priorities' (1 clips)
+[2026-05-16 09:05:36] [tray] _structure_and_advance: structured preview='- [ ] Convert voice note into Markdown checkbox task list for tomorrow
+- [ ] For'
+[2026-05-16 09:05:36] [review_engine] write_step_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:05:36] [review_engine] write_step_to_note: appended 197 chars under Evening Review
+[2026-05-16 09:05:36] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:05:36] [review_engine] advance_step: 2 → 3 (total=6)
+[2026-05-16 09:05:36] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:05:36] [review_engine] NOTIFY: 'Evening Review — Step 4/6' — 'Step 4/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 09:05:36] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:05:36] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:05:36] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:05:51] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:05:51] [review_engine] NOTIFY: 'Evening Review — Step 4/6' — 'Step 4/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 09:06:03] [tray] Transcription done: len=42 preview=' Everything is okay today, health is good.'
+[2026-05-16 09:06:03] [tray] Routing: REVIEW MODE
+[2026-05-16 09:06:03] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:06:03] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:06:03] [review_engine] State saved: step=3, awaiting=True
+[2026-05-16 09:06:03] [tray] Accumulated clip 1 for step 'Wellness Log'
+[2026-05-16 09:06:03] [review_engine] NOTIFY: 'Evening Review — Step 4/6 Recorded' — ''Wellness Log' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:06:13] [tray] next_step_review called
+[2026-05-16 09:06:13] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:06:13] [tray] _structure_and_advance: started
+[2026-05-16 09:06:13] [review_engine] State saved: step=3, awaiting=True
+[2026-05-16 09:06:13] [tray] _structure_and_advance: structuring 'Wellness Log' (1 clips)
+[2026-05-16 09:06:13] [tray] _structure_and_advance: structured preview='Everything is okay today, health is good.'
+[2026-05-16 09:06:13] [review_engine] write_step_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-16.md'
+[2026-05-16 09:06:13] [review_engine] _create_wellness_note: created /home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-16.md
+[2026-05-16 09:06:13] [review_engine] write_step_to_note: appended 59 chars to isolated file
+[2026-05-16 09:06:13] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:06:13] [review_engine] advance_step: 3 → 4 (total=6)
+[2026-05-16 09:06:13] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:06:13] [review_engine] NOTIFY: 'Evening Review — Step 5/6' — 'Step 5/6: Summarise today's meetings — decisions made and actions assigned.'
+[2026-05-16 09:06:13] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:06:13] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:06:13] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:06:24] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:06:24] [review_engine] NOTIFY: 'Evening Review — Step 5/6' — 'Step 5/6: Summarise today's meetings — decisions made and actions assigned.'
+[2026-05-16 09:06:47] [tray] Transcription done: len=114 preview=' I have not attended the meeting, it's a meeting of in-house meeting with ENC an'
+[2026-05-16 09:06:47] [tray] Routing: REVIEW MODE
+[2026-05-16 09:06:47] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:06:47] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:06:47] [review_engine] State saved: step=4, awaiting=True
+[2026-05-16 09:06:47] [tray] Accumulated clip 1 for step 'Meeting'
+[2026-05-16 09:06:47] [review_engine] NOTIFY: 'Evening Review — Step 5/6 Recorded' — ''Meeting' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:06:50] [tray] next_step_review called
+[2026-05-16 09:06:50] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:06:50] [tray] _structure_and_advance: started
+[2026-05-16 09:06:50] [review_engine] State saved: step=4, awaiting=True
+[2026-05-16 09:06:50] [tray] _structure_and_advance: structuring 'Meeting' (1 clips)
+[2026-05-16 09:06:50] [tray] _structure_and_advance: structured preview='- **Decisions:**
+  - None
+  
+- **Actions:**
+  - None'
+[2026-05-16 09:06:50] [review_engine] write_step_to_note: step='Meeting' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:06:50] [review_engine] _fill_section: wrote 'Meeting' into existing section
+[2026-05-16 09:06:50] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:06:50] [review_engine] advance_step: 4 → 5 (total=6)
+[2026-05-16 09:06:50] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:06:50] [review_engine] NOTIFY: 'Evening Review — Step 6/6' — 'Step 6/6: Any movement, exercise, or physical activity today?'
+[2026-05-16 09:06:50] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:06:50] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:06:50] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:06:59] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:06:59] [review_engine] NOTIFY: 'Evening Review — Step 6/6' — 'Step 6/6: Any movement, exercise, or physical activity today?'
+[2026-05-16 09:07:09] [tray] Transcription done: len=39 preview=' नमस्ते, यह एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 09:07:09] [tray] Routing: REVIEW MODE
+[2026-05-16 09:07:09] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:07:09] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:07:09] [review_engine] State saved: step=5, awaiting=True
+[2026-05-16 09:07:09] [tray] Accumulated clip 1 for step 'Movement'
+[2026-05-16 09:07:09] [review_engine] NOTIFY: 'Evening Review — Step 6/6 Recorded' — ''Movement' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray.'
+[2026-05-16 09:07:11] [tray] next_step_review called
+[2026-05-16 09:07:11] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:07:11] [tray] _structure_and_advance: started
+[2026-05-16 09:07:11] [review_engine] State saved: step=5, awaiting=True
+[2026-05-16 09:07:11] [tray] _structure_and_advance: structuring 'Movement' (1 clips)
+[2026-05-16 09:07:12] [tray] _structure_and_advance: structured preview='This is a Hindi transcription, meaning it is a written representation of spoken '
+[2026-05-16 09:07:12] [review_engine] write_step_to_note: step='Movement' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:07:12] [review_engine] _fill_section: wrote 'Movement' into existing section
+[2026-05-16 09:07:12] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:07:12] [review_engine] advance_step: 5 → 6 (total=6)
+[2026-05-16 09:07:12] [review_engine] advance_step: last step done, calling complete_review
+[2026-05-16 09:07:12] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md
+[2026-05-16 09:07:12] [review_engine] complete_review: state file deleted
+[2026-05-16 09:07:12] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 09:07:12] [review_engine] _generate_and_append_summary: starting
+[2026-05-16 09:07:12] [review_engine] complete_review: background summary thread started
+[2026-05-16 09:07:12] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 09:07:12] [review_engine] is_review_active → False (no state file)
+[2026-05-16 09:07:12] [tray] _structure_and_advance: still_active=False
+[2026-05-16 09:07:12] [tray] _review_finished called
+[2026-05-16 09:07:12] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 09:07:13] [review_engine] _generate_and_append_summary: summary appended (490 chars)
+[2026-05-16 09:07:13] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to your daily note.'
+[2026-05-16 09:09:03] [tray] exit_app called
+[2026-05-16 09:09:03] [tray] exit_app called
+[2026-05-16 09:09:08] [tray] ==================================================
+[2026-05-16 09:09:08] [tray] VoiceAssistantTray starting
+[2026-05-16 09:09:08] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 09:09:08] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 09:09:14] [tray] start_review called
+[2026-05-16 09:09:14] [review_engine] ==================================================
+[2026-05-16 09:09:14] [review_engine] initialize_review called
+[2026-05-16 09:09:14] [review_engine] Vault year/month directories ensured
+[2026-05-16 09:09:14] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:09:14] [review_engine] Review initialized. Steps: 6
+[2026-05-16 09:09:14] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:09:14] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:09:20] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:09:20] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:09:34] [tray] Transcription done: len=31 preview=' यह एक हिंदी ट्रांसक्रिप्शन है।'
+[2026-05-16 09:09:34] [tray] Routing: REVIEW MODE
+[2026-05-16 09:09:34] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:09:34] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:09:34] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:09:34] [tray] Accumulated clip 1 for step 'Focus Word'
+[2026-05-16 09:09:34] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:10:18] [tray] exit_app called
+[2026-05-16 09:10:18] [tray] exit_app called
+[2026-05-16 09:11:40] [tray] ==================================================
+[2026-05-16 09:11:40] [tray] VoiceAssistantTray starting
+[2026-05-16 09:11:40] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:11:40] [tray] Resumed review session at step 0
+[2026-05-16 09:11:40] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 09:11:46] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:12:06] [tray] Transcription done: len=102 preview=' Okay, that's great now. One word is Pazat, Preach and Bixit, Uttarakhand 2047. '
+[2026-05-16 09:12:06] [tray] Routing: REVIEW MODE
+[2026-05-16 09:12:06] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:12:06] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:12:06] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:12:06] [tray] Accumulated clip 2 for step 'Focus Word'
+[2026-05-16 09:12:06] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Focus Word' recorded (2 clips). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:12:17] [tray] next_step_review called
+[2026-05-16 09:12:17] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:12:17] [tray] _structure_and_advance: started
+[2026-05-16 09:12:17] [review_engine] State saved: step=0, awaiting=True
+[2026-05-16 09:12:17] [tray] _structure_and_advance: structuring 'Focus Word' (2 clips)
+[2026-05-16 09:12:18] [tray] _structure_and_advance: structured preview='Pazat'
+[2026-05-16 09:12:18] [review_engine] write_step_to_note: step='Focus Word' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:12:18] [review_engine] write_step_to_note: appended 21 chars under Evening Review
+[2026-05-16 09:12:18] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:12:18] [review_engine] advance_step: 0 → 1 (total=6)
+[2026-05-16 09:12:18] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:12:18] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: What did you accomplish, build, or unblock today?'
+[2026-05-16 09:12:18] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:12:18] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:12:18] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:12:23] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:14:03] [tray] Transcription done: len=846 preview=' I have collected data for evening meeting of Bixit Bharat 2047 which is to be d'
+[2026-05-16 09:14:03] [tray] Routing: REVIEW MODE
+[2026-05-16 09:14:03] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:14:03] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:14:03] [review_engine] State saved: step=1, awaiting=True
+[2026-05-16 09:14:03] [tray] Accumulated clip 1 for step 'Achievements'
+[2026-05-16 09:14:03] [review_engine] NOTIFY: 'Evening Review — Step 2/6 Recorded' — ''Achievements' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:14:13] [tray] next_step_review called
+[2026-05-16 09:14:13] [review_engine] is_review_active → True (step=1)
+[2026-05-16 09:14:13] [tray] _structure_and_advance: started
+[2026-05-16 09:14:13] [review_engine] State saved: step=1, awaiting=True
+[2026-05-16 09:14:13] [tray] _structure_and_advance: structuring 'Achievements' (1 clips)
+[2026-05-16 09:14:14] [tray] _structure_and_advance: structured preview='- Collected data for evening meeting of Bixit Bharat 2047
+- Discussed budget rel'
+[2026-05-16 09:14:14] [review_engine] write_step_to_note: step='Achievements' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:14:14] [review_engine] write_step_to_note: appended 305 chars under Evening Review
+[2026-05-16 09:14:14] [review_engine] State saved: step=1, awaiting=False
+[2026-05-16 09:14:14] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-16 09:14:14] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:14:14] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: What tasks need immediate attention tomorrow?'
+[2026-05-16 09:14:14] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:14:14] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:14:14] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:14:21] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:14:46] [tray] Transcription done: len=201 preview=' Tomorrow priorities is actually finalizing those letters which we have discusse'
+[2026-05-16 09:14:46] [tray] Routing: REVIEW MODE
+[2026-05-16 09:14:46] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:14:46] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:14:46] [review_engine] State saved: step=2, awaiting=True
+[2026-05-16 09:14:46] [tray] Accumulated clip 1 for step 'Tomorrow's Priorities'
+[2026-05-16 09:14:46] [review_engine] NOTIFY: 'Evening Review — Step 3/6 Recorded' — ''Tomorrow's Priorities' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:14:50] [tray] next_step_review called
+[2026-05-16 09:14:50] [review_engine] is_review_active → True (step=2)
+[2026-05-16 09:14:50] [tray] _structure_and_advance: started
+[2026-05-16 09:14:50] [review_engine] State saved: step=2, awaiting=True
+[2026-05-16 09:14:50] [tray] _structure_and_advance: structuring 'Tomorrow's Priorities' (1 clips)
+[2026-05-16 09:14:50] [tray] _structure_and_advance: structured preview='- [ ] Finalizing those letters which we have discussed
+- [ ] Complete my AI cour'
+[2026-05-16 09:14:50] [review_engine] write_step_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:14:50] [review_engine] write_step_to_note: appended 153 chars under Evening Review
+[2026-05-16 09:14:50] [review_engine] State saved: step=2, awaiting=False
+[2026-05-16 09:14:50] [review_engine] advance_step: 2 → 3 (total=6)
+[2026-05-16 09:14:50] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:14:50] [review_engine] NOTIFY: 'Evening Review — Step 4/6' — 'Step 4/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-16 09:14:50] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:14:50] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:14:50] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:15:11] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:15:36] [tray] Transcription done: len=179 preview=' Overall health is okay, I have feel some problem around two that my and I have '
+[2026-05-16 09:15:36] [tray] Routing: REVIEW MODE
+[2026-05-16 09:15:36] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:15:36] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:15:36] [review_engine] State saved: step=3, awaiting=True
+[2026-05-16 09:15:36] [tray] Accumulated clip 1 for step 'Wellness Log'
+[2026-05-16 09:15:36] [review_engine] NOTIFY: 'Evening Review — Step 4/6 Recorded' — ''Wellness Log' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:15:41] [tray] next_step_review called
+[2026-05-16 09:15:41] [review_engine] is_review_active → True (step=3)
+[2026-05-16 09:15:41] [tray] _structure_and_advance: started
+[2026-05-16 09:15:41] [review_engine] State saved: step=3, awaiting=True
+[2026-05-16 09:15:41] [tray] _structure_and_advance: structuring 'Wellness Log' (1 clips)
+[2026-05-16 09:15:41] [tray] _structure_and_advance: structured preview='Overall health is okay, I have feel some problem around two that my and I have s'
+[2026-05-16 09:15:41] [review_engine] write_step_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-16.md'
+[2026-05-16 09:15:41] [review_engine] write_step_to_note: appended 196 chars to isolated file
+[2026-05-16 09:15:41] [review_engine] State saved: step=3, awaiting=False
+[2026-05-16 09:15:41] [review_engine] advance_step: 3 → 4 (total=6)
+[2026-05-16 09:15:41] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:15:41] [review_engine] NOTIFY: 'Evening Review — Step 5/6' — 'Step 5/6: Summarise today's meetings — decisions made and actions assigned.'
+[2026-05-16 09:15:41] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:15:41] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:15:41] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:15:51] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:16:09] [tray] Transcription done: len=153 preview=' Today we have meetings in-house meeting with India in chief, my colleague, Belw'
+[2026-05-16 09:16:09] [tray] Routing: REVIEW MODE
+[2026-05-16 09:16:09] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:16:09] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:16:09] [review_engine] State saved: step=4, awaiting=True
+[2026-05-16 09:16:09] [tray] Accumulated clip 1 for step 'Meeting'
+[2026-05-16 09:16:09] [review_engine] NOTIFY: 'Evening Review — Step 5/6 Recorded' — ''Meeting' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:16:15] [tray] next_step_review called
+[2026-05-16 09:16:15] [review_engine] is_review_active → True (step=4)
+[2026-05-16 09:16:15] [tray] _structure_and_advance: started
+[2026-05-16 09:16:15] [review_engine] State saved: step=4, awaiting=True
+[2026-05-16 09:16:15] [tray] _structure_and_advance: structuring 'Meeting' (1 clips)
+[2026-05-16 09:16:16] [tray] _structure_and_advance: structured preview='- **Decisions:**
+  - In-house meeting with India in chief, Belwal, Ravindra, and'
+[2026-05-16 09:16:16] [review_engine] write_step_to_note: step='Meeting' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:16:16] [review_engine] _fill_section: wrote 'Meeting' into existing section
+[2026-05-16 09:16:16] [review_engine] State saved: step=4, awaiting=False
+[2026-05-16 09:16:16] [review_engine] advance_step: 4 → 5 (total=6)
+[2026-05-16 09:16:16] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:16:16] [review_engine] NOTIFY: 'Evening Review — Step 6/6' — 'Step 6/6: Any movement, exercise, or physical activity today?'
+[2026-05-16 09:16:16] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:16:16] [tray] _structure_and_advance: still_active=True
+[2026-05-16 09:16:16] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:16:22] [tray] run_full_process started. is_in_review=True
+[2026-05-16 09:16:39] [tray] Transcription done: len=80 preview=' Today no movement, I am in office only, from home to office and office to home.'
+[2026-05-16 09:16:39] [tray] Routing: REVIEW MODE
+[2026-05-16 09:16:39] [tray] _handle_review_step: accumulating raw text
+[2026-05-16 09:16:39] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:16:39] [review_engine] State saved: step=5, awaiting=True
+[2026-05-16 09:16:39] [tray] Accumulated clip 1 for step 'Movement'
+[2026-05-16 09:16:39] [review_engine] NOTIFY: 'Evening Review — Step 6/6 Recorded' — ''Movement' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-16 09:16:42] [tray] next_step_review called
+[2026-05-16 09:16:42] [review_engine] is_review_active → True (step=5)
+[2026-05-16 09:16:42] [tray] _structure_and_advance: started
+[2026-05-16 09:16:42] [review_engine] State saved: step=5, awaiting=True
+[2026-05-16 09:16:42] [tray] _structure_and_advance: structuring 'Movement' (1 clips)
+[2026-05-16 09:16:43] [tray] _structure_and_advance: structured preview='Today involved minimal physical activity as you were at the office, only moving '
+[2026-05-16 09:16:43] [review_engine] write_step_to_note: step='Movement' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md'
+[2026-05-16 09:16:43] [review_engine] _fill_section: wrote 'Movement' into existing section
+[2026-05-16 09:16:43] [review_engine] State saved: step=5, awaiting=False
+[2026-05-16 09:16:43] [review_engine] advance_step: 5 → 6 (total=6)
+[2026-05-16 09:16:43] [review_engine] advance_step: last step done, calling complete_review
+[2026-05-16 09:16:43] [review_engine] complete_review: date=2026-05-16 daily_note=/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-16.md
+[2026-05-16 09:16:43] [review_engine] complete_review: state file deleted
+[2026-05-16 09:16:43] [review_engine] NOTIFY: 'Evening Review Complete' — 'All steps done! Generating summary in background...'
+[2026-05-16 09:16:43] [review_engine] complete_review: background summary thread started
+[2026-05-16 09:16:43] [review_engine] _generate_and_append_summary: starting
+[2026-05-16 09:16:43] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 09:16:43] [review_engine] is_review_active → False (no state file)
+[2026-05-16 09:16:43] [tray] _structure_and_advance: still_active=False
+[2026-05-16 09:16:43] [tray] _review_finished called
+[2026-05-16 09:16:43] [review_engine] State file not found at /tmp/review_state.json
+[2026-05-16 09:16:44] [review_engine] _generate_and_append_summary: summary appended (869 chars)
+[2026-05-16 09:16:44] [review_engine] NOTIFY: 'Evening Review' — 'AI summary added to your daily note.'
+[2026-05-16 09:18:29] [tray] start_review called
+[2026-05-16 09:18:29] [review_engine] ==================================================
+[2026-05-16 09:18:29] [review_engine] initialize_review called
+[2026-05-16 09:18:29] [review_engine] Vault year/month directories ensured
+[2026-05-16 09:18:29] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:18:29] [review_engine] Review initialized. Steps: 6
+[2026-05-16 09:18:29] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:18:29] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:18:34] [review_engine] cancel_review called
+[2026-05-16 09:18:34] [review_engine] State file deleted
+[2026-05-16 09:18:34] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 09:18:34] [tray] _review_finished called
+[2026-05-16 09:20:05] [tray] start_review called
+[2026-05-16 09:20:05] [review_engine] ==================================================
+[2026-05-16 09:20:05] [review_engine] initialize_review called
+[2026-05-16 09:20:05] [review_engine] Vault year/month directories ensured
+[2026-05-16 09:20:05] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:20:05] [review_engine] Review initialized. Steps: 6
+[2026-05-16 09:20:05] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:20:05] [review_engine] is_review_active → True (step=0)
+[2026-05-16 09:20:11] [tray] exit_app called
+[2026-05-16 09:20:11] [tray] exit_app called
+[2026-05-16 09:20:17] [tray] ==================================================
+[2026-05-16 09:20:17] [tray] VoiceAssistantTray starting
+[2026-05-16 09:20:17] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:20:17] [tray] Resumed review session at step 0
+[2026-05-16 09:20:17] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 09:20:21] [review_engine] cancel_review called
+[2026-05-16 09:20:21] [review_engine] State file deleted
+[2026-05-16 09:20:21] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 09:20:21] [tray] _review_finished called
+[2026-05-16 09:20:26] [tray] start_review called
+[2026-05-16 09:20:26] [review_engine] ==================================================
+[2026-05-16 09:20:26] [review_engine] initialize_review called
+[2026-05-16 09:20:26] [review_engine] Vault year/month directories ensured
+[2026-05-16 09:20:26] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:20:26] [review_engine] Review initialized. Steps: 6
+[2026-05-16 09:20:26] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:20:31] [tray] exit_app called
+[2026-05-16 09:20:31] [tray] exit_app called

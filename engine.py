@@ -176,6 +176,21 @@ class VoiceEngine:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
 
+    def refine_with_prompt(self, full_prompt, structure_model=None):
+        """Call Ollama with a fully pre-built prompt string (used for per-step structuring).
+
+        structure_model: explicit model name from review_config["structure_model"].
+        Falls back to the English refiner model from the main config.
+        """
+        model_name = structure_model or utils.get_model_for_lang(self.config, "en")
+        response = utils.call_ollama(
+            self.config.get("OLLAMA_HOST"), model_name, full_prompt, [],
+            self.config.get("TEMPERATURE", 0.1)
+        )
+        if "error" in response:
+            return f"Error: {response['error']}"
+        return utils.clean_response(response.get("response", ""))
+
     def get_raw_transcription(self, wav_path):
         return self.transcribe(wav_path)
 

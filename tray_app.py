@@ -25,7 +25,7 @@ def _tlog(msg):
         except Exception:
             pass
 
-# ---- TRAY ICON MANAGER ----
+# ── Tray application ──────────────────────────────────────────────────────────
 
 class VoiceAssistantTray:
     def __init__(self):
@@ -38,51 +38,52 @@ class VoiceAssistantTray:
         _tlog("VoiceAssistantTray starting")
         self.engine = VoiceEngine(self.script_dir)
 
-        # Current app states
+        # App state flags
         self.is_recording = False
         self.is_processing = False
         self.running = True
 
-        # Review state tracking
+        # Review state
         self.is_in_review = False
         self.review_config = None
         self.review_state = None
 
-        # Generate initial icons
+        # Icons
         self.icons = {
-            "idle": self.create_status_icon("#45475a"),      # Gray/Slate
-            "recording": self.create_status_icon("#f38ba8"), # Red
-            "processing": self.create_status_icon("#89b4fa"),# Blue
-            "review": self.create_status_icon("#a6e3a1")     # Green
+            "idle":       self.create_status_icon("#45475a"),  # Gray
+            "recording":  self.create_status_icon("#f38ba8"),  # Red
+            "processing": self.create_status_icon("#89b4fa"),  # Blue
+            "review":     self.create_status_icon("#a6e3a1"),  # Green
         }
 
-        # Setup the tray icon with a single static menu that uses dynamic callables
+        # Build tray icon with single static menu (dynamic callables)
         self.icon = pystray.Icon(
             "AI Voice Refiner",
             self.icons["idle"],
             menu=self._build_static_menu()
         )
 
-        # Hotkey tracking
+        # Hotkey listener (works on X11; on Wayland the GNOME shortcut + SIGUSR1 is used)
         self.pressed_keys = set()
-        self.hotkey_combo = {keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char('v')}
-        self.hotkey_combo_alt = {keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char('v')}
-
         self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
 
-        # Check startup state for resume/expire
-        import review_engine
+        # Startup: resume or expire any stale review session
         result, state, cfg = review_engine.check_startup_state(self.script_dir)
-        if result == 'resume':
+        if result == "resume":
             self.is_in_review = True
             self.review_state = state
             self.review_config = cfg
             self.update_icon("review")
             review_engine.send_step_notification(state, cfg)
+            _tlog(f"Resumed review session at step {state.get('current_step_index')}")
+        elif result == "expired":
+            _tlog("Stale review session expired on startup")
+
+    # ── Menu ──────────────────────────────────────────────────────────────────
 
     def _build_static_menu(self):
-        """Build one static menu with all items; visibility/text are dynamic callables.
-        pystray re-evaluates these on every update_menu() call — no menu rebuild needed."""
+        """Single static menu; all text/visibility use live callables.
+        pystray re-evaluates on every update_menu() — no rebuild needed."""
 
         def _step_label(item):
             if not self.is_in_review or not self.review_state or not self.review_config:
@@ -93,106 +94,104 @@ class VoiceAssistantTray:
             idx = self.review_state.get("current_step_index", 0)
             if step:
                 name = step["section_name"]
+                clips = len(self.review_state.get("accumulated_raw", []))
                 if self.review_state.get("awaiting_more", False):
-                    return f"Step {idx+1}/{total}: {name} \u2713 Saved"
+                    clip_label = f" ({clips} clip{'s' if clips != 1 else ''})"
+                    return f"Step {idx+1}/{total}: {name} \u2713{clip_label}"
                 return f"Step {idx+1}/{total}: {name}"
             return "Review in progress"
 
-        def _in_review(item):
-            return self.is_in_review
-
-        def _not_in_review(item):
-            return not self.is_in_review
-
-        def _awaiting(item):
-            return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more", False))
-
-        def _not_awaiting(item):
-            return self.is_in_review and not bool(self.review_state and self.review_state.get("awaiting_more", False))
-
-        def _mode_label(item):
-            return f"Mode: {self.engine.config.get('MODE', 'refine').capitalize()}"
+        def _in_review(item):       return self.is_in_review
+        def _not_in_review(item):   return not self.is_in_review
+        def _awaiting(item):        return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more"))
+        def _not_awaiting(item):    return self.is_in_review and not bool(self.review_state and self.review_state.get("awaiting_more"))
+        def _mode_label(item):      return f"Mode: {self.engine.config.get('MODE', 'refine').capitalize()}"
 
         return pystray.Menu(
             # ── Review mode ──
-            pystray.MenuItem(_step_label, None, enabled=False, visible=_in_review),
-            pystray.MenuItem("Next Step",      self.next_step_review,  visible=_awaiting),
-            pystray.MenuItem("Skip This Step", self.skip_review_step,  visible=_not_awaiting),
-            pystray.MenuItem("Redo This Step", self.redo_review_step,  visible=_in_review),
-            pystray.MenuItem("Cancel Review",  self.cancel_review,     visible=_in_review),
+            pystray.MenuItem(_step_label,          None,                    enabled=False, visible=_in_review),
+            pystray.MenuItem("Next Step",          self.next_step_review,                  visible=_awaiting),
+            pystray.MenuItem("Skip This Step",     self.skip_review_step,                  visible=_not_awaiting),
+            pystray.MenuItem("Redo This Step",     self.redo_review_step,                  visible=_in_review),
+            pystray.MenuItem("Cancel Review",      self.cancel_review,                     visible=_in_review),
             pystray.Menu.SEPARATOR,
             # ── Normal mode ──
-            pystray.MenuItem("Start Recording",      self.toggle_recording,   visible=_not_in_review),
-            pystray.MenuItem(_mode_label,             self.cycle_mode,         visible=_not_in_review),
-            pystray.MenuItem("Start Evening Review",  self.start_review,       visible=_not_in_review),
-            pystray.MenuItem("Open Dashboard",        self.open_gui,           visible=_not_in_review),
-            pystray.MenuItem("Settings",              self.open_settings,      visible=_not_in_review),
+            pystray.MenuItem("Start Recording",     self.toggle_recording,                  visible=_not_in_review),
+            pystray.MenuItem(_mode_label,           self.cycle_mode,                        visible=_not_in_review),
+            pystray.MenuItem("Start Evening Review",self.start_review,                      visible=_not_in_review),
+            pystray.MenuItem("Open Dashboard",      self.open_gui,                          visible=_not_in_review),
+            pystray.MenuItem("Settings",            self.open_settings,                     visible=_not_in_review),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit", self.exit_app)
         )
 
-    def on_press(self, key):
-        if key == keyboard.Key.ctrl or key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            self.pressed_keys.add(keyboard.Key.ctrl_l if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl else keyboard.Key.ctrl_r)
-        elif key == keyboard.Key.alt or key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
-            self.pressed_keys.add(keyboard.Key.alt_l if key == keyboard.Key.alt_l or key == keyboard.Key.alt else keyboard.Key.alt_r)
-        elif hasattr(key, 'char') and key.char == 'v':
-            self.pressed_keys.add(keyboard.KeyCode.from_char('v'))
+    # ── Hotkey listener ───────────────────────────────────────────────────────
 
-        # Check if combo is pressed
-        if all(k in self.pressed_keys for k in [keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char('v')]) or \
-           all(k in self.pressed_keys for k in [keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char('v')]):
+    def on_press(self, key):
+        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+            self.pressed_keys.add(keyboard.Key.ctrl_l if key != keyboard.Key.ctrl_r else keyboard.Key.ctrl_r)
+        elif key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
+            self.pressed_keys.add(keyboard.Key.alt_l if key != keyboard.Key.alt_r else keyboard.Key.alt_r)
+        elif hasattr(key, "char") and key.char == "v":
+            self.pressed_keys.add(keyboard.KeyCode.from_char("v"))
+
+        if (
+            all(k in self.pressed_keys for k in [keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char("v")]) or
+            all(k in self.pressed_keys for k in [keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char("v")])
+        ):
             self.toggle_recording()
 
     def on_release(self, key):
-        if key == keyboard.Key.ctrl or key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
             self.pressed_keys.discard(keyboard.Key.ctrl_l)
             self.pressed_keys.discard(keyboard.Key.ctrl_r)
-        elif key == keyboard.Key.alt or key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
+        elif key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
             self.pressed_keys.discard(keyboard.Key.alt_l)
             self.pressed_keys.discard(keyboard.Key.alt_r)
-        elif hasattr(key, 'char') and key.char == 'v':
-            self.pressed_keys.discard(keyboard.KeyCode.from_char('v'))
+        elif hasattr(key, "char") and key.char == "v":
+            self.pressed_keys.discard(keyboard.KeyCode.from_char("v"))
+
+    # ── Icon helpers ──────────────────────────────────────────────────────────
 
     def create_status_icon(self, color):
-        """Generates a simple 64x64 circle icon for the tray."""
-        image = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+        image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((8, 8, 56, 56), fill=color)
         return image
 
-    def update_icon(self, state):
-        """Switches the tray icon image based on current activity."""
-        self.icon.icon = self.icons.get(state, self.icons["idle"])
+    def update_icon(self, state_name):
+        self.icon.icon = self.icons.get(state_name, self.icons["idle"])
+
+    def _refresh_menu(self):
+        try:
+            self.icon.update_menu()
+        except Exception as e:
+            _tlog(f"_refresh_menu: warning (non-fatal): {e}")
+
+    # ── Recording ─────────────────────────────────────────────────────────────
 
     def toggle_recording(self):
-        """The main action triggered by the hotkey or menu."""
         if not self.is_recording and not self.is_processing:
             threading.Thread(target=self.run_full_process, daemon=True).start()
         elif self.is_recording:
             self.engine.stop_recording()
 
     def _notify(self, title, message):
-        """Fire a desktop notification, fallback to print."""
         try:
-            subprocess.run(["notify-send", "-i", "dialog-information", "-t", "4000", title, message],
-                           timeout=5, check=False)
+            subprocess.run(
+                ["notify-send", "-i", "dialog-information", "-t", "4000", title, message],
+                timeout=5, check=False
+            )
         except Exception:
             print(f"[{title}] {message}")
 
     def run_full_process(self):
-        """Orchestrates the full Record -> Transcribe -> Refine cycle."""
+        """Record → Transcribe → route to review accumulation or normal clipboard."""
         import review_engine
         try:
             self.is_recording = True
             self.update_icon("recording")
             _tlog(f"run_full_process started. is_in_review={self.is_in_review}")
-
-            # Send step reminder before recording — only when NOT already awaiting_more
-            # (if awaiting_more=True the user knows the step; no need to re-notify)
-            if self.is_in_review and self.review_state and self.review_config:
-                if not self.review_state.get("awaiting_more", False):
-                    review_engine.send_step_notification(self.review_state, self.review_config)
 
             wav_path = self.engine.record()
 
@@ -200,19 +199,21 @@ class VoiceAssistantTray:
             self.is_processing = True
             self.update_icon("processing")
 
-            # Stage 1: Transcribing
+            # Narrate processing so user knows recording was captured
+            if self.is_in_review and self.review_config:
+                review_engine.narrate("Processing.", self.review_config)
+
             self._notify("Voice Refiner", "Transcribing audio...")
             raw_text = self.engine.transcribe(wav_path)
-            _tlog(f"Transcription done. text_len={len(raw_text)} preview='{raw_text[:80]}'")
+            _tlog(f"Transcription done: len={len(raw_text)} preview='{raw_text[:80]}'")
 
             if not raw_text.strip():
                 self._notify("Voice Refiner", "No speech detected. Try again.")
-                _tlog("No speech detected, returning")
+                _tlog("No speech detected")
                 self.is_processing = False
                 self.update_icon("review" if self.is_in_review else "idle")
                 return
 
-            # ── PRIMARY ROUTING: use in-memory flag, not disk re-check ──
             if self.is_in_review:
                 _tlog("Routing: REVIEW MODE")
                 self._handle_review_step(raw_text)
@@ -221,85 +222,52 @@ class VoiceAssistantTray:
                 self._run_normal_mode(raw_text)
 
             self.is_processing = False
-            if self.is_in_review:
-                self.update_icon("review")
-            else:
-                self.update_icon("idle")
+            self.update_icon("review" if self.is_in_review else "idle")
 
         except Exception as e:
             import traceback
-            err_detail = traceback.format_exc()
-            _tlog(f"EXCEPTION in run_full_process:\n{err_detail}")
-            self._notify("Voice Refiner — Error", str(e)[:100])
+            _tlog(f"EXCEPTION in run_full_process:\n{traceback.format_exc()}")
+            self._notify("Voice Refiner — Error", str(e)[:120])
             self.is_recording = False
             self.is_processing = False
-            if self.is_in_review:
-                self.update_icon("review")
-            else:
-                self.update_icon("idle")
+            self.update_icon("review" if self.is_in_review else "idle")
 
     def _handle_review_step(self, raw_text):
-        """Handles a single review step: refine, save to Obsidian, advance."""
+        """Accumulate raw transcription into state. No LLM call here — deferred to Next Step."""
         import review_engine
-        _tlog("_handle_review_step called")
+        _tlog("_handle_review_step: accumulating raw text")
 
-        # Reload state from disk to get latest (e.g. after skip/redo from menu)
+        # Always reload state from disk (may have changed via menu actions)
         _, fresh_state = review_engine.is_review_active(self.script_dir)
         if fresh_state is None:
-            # State file gone (expired or cancelled while recording) — fallback
-            _tlog("WARNING: is_in_review=True but state file gone. Falling back to normal mode.")
+            _tlog("WARNING: review state gone mid-recording, falling back to normal mode")
             self._review_finished()
             self._run_normal_mode(raw_text)
             return
 
         self.review_state = fresh_state
         step = review_engine.get_current_step(fresh_state, self.review_config)
-
         if step is None:
-            _tlog("ERROR: get_current_step returned None — all steps done or bad state")
+            _tlog("ERROR: get_current_step returned None")
             self._notify("Voice Refiner", "Review error: could not get current step.")
             return
 
-        step_name = step.get('section_name', f"Step {fresh_state.get('current_step_index', '?')}")
-        is_continuation = fresh_state.get("awaiting_more", False)
-        _tlog(f"Current step: '{step_name}' idx={fresh_state.get('current_step_index')} refine={step.get('refine', True)} is_continuation={is_continuation}")
-
-        # Stage 2: Refine or raw
-        if step.get('refine', True):
-            if is_continuation:
-                self._notify("Voice Refiner", f"Refining continuation for '{step_name}'...")
-            else:
-                self._notify("Voice Refiner", f"Refining text for '{step_name}'...")
-            _tlog(f"Calling engine.refine for step '{step_name}'")
-            final_text = self.engine.refine(raw_text)
-        else:
-            _tlog(f"Skipping refinement for step '{step_name}' (refine=False)")
-            final_text = raw_text
-
-        _tlog(f"final_text preview: '{final_text[:80]}'")
-
-        # Stage 3: Save to Obsidian (append_to_note uses awaiting_more flag to pick format)
-        self._notify("Voice Refiner", f"Saving to '{step_name}'...")
-        review_engine.append_to_note(self.script_dir, self.review_config, step, final_text, self.review_state)
-
-        # Mark awaiting_more so the next hotkey appends a continuation
+        # Accumulate raw text in state file
+        accumulated = self.review_state.get("accumulated_raw", [])
+        accumulated.append(raw_text)
+        self.review_state["accumulated_raw"] = accumulated
         self.review_state["awaiting_more"] = True
         review_engine._save_state(self.review_state)
 
-        # Notify and update menu — user must click "Next Step" to advance
-        if is_continuation:
-            self._notify("Voice Refiner", f"More added to '{step_name}'. Speak again or click Next Step.")
-        else:
-            review_engine.send_awaiting_notification(self.review_state, self.review_config)
-        _tlog(f"_handle_review_step: set awaiting_more=True, waiting for user to click Next Step")
+        clip_count = len(accumulated)
+        step_name = step.get("section_name", "this step")
+        _tlog(f"Accumulated clip {clip_count} for step '{step_name}'")
 
-        try:
-            self.icon.update_menu()
-        except Exception as e:
-            _tlog(f"_handle_review_step: menu update warning (non-fatal): {e}")
+        review_engine.send_awaiting_notification(self.review_state, self.review_config)
+        self._refresh_menu()
 
     def _run_normal_mode(self, raw_text):
-        """Handles normal mode: refine → clipboard → optional direct typing."""
+        """Normal mode: refine → clipboard → optional direct typing."""
         _tlog("_run_normal_mode: refining")
         self._notify("Voice Refiner", "Refining text with AI...")
         final_text = self.engine.refine(raw_text)
@@ -319,79 +287,148 @@ class VoiceAssistantTray:
         if self.engine.config.get("DIRECT_TYPING"):
             self.engine.type_text(final_text)
 
+    # ── Review controls ───────────────────────────────────────────────────────
+
     def start_review(self, icon=None, item=None):
         import review_engine
         _tlog("start_review called")
         self.review_config = review_engine.load_review_config(self.script_dir)
         review_engine.initialize_review(self.script_dir)
         active, state = review_engine.is_review_active(self.script_dir)
-        _tlog(f"start_review: is_review_active={active}, state={state}")
-        # Always load state from disk directly as fallback (is_review_active may be strict)
         if state is None:
             state = review_engine._load_state()
             _tlog(f"start_review: fallback state load = {state}")
         self.review_state = state
         self.is_in_review = True
         self.update_icon("review")
-        try:
-            self.icon.update_menu()
-        except Exception as e:
-            _tlog(f"start_review: menu update warning (non-fatal): {e}")
-
-    def skip_review_step(self, icon=None, item=None):
-        import review_engine
-        _tlog("skip_review_step called")
-        if not self.review_config:
-            _tlog("skip_review_step: no review_config, ignoring")
-            return
-        # Always reload state from disk for freshness
-        _, state = review_engine.is_review_active(self.script_dir)
-        if state is None:
-            state = review_engine._load_state()
-        if state is None:
-            _tlog("skip_review_step: no state found, cancelling review")
-            self._review_finished()
-            return
-        self.review_state = state
-        review_engine.skip_step(self.script_dir, self.review_state, self.review_config)
-        still_active, new_state = review_engine.is_review_active(self.script_dir)
-        _tlog(f"skip_review_step: still_active={still_active}")
-        if still_active:
-            self.review_state = new_state
-            try:
-                self.icon.update_menu()
-            except Exception as e:
-                _tlog(f"skip_review_step: menu update warning (non-fatal): {e}")
-        else:
-            self._review_finished()
+        self._refresh_menu()
+        # Open the review dashboard window
+        subprocess.Popen(
+            [sys.executable, os.path.join(self.script_dir, "review_dashboard.py")],
+            close_fds=True
+        )
 
     def next_step_review(self, icon=None, item=None):
+        """Trigger structuring + advance in a background thread so the menu stays responsive."""
         import review_engine
         _tlog("next_step_review called")
         if not self.review_config:
             _tlog("next_step_review: no review_config, ignoring")
             return
-        # Reload fresh state from disk
+        if self.is_processing:
+            _tlog("next_step_review: already processing, ignoring")
+            return
+
         _, state = review_engine.is_review_active(self.script_dir)
         if state is None:
             state = review_engine._load_state()
         if state is None:
-            _tlog("next_step_review: no state found, finishing review")
+            _tlog("next_step_review: no state, finishing review")
             self._review_finished()
             return
-        # Reset awaiting_more then advance
-        state["awaiting_more"] = False
-        review_engine._save_state(state)
+
         self.review_state = state
-        review_engine.advance_step(self.script_dir, self.review_state, self.review_config)
+        self.is_processing = True
+        self.update_icon("processing")
+        threading.Thread(target=self._structure_and_advance, args=(state,), daemon=True).start()
+
+    def _structure_and_advance(self, state):
+        """Background: run LLM structuring prompt, write to note, then advance step."""
+        import review_engine
+        _tlog("_structure_and_advance: started")
+        acquired_lock = False
+        try:
+            # Re-read freshest state from disk so we capture any clips accumulated
+            # between the "Next Step" click and this thread actually starting.
+            fresh_state = review_engine._load_state()
+            if fresh_state is None:
+                _tlog("_structure_and_advance: state file gone before processing started")
+                self._review_finished()
+                return
+
+            # Guard against concurrent structuring (e.g. dashboard also triggers Next Step)
+            if fresh_state.get("processing"):
+                _tlog("_structure_and_advance: concurrent processing detected, bailing")
+                return
+
+            fresh_state["processing"] = True
+            review_engine._save_state(fresh_state)
+            acquired_lock = True  # We own the lock — finally must clean it up
+            state = fresh_state
+
+            step = review_engine.get_current_step(state, self.review_config)
+            if step is None:
+                _tlog("_structure_and_advance: no step found")
+                self.update_icon("review")
+                return
+
+            step_name = step.get("section_name", "this step")
+            raw_list = state.get("accumulated_raw", [])
+            raw_combined = "\n".join(raw_list).strip()
+
+            if not raw_combined:
+                _tlog("_structure_and_advance: no accumulated raw, treating as skip")
+                review_engine.skip_step(self.script_dir, state, self.review_config)
+            else:
+                self._notify("Voice Refiner", f"Structuring '{step_name}'...")
+                _tlog(f"_structure_and_advance: structuring '{step_name}' ({len(raw_list)} clips)")
+
+                if step.get("refine", True):
+                    structure_prompt = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
+                    full_prompt = structure_prompt.replace("{raw_text}", raw_combined)
+                    struct_model = self.review_config.get("structure_model") or None
+                    structured_text = self.engine.refine_with_prompt(full_prompt, structure_model=struct_model)
+                else:
+                    structured_text = raw_combined
+
+                _tlog(f"_structure_and_advance: structured preview='{structured_text[:80]}'")
+
+                state["accumulated_raw"] = []
+                state["awaiting_more"] = False
+                review_engine.write_step_to_note(self.script_dir, self.review_config, step, structured_text, state)
+                review_engine.advance_step(self.script_dir, state, self.review_config)
+
+            still_active, new_state = review_engine.is_review_active(self.script_dir)
+            _tlog(f"_structure_and_advance: still_active={still_active}")
+            if still_active:
+                self.review_state = new_state
+                self.update_icon("review")
+            else:
+                self._review_finished()
+
+        except Exception as e:
+            import traceback
+            _tlog(f"EXCEPTION in _structure_and_advance:\n{traceback.format_exc()}")
+            self._notify("Voice Refiner — Error", str(e)[:120])
+            self.update_icon("review" if self.is_in_review else "idle")
+        finally:
+            # Only clear the processing lock if WE set it.
+            # If we bailed because someone else held the lock, don't touch it.
+            if acquired_lock:
+                final_state = review_engine._load_state()
+                if final_state is not None:
+                    final_state.pop("processing", None)
+                    review_engine._save_state(final_state)
+            self.is_processing = False
+            self._refresh_menu()
+
+    def skip_review_step(self, icon=None, item=None):
+        import review_engine
+        _tlog("skip_review_step called")
+        if not self.review_config:
+            return
+        _, state = review_engine.is_review_active(self.script_dir)
+        if state is None:
+            state = review_engine._load_state()
+        if state is None:
+            self._review_finished()
+            return
+        self.review_state = state
+        review_engine.skip_step(self.script_dir, self.review_state, self.review_config)
         still_active, new_state = review_engine.is_review_active(self.script_dir)
-        _tlog(f"next_step_review: still_active={still_active}")
         if still_active:
             self.review_state = new_state
-            try:
-                self.icon.update_menu()
-            except Exception as e:
-                _tlog(f"next_step_review: menu update warning (non-fatal): {e}")
+            self._refresh_menu()
         else:
             self._review_finished()
 
@@ -399,27 +436,19 @@ class VoiceAssistantTray:
         import review_engine
         _tlog("redo_review_step called")
         if not self.review_config:
-            _tlog("redo_review_step: no review_config, ignoring")
             return
-        # Always reload state from disk for freshness
         _, state = review_engine.is_review_active(self.script_dir)
         if state is None:
             state = review_engine._load_state()
         if state is None:
-            _tlog("redo_review_step: no state found, cancelling review")
             self._review_finished()
             return
         self.review_state = state
-        if self.review_state and self.review_config:
-            review_engine.redo_step(self.script_dir, self.review_state, self.review_config)
-            active, new_state = review_engine.is_review_active(self.script_dir)
-            _tlog(f"redo_review_step: still_active={active}")
-            if active:
-                self.review_state = new_state
-                try:
-                    self.icon.update_menu()
-                except Exception as e:
-                    _tlog(f"redo_review_step: menu update warning (non-fatal): {e}")
+        review_engine.redo_step(self.script_dir, self.review_state, self.review_config)
+        _, new_state = review_engine.is_review_active(self.script_dir)
+        if new_state:
+            self.review_state = new_state
+        self._refresh_menu()
 
     def cancel_review(self, icon=None, item=None):
         import review_engine
@@ -431,54 +460,62 @@ class VoiceAssistantTray:
         self.is_in_review = False
         self.review_state = None
         self.review_config = None
+        self.is_processing = False
         self.update_icon("idle")
-        try:
-            self.icon.update_menu()
-        except Exception as e:
-            _tlog(f"_review_finished: menu update warning (non-fatal): {e}")
+        self._refresh_menu()
+
+    # ── Normal mode controls ──────────────────────────────────────────────────
 
     def open_gui(self, icon=None, item=None):
-        """Launches the main GUI dashboard."""
         subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
 
     def open_settings(self, icon=None, item=None):
-        """Launches the settings window."""
         subprocess.Popen([sys.executable, os.path.join(self.script_dir, "config_gui.py")])
 
-    def cycle_mode(self, icon, item):
-        """Toggles between Refine and Translate modes."""
+    def cycle_mode(self, icon=None, item=None):
         current = self.engine.config.get("MODE", "refine")
         new_mode = "translate" if current == "refine" else "refine"
-
         self.engine.config["MODE"] = new_mode
-        with open(os.path.join(self.script_dir, "config.json"), "w") as f:
-            json.dump(self.engine.config, f, indent=4)
-
-        self.icon.update_menu()
+        try:
+            # Re-read from disk so we only update MODE without clobbering
+            # any settings saved by config_gui.py since the tray started.
+            config_path = os.path.join(self.script_dir, "config.json")
+            disk_cfg = {}
+            if os.path.exists(config_path):
+                with open(config_path, "r", encoding="utf-8") as f:
+                    disk_cfg = json.load(f)
+            disk_cfg["MODE"] = new_mode
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(disk_cfg, f, indent=4)
+        except Exception as e:
+            _tlog(f"cycle_mode: error saving config: {e}")
+        self._refresh_menu()
 
     def exit_app(self, icon=None, item=None):
-        """Signals the application components to stop."""
-        print("Stopping application...")
+        _tlog("exit_app called")
         self.running = False
         if self.listener:
             self.listener.stop()
         if self.icon:
             self.icon.stop()
 
+    # ── Entry point ───────────────────────────────────────────────────────────
+
     def run(self):
-        """Starts the tray icon and the hotkey listener."""
-        signal.signal(signal.SIGINT, lambda sig, frame: self.exit_app())
+        signal.signal(signal.SIGINT,  lambda sig, frame: self.exit_app())
         signal.signal(signal.SIGTERM, lambda sig, frame: self.exit_app())
         signal.signal(signal.SIGUSR1, lambda sig, frame: self.toggle_recording())
 
         try:
             self.listener.start()
+            _tlog("Tray application running. Ctrl+Alt+V or SIGUSR1 to record.")
             print("Tray application is running. Use the menu or Ctrl+Alt+V.")
             self.icon.run()
         except Exception as e:
             print(f"Error in main loop: {e}")
         finally:
             self.exit_app()
+
 
 if __name__ == "__main__":
     app = VoiceAssistantTray()

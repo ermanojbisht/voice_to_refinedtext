@@ -1,191 +1,462 @@
 #!/usr/bin/env python3
+"""Settings window — two tabs:
+  • Voice Refiner  — existing Whisper / Ollama / audio / storage settings
+  • Evening Review — vault paths, review behaviour, per-step toggles
+"""
+import os
+import json
+import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-import json
-import os
-import subprocess
+
 import requests
 import utils
+import review_engine
 
-# Path to config file
-script_dir = os.path.dirname(os.path.abspath(__file__))
+script_dir  = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(script_dir, "config.json")
+review_config_path = os.path.join(script_dir, "review_config.json")
 
-def load_config():
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def load_main_config():
     return utils.load_config(script_dir)
 
-def save_config(config):
-    with open(config_path, "w") as f:
-        json.dump(config, f, indent=4)
-    messagebox.showinfo("Success", "Configuration saved successfully!")
+
+def load_review_config_raw():
+    """Return the raw review_config.json dict (or {} if missing)."""
+    if os.path.exists(review_config_path):
+        try:
+            with open(review_config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
 
 def get_ollama_models(host="http://localhost:11434"):
     try:
-        response = requests.get(f"{host}/api/tags", timeout=2)
-        if response.status_code == 200:
-            return [m["name"] for m in response.json()["models"]]
-    except:
+        r = requests.get(f"{host}/api/tags", timeout=2)
+        if r.status_code == 200:
+            return [m["name"] for m in r.json()["models"]]
+    except Exception:
         pass
-    
     try:
-        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        lines = result.stdout.strip().split("\n")[1:]
-        return [line.split()[0] for line in lines if line]
-    except:
-        return ["qwen2.5:3b", "qwen3.5:0.8b", "mashriram/sarvam-1:latest"]
+        out = subprocess.run(["ollama", "list"], capture_output=True, text=True)
+        lines = out.stdout.strip().split("\n")[1:]
+        return [l.split()[0] for l in lines if l.strip()]
+    except Exception:
+        return ["qwen2.5:3b", "qwen3:0.6b", "gemma3:1b"]
+
+
+# ── Palette ────────────────────────────────────────────────────────────────────
+BG      = "#1e1e2e"
+SURFACE = "#313244"
+ACCENT  = "#89b4fa"
+TEXT    = "#cdd6f4"
+SUBTLE  = "#6c7086"
+GREEN   = "#a6e3a1"
+
+
+# ── Scrollable frame helper ────────────────────────────────────────────────────
+
+def _make_scrollable(parent):
+    """Return (outer_frame, inner_frame).
+    Pack outer_frame; grid widgets into inner_frame.
+    Mouse-wheel is only active when the pointer is over this canvas,
+    so two scrollable tabs don't fight each other."""
+    outer = tk.Frame(parent, bg=BG)
+    canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+    sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+    inner = tk.Frame(canvas, bg=BG)
+
+    inner.bind("<Configure>",
+               lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    canvas.create_window((0, 0), window=inner, anchor="nw")
+    canvas.configure(yscrollcommand=sb.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    sb.pack(side="right", fill="y")
+
+    # Bind mouse-wheel only while the pointer is inside this canvas
+    def _on_wheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", _on_wheel))
+    canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
+
+    return outer, inner
+
+
+# ── Section header helper ──────────────────────────────────────────────────────
+
+def _section(frame, text, row):
+    lbl = tk.Label(frame, text=text, font=("Inter", 11, "bold"),
+                   fg=ACCENT, bg=BG, anchor="w")
+    lbl.grid(row=row, column=0, columnspan=2, sticky="w",
+             padx=20, pady=(20, 6))
+
+
+def _label(frame, text, row, col=0):
+    tk.Label(frame, text=text, fg=TEXT, bg=BG,
+             font=("Inter", 10), anchor="w").grid(
+        row=row, column=col, sticky="w", padx=20, pady=4)
+
+
+def _note(frame, text, row):
+    tk.Label(frame, text=text, fg=SUBTLE, bg=BG,
+             font=("Inter", 9), anchor="w").grid(
+        row=row, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+
+
+# ── Main application ───────────────────────────────────────────────────────────
 
 class ConfigApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Voice Assistant Settings")
-        self.root.geometry("550x800")
-        
-        self.config = load_config()
-        
-        # UI Elements
-        canvas = tk.Canvas(root, bg="#1e1e2e", highlightthickness=0)
-        scrollbar = ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        self.root.title("Voice Assistant — Settings")
+        self.root.geometry("580x700")
+        self.root.configure(bg=BG)
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        self.main_cfg   = load_main_config()
+        self.review_raw = load_review_config_raw()
 
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self._build_ui()
+        self._load_ollama_models()
 
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+    # ── Tab shell ──────────────────────────────────────────────────────────────
 
-        frame = scrollable_frame
-        
-        # Section: Whisper
-        self.add_section_header(frame, "🎙 Speech-to-Text", 0)
-        
-        ttk.Label(frame, text="Whisper Model:").grid(row=1, column=0, sticky=tk.W, pady=5, padx=20)
-        self.whisper_var = tk.StringVar(value=self.config["WHISPER_MODEL"])
-        whisper_models = ["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"]
-        self.whisper_cb = ttk.Combobox(frame, textvariable=self.whisper_var, values=whisper_models, width=30)
-        self.whisper_cb.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
-        
-        # Section: Refinement Models
-        self.add_section_header(frame, "✨ Refinement Models (Cleanup)", 2)
-        
-        ttk.Label(frame, text="English Refiner:").grid(row=3, column=0, sticky=tk.W, pady=5, padx=20)
-        self.ollama_en_var = tk.StringVar(value=self.config["OLLAMA_MODELS"].get("en", ""))
-        self.ollama_en_cb = ttk.Combobox(frame, textvariable=self.ollama_en_var, width=30)
-        self.ollama_en_cb.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        ttk.Label(frame, text="Hindi Refiner:").grid(row=4, column=0, sticky=tk.W, pady=5, padx=20)
-        self.ollama_hi_var = tk.StringVar(value=self.config["OLLAMA_MODELS"].get("hi", ""))
-        self.ollama_hi_cb = ttk.Combobox(frame, textvariable=self.ollama_hi_var, width=30)
-        self.ollama_hi_cb.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        # Section: Translation Models
-        self.add_section_header(frame, "🌍 Translation Models", 5)
-        
-        ttk.Label(frame, text="To English:").grid(row=6, column=0, sticky=tk.W, pady=5, padx=20)
-        self.trans_en_var = tk.StringVar(value=self.config["OLLAMA_TRANSLATE_MODELS"].get("to_en", ""))
-        self.trans_en_cb = ttk.Combobox(frame, textvariable=self.trans_en_var, width=30)
-        self.trans_en_cb.grid(row=6, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        ttk.Label(frame, text="To Hindi:").grid(row=7, column=0, sticky=tk.W, pady=5, padx=20)
-        self.trans_hi_var = tk.StringVar(value=self.config["OLLAMA_TRANSLATE_MODELS"].get("to_hi", ""))
-        self.trans_hi_cb = ttk.Combobox(frame, textvariable=self.trans_hi_var, width=30)
-        self.trans_hi_cb.grid(row=7, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        # Section: AI Parameters
-        self.add_section_header(frame, "⚙️ AI Parameters", 8)
-
-        ttk.Label(frame, text="Ollama Host:").grid(row=9, column=0, sticky=tk.W, pady=5, padx=20)
-        self.host_var = tk.StringVar(value=self.config["OLLAMA_HOST"])
-        self.host_entry = ttk.Entry(frame, textvariable=self.host_var, width=30)
-        self.host_entry.grid(row=9, column=1, sticky=(tk.W, tk.E), pady=5)
-        self.host_var.trace_add("write", self.update_models)
-
-        ttk.Label(frame, text="AI Temperature:").grid(row=10, column=0, sticky=tk.W, pady=5, padx=20)
-        self.temp_var = tk.DoubleVar(value=self.config["TEMPERATURE"])
-        self.temp_entry = ttk.Entry(frame, textvariable=self.temp_var, width=30)
-        self.temp_entry.grid(row=10, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        ttk.Label(frame, text="Default Mode:").grid(row=11, column=0, sticky=tk.W, pady=5, padx=20)
-        self.mode_var = tk.StringVar(value=self.config.get("MODE", "refine"))
-        self.mode_cb = ttk.Combobox(frame, textvariable=self.mode_var, values=["refine", "translate"], width=30)
-        self.mode_cb.grid(row=11, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        # Section: Audio
-        self.add_section_header(frame, "🔉 Audio Settings", 12)
-
-        ttk.Label(frame, text="Silence Threshold:").grid(row=13, column=0, sticky=tk.W, pady=5, padx=20)
-        self.threshold_var = tk.IntVar(value=self.config["SILENCE_THRESHOLD"])
-        self.threshold_scale = ttk.Scale(frame, from_=50, to=1000, variable=self.threshold_var, orient=tk.HORIZONTAL)
-        self.threshold_scale.grid(row=13, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        # Section: Storage
-        self.add_section_header(frame, "📁 Storage & Backup", 14)
-
-        ttk.Label(frame, text="Save to Markdown:").grid(row=15, column=0, sticky=tk.W, pady=5, padx=20)
-        self.save_md_var = tk.BooleanVar(value=self.config.get("SAVE_TO_MARKDOWN", False))
-        ttk.Checkbutton(frame, variable=self.save_md_var).grid(row=15, column=1, sticky=tk.W, pady=5)
-
-        ttk.Label(frame, text="Markdown Path:").grid(row=16, column=0, sticky=tk.W, pady=5, padx=20)
-        self.md_path_var = tk.StringVar(value=self.config.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
-        ttk.Entry(frame, textvariable=self.md_path_var, width=30).grid(row=16, column=1, sticky=(tk.W, tk.E), pady=5)
-
-        ttk.Label(frame, text="Direct Typing:").grid(row=17, column=0, sticky=tk.W, pady=5, padx=20)
-        self.direct_typing_var = tk.BooleanVar(value=self.config.get("DIRECT_TYPING", False))
-        ttk.Checkbutton(frame, variable=self.direct_typing_var).grid(row=17, column=1, sticky=tk.W, pady=5)
-        
-        # Buttons Frame
-        btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=18, column=0, columnspan=2, pady=40)
-
-        ttk.Button(btn_frame, text="Save Settings", command=self.save_settings).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=self.root.destroy).pack(side=tk.LEFT, padx=10)
-
-        self.update_models()
-
-    def add_section_header(self, frame, text, row):
-        header = ttk.Label(frame, text=text, font=("Inter", 11, "bold"), foreground="#89b4fa")
-        header.grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(20, 10))
-
-    def update_models(self, *args):
-        models = get_ollama_models(self.host_var.get())
-        for cb in [self.ollama_en_cb, self.ollama_hi_cb, self.trans_en_cb, self.trans_hi_cb]:
-            cb["values"] = models
-
-    def save_settings(self):
+    def _build_ui(self):
+        style = ttk.Style()
         try:
-            new_config = {
-                "SAMPLE_RATE": self.config["SAMPLE_RATE"],
-                "WHISPER_MODEL": self.whisper_var.get(),
-                "OLLAMA_MODELS": {
-                    "en": self.ollama_en_var.get(),
-                    "hi": self.ollama_hi_var.get()
-                },
-                "OLLAMA_TRANSLATE_MODELS": {
-                    "to_en": self.trans_en_var.get(),
-                    "to_hi": self.trans_hi_var.get()
-                },
-                "OLLAMA_HOST": self.host_var.get(),
-                "SILENCE_THRESHOLD": self.threshold_var.get(),
-                "SILENCE_DURATION": float(self.config["SILENCE_DURATION"]),
-                "TEMPERATURE": float(self.temp_var.get()),
-                "MODE": self.mode_var.get(),
-                "SAVE_TO_MARKDOWN": self.save_md_var.get(),
-                "MARKDOWN_PATH": self.md_path_var.get(),
-                "DIRECT_TYPING": self.direct_typing_var.get()
+            style.theme_use("clam")
+        except Exception:
+            pass
+        style.configure("TNotebook",        background=BG, borderwidth=0)
+        style.configure("TNotebook.Tab",    background=SURFACE, foreground=TEXT,
+                        padding=[14, 6], font=("Inter", 10))
+        style.map("TNotebook.Tab",
+                  background=[("selected", ACCENT)],
+                  foreground=[("selected", BG)])
+        style.configure("TFrame",           background=BG)
+        style.configure("TLabel",           background=BG, foreground=TEXT)
+        style.configure("TCheckbutton",     background=BG, foreground=TEXT)
+        style.configure("TCombobox",        fieldbackground=SURFACE, foreground=TEXT)
+        style.configure("TEntry",           fieldbackground=SURFACE, foreground=TEXT)
+        style.configure("TScrollbar",       background=SURFACE)
+        style.configure("TSpinbox",         fieldbackground=SURFACE, foreground=TEXT)
+
+        nb = ttk.Notebook(self.root)
+        nb.pack(fill="both", expand=True, padx=0, pady=0)
+
+        # Tab 1 — Voice Refiner
+        tab1_outer, tab1_inner = _make_scrollable(nb)
+        nb.add(tab1_outer, text="🎙  Voice Refiner")
+        self._build_voice_tab(tab1_inner)
+
+        # Tab 2 — Evening Review
+        tab2_outer, tab2_inner = _make_scrollable(nb)
+        nb.add(tab2_outer, text="🌙  Evening Review")
+        self._build_review_tab(tab2_inner)
+
+        # Save / Cancel bar
+        bar = tk.Frame(self.root, bg=SURFACE, pady=10)
+        bar.pack(fill="x", side="bottom")
+        tk.Button(bar, text="Save All Settings", command=self._save_all,
+                  bg=ACCENT, fg=BG, font=("Inter", 11, "bold"),
+                  relief=tk.FLAT, padx=20, pady=6, cursor="hand2").pack(side=tk.LEFT, padx=16)
+        tk.Button(bar, text="Cancel", command=self.root.destroy,
+                  bg=SURFACE, fg=TEXT, font=("Inter", 11),
+                  relief=tk.FLAT, padx=16, pady=6, cursor="hand2").pack(side=tk.LEFT)
+
+    # ── Tab 1: Voice Refiner ───────────────────────────────────────────────────
+
+    def _build_voice_tab(self, f):
+        f.columnconfigure(1, weight=1)
+
+        # ── STT
+        _section(f, "🎙  Speech-to-Text", 0)
+        _label(f, "Whisper Model:", 1)
+        self.whisper_var = tk.StringVar(value=self.main_cfg.get("WHISPER_MODEL", "large-v3-turbo"))
+        ttk.Combobox(f, textvariable=self.whisper_var, width=30,
+                     values=["tiny", "base", "small", "medium",
+                             "large-v2", "large-v3", "large-v3-turbo"]
+                     ).grid(row=1, column=1, sticky="we", padx=20, pady=4)
+
+        # ── Refinement models
+        _section(f, "✨  Refinement Models", 2)
+        _label(f, "English Refiner:", 3)
+        self.en_model_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("en", ""))
+        self.en_cb = ttk.Combobox(f, textvariable=self.en_model_var, width=30)
+        self.en_cb.grid(row=3, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "Hindi Refiner:", 4)
+        self.hi_model_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_MODELS", {}).get("hi", ""))
+        self.hi_cb = ttk.Combobox(f, textvariable=self.hi_model_var, width=30)
+        self.hi_cb.grid(row=4, column=1, sticky="we", padx=20, pady=4)
+
+        # ── Translation models
+        _section(f, "🌍  Translation Models", 5)
+        _label(f, "→ English:", 6)
+        self.to_en_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_en", ""))
+        self.to_en_cb = ttk.Combobox(f, textvariable=self.to_en_var, width=30)
+        self.to_en_cb.grid(row=6, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "→ Hindi:", 7)
+        self.to_hi_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_TRANSLATE_MODELS", {}).get("to_hi", ""))
+        self.to_hi_cb = ttk.Combobox(f, textvariable=self.to_hi_var, width=30)
+        self.to_hi_cb.grid(row=7, column=1, sticky="we", padx=20, pady=4)
+
+        # ── AI Parameters
+        _section(f, "⚙️  AI Parameters", 8)
+        _label(f, "Ollama Host:", 9)
+        self.host_var = tk.StringVar(value=self.main_cfg.get("OLLAMA_HOST", "http://localhost:11434"))
+        host_entry = ttk.Entry(f, textvariable=self.host_var, width=30)
+        host_entry.grid(row=9, column=1, sticky="we", padx=20, pady=4)
+        self.host_var.trace_add("write", lambda *_: self._load_ollama_models())
+
+        _label(f, "Temperature:", 10)
+        self.temp_var = tk.DoubleVar(value=self.main_cfg.get("TEMPERATURE", 0.1))
+        ttk.Entry(f, textvariable=self.temp_var, width=30).grid(row=10, column=1,
+                                                                  sticky="we", padx=20, pady=4)
+
+        _label(f, "Default Mode:", 11)
+        self.mode_var = tk.StringVar(value=self.main_cfg.get("MODE", "refine"))
+        ttk.Combobox(f, textvariable=self.mode_var,
+                     values=["refine", "translate"], width=30
+                     ).grid(row=11, column=1, sticky="we", padx=20, pady=4)
+
+        # ── Audio
+        _section(f, "🔉  Audio Settings", 12)
+        _label(f, "Silence Threshold:", 13)
+        self.threshold_var = tk.IntVar(value=self.main_cfg.get("SILENCE_THRESHOLD", 300))
+        ttk.Scale(f, from_=50, to=1000, variable=self.threshold_var,
+                  orient="horizontal").grid(row=13, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "Silence Duration (s):", 14)
+        self.silence_dur_var = tk.DoubleVar(value=self.main_cfg.get("SILENCE_DURATION", 2.0))
+        ttk.Entry(f, textvariable=self.silence_dur_var, width=30).grid(row=14, column=1,
+                                                                        sticky="we", padx=20, pady=4)
+
+        # ── Storage
+        _section(f, "📁  Storage & Output", 15)
+        _label(f, "Save to Markdown:", 16)
+        self.save_md_var = tk.BooleanVar(value=self.main_cfg.get("SAVE_TO_MARKDOWN", False))
+        ttk.Checkbutton(f, variable=self.save_md_var).grid(row=16, column=1,
+                                                            sticky="w", padx=20, pady=4)
+
+        _label(f, "Markdown Path:", 17)
+        self.md_path_var = tk.StringVar(value=self.main_cfg.get("MARKDOWN_PATH", "~/Documents/VoiceNotes"))
+        ttk.Entry(f, textvariable=self.md_path_var, width=30).grid(row=17, column=1,
+                                                                    sticky="we", padx=20, pady=4)
+
+        _label(f, "Direct Typing:", 18)
+        self.direct_typing_var = tk.BooleanVar(value=self.main_cfg.get("DIRECT_TYPING", False))
+        ttk.Checkbutton(f, variable=self.direct_typing_var).grid(row=18, column=1,
+                                                                  sticky="w", padx=20, pady=4)
+        _note(f, "Types refined text directly at cursor position after processing.", 19)
+
+        # Spacer at bottom for scroll comfort
+        tk.Frame(f, bg=BG, height=30).grid(row=20, column=0, columnspan=2)
+
+    # ── Tab 2: Evening Review ──────────────────────────────────────────────────
+
+    def _build_review_tab(self, f):
+        f.columnconfigure(1, weight=1)
+
+        vp = self.review_raw.get("vault_paths", {})
+
+        # ── Vault Paths
+        _section(f, "📂  Obsidian Vault Paths", 0)
+        _note(f, "Use ~ for home directory. Folders are created automatically.", 1)
+
+        _label(f, "Base Vault:", 2)
+        self.vault_base_var = tk.StringVar(value=vp.get("base_vault", "~/learning_vault"))
+        ttk.Entry(f, textvariable=self.vault_base_var, width=38).grid(row=2, column=1,
+                                                                       sticky="we", padx=20, pady=4)
+
+        _label(f, "Daily Notes:", 3)
+        self.vault_daily_var = tk.StringVar(
+            value=vp.get("daily_notes", "~/learning_vault/My Daily Notes"))
+        ttk.Entry(f, textvariable=self.vault_daily_var, width=38).grid(row=3, column=1,
+                                                                        sticky="we", padx=20, pady=4)
+
+        _label(f, "Wellness Notes:", 4)
+        self.vault_well_var = tk.StringVar(
+            value=vp.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
+        ttk.Entry(f, textvariable=self.vault_well_var, width=38).grid(row=4, column=1,
+                                                                       sticky="we", padx=20, pady=4)
+
+        # ── Review Behaviour
+        _section(f, "⚙️  Review Behaviour", 5)
+
+        _label(f, "Session Expiry (hours):", 6)
+        self.expiry_var = tk.IntVar(value=self.review_raw.get("review_expiry_hours", 1))
+        ttk.Spinbox(f, from_=1, to=8, textvariable=self.expiry_var, width=8).grid(
+            row=6, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Review state expires after this many hours of inactivity.", 7)
+
+        _label(f, "Voice Narration:", 8)
+        self.narration_var = tk.BooleanVar(value=self.review_raw.get("voice_narration", True))
+        ttk.Checkbutton(f, variable=self.narration_var).grid(row=8, column=1,
+                                                              sticky="w", padx=20, pady=4)
+        _note(f, "Uses espeak-ng to speak step prompts aloud (must be installed).", 9)
+
+        _label(f, "Context Days:", 10)
+        self.context_days_var = tk.IntVar(value=self.review_raw.get("last_n_days_context", 1))
+        ttk.Spinbox(f, from_=1, to=7, textvariable=self.context_days_var, width=8).grid(
+            row=10, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "How many previous days' notes the AI reads for context (Phase 2).", 11)
+
+        # ── Structuring model
+        _section(f, "🤖  Step Structuring Model", 12)
+        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 13)
+        _label(f, "Structuring Model:", 14)
+        self.struct_model_var = tk.StringVar(
+            value=self.review_raw.get("structure_model", ""))
+        self.struct_cb = ttk.Combobox(f, textvariable=self.struct_model_var, width=30)
+        self.struct_cb.grid(row=14, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 15)
+
+        # ── Per-step configuration
+        _section(f, "📋  Step Configuration", 16)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 17)
+
+        # Table header
+        hdr = tk.Frame(f, bg=SURFACE)
+        hdr.grid(row=18, column=0, columnspan=2, sticky="we", padx=20, pady=(4, 0))
+        for col_text, col_w in [("Step", 20), ("Skippable", 10), ("AI Refine", 10)]:
+            tk.Label(hdr, text=col_text, fg=ACCENT, bg=SURFACE,
+                     font=("Inter", 10, "bold"), width=col_w, anchor="w"
+                     ).pack(side=tk.LEFT, padx=4, pady=4)
+
+        # Load steps from review_config defaults merged with user overrides
+        full_cfg = review_engine.load_review_config(script_dir)
+        self.step_skippable_vars = []
+        self.step_refine_vars    = []
+        self._step_ids           = []
+
+        for row_i, step in enumerate(full_cfg.get("review_steps", [])):
+            row_frame = tk.Frame(f, bg=BG if row_i % 2 == 0 else SURFACE)
+            row_frame.grid(row=19 + row_i, column=0, columnspan=2,
+                           sticky="we", padx=20, pady=1)
+
+            tk.Label(row_frame, text=f"{step['step_id']}. {step['section_name']}",
+                     fg=TEXT, bg=row_frame["bg"], font=("Inter", 10),
+                     width=20, anchor="w").pack(side=tk.LEFT, padx=8, pady=5)
+
+            skip_var = tk.BooleanVar(value=step.get("skippable", True))
+            ttk.Checkbutton(row_frame, variable=skip_var).pack(side=tk.LEFT, padx=28)
+
+            refine_var = tk.BooleanVar(value=step.get("refine", True))
+            ttk.Checkbutton(row_frame, variable=refine_var).pack(side=tk.LEFT, padx=14)
+
+            self.step_skippable_vars.append(skip_var)
+            self.step_refine_vars.append(refine_var)
+            self._step_ids.append(step["step_id"])
+
+        # Spacer
+        spacer_row = 19 + len(full_cfg.get("review_steps", []))
+        tk.Frame(f, bg=BG, height=30).grid(row=spacer_row, column=0, columnspan=2)
+
+    # ── Ollama model loader ────────────────────────────────────────────────────
+
+    def _load_ollama_models(self, *_):
+        def _fetch():
+            host   = getattr(self, "host_var", None)
+            models = get_ollama_models(host.get() if host else "http://localhost:11434")
+            self.root.after(0, lambda: self._populate_model_dropdowns(models))
+        import threading
+        threading.Thread(target=_fetch, daemon=True).start()
+
+    def _populate_model_dropdowns(self, models):
+        for cb in (self.en_cb, self.hi_cb, self.to_en_cb, self.to_hi_cb):
+            cb["values"] = models
+        if hasattr(self, "struct_cb"):
+            self.struct_cb["values"] = [""] + models
+
+    # ── Save ───────────────────────────────────────────────────────────────────
+
+    def _save_all(self):
+        errors = []
+
+        # 1. Save config.json
+        try:
+            new_main = {
+                "SAMPLE_RATE":              self.main_cfg.get("SAMPLE_RATE", 16000),
+                "WHISPER_MODEL":            self.whisper_var.get(),
+                "OLLAMA_MODELS":            {"en": self.en_model_var.get(),
+                                             "hi": self.hi_model_var.get()},
+                "OLLAMA_TRANSLATE_MODELS":  {"to_en": self.to_en_var.get(),
+                                             "to_hi": self.to_hi_var.get()},
+                "OLLAMA_HOST":              self.host_var.get(),
+                "SILENCE_THRESHOLD":        int(self.threshold_var.get()),
+                "SILENCE_DURATION":         float(self.silence_dur_var.get()),
+                "TEMPERATURE":              float(self.temp_var.get()),
+                "MODE":                     self.mode_var.get(),
+                "SAVE_TO_MARKDOWN":         self.save_md_var.get(),
+                "MARKDOWN_PATH":            self.md_path_var.get(),
+                "DIRECT_TYPING":            self.direct_typing_var.get(),
             }
-            save_config(new_config)
-            self.root.destroy()
+            with open(config_path, "w", encoding="utf-8") as fh:
+                json.dump(new_main, fh, indent=4)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {e}")
+            errors.append(f"config.json: {e}")
+
+        # 2. Save review_config.json
+        try:
+            step_overrides = []
+            for sid, skip_v, refine_v in zip(
+                self._step_ids, self.step_skippable_vars, self.step_refine_vars
+            ):
+                step_overrides.append({
+                    "step_id":   sid,
+                    "skippable": skip_v.get(),
+                    "refine":    refine_v.get(),
+                })
+
+            struct_model = self.struct_model_var.get().strip()
+
+            new_review = {
+                "vault_paths": {
+                    "base_vault":     self.vault_base_var.get().strip(),
+                    "daily_notes":    self.vault_daily_var.get().strip(),
+                    "wellness_notes": self.vault_well_var.get().strip(),
+                },
+                "review_expiry_hours":  int(self.expiry_var.get()),
+                "voice_narration":      self.narration_var.get(),
+                "last_n_days_context":  int(self.context_days_var.get()),
+                "review_steps":         step_overrides,
+            }
+            if struct_model:
+                new_review["structure_model"] = struct_model
+
+            # Preserve any existing keys we don't manage (e.g. custom prompts)
+            existing = load_review_config_raw()
+            if "review_steps" in existing:
+                # Merge prompts from existing steps into overrides
+                existing_by_id = {s["step_id"]: s for s in existing["review_steps"]
+                                  if "step_id" in s}
+                merged_steps = []
+                for s in new_review["review_steps"]:
+                    merged = dict(existing_by_id.get(s["step_id"], {}))
+                    merged.update(s)
+                    merged_steps.append(merged)
+                new_review["review_steps"] = merged_steps
+
+            with open(review_config_path, "w", encoding="utf-8") as fh:
+                json.dump(new_review, fh, indent=2, ensure_ascii=False)
+        except Exception as e:
+            errors.append(f"review_config.json: {e}")
+
+        if errors:
+            messagebox.showerror("Save failed", "\n".join(errors))
+        else:
+            messagebox.showinfo("Saved", "Settings saved successfully.")
+            self.root.destroy()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
-    style = ttk.Style()
-    # Basic dark theme for the settings
-    root.configure(bg="#1e1e2e")
-    app = ConfigApp(root)
+    app  = ConfigApp(root)
     root.mainloop()

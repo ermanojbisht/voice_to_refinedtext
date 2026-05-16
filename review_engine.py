@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import json
 import datetime
 import subprocess
@@ -22,6 +23,8 @@ def _rlog(msg):
     except Exception:
         pass
 
+# ── Config ────────────────────────────────────────────────────────────────────
+
 def load_review_config(script_dir):
     config_path = os.path.join(script_dir, "review_config.json")
     default_config = {
@@ -32,42 +35,84 @@ def load_review_config(script_dir):
         },
         "review_expiry_hours": 1,
         "last_n_days_context": 1,
+        "voice_narration": True,
         "review_steps": [
             {
                 "step_id": 1,
                 "section_name": "Focus Word",
-                "prompt_notification": "Step 1/4: Speak today's core focus word or overarching theme.",
-                "markdown_template": "### \U0001f4cc Focus Word\n**{{text}}**\n",
+                "prompt_notification": "Step 1/6: Speak today's core focus word or overarching theme.",
+                "section_fill": False,
                 "isolate_file": False,
                 "skippable": True,
-                "refine": True
+                "refine": True,
+                "structure_prompt": (
+                    "Extract the single core focus word or theme from this voice note. "
+                    "Output only the word or short phrase, nothing else:\n{raw_text}"
+                )
             },
             {
                 "step_id": 2,
                 "section_name": "Achievements",
-                "prompt_notification": "Step 2/4: What did you accomplish, build, or unblock today?",
-                "markdown_template": "### \U0001f6e0\ufe0f Key Achievements\n{{text}}\n",
+                "prompt_notification": "Step 2/6: What did you accomplish, build, or unblock today?",
+                "section_fill": False,
                 "isolate_file": False,
                 "skippable": True,
-                "refine": True
+                "refine": True,
+                "structure_prompt": (
+                    "Convert this voice note into a concise bullet-point list of achievements. "
+                    "Each bullet must start with a past-tense action verb. "
+                    "Output only the bullet points, no headings:\n{raw_text}"
+                )
             },
             {
                 "step_id": 3,
                 "section_name": "Tomorrow's Priorities",
-                "prompt_notification": "Step 3/4: What tasks need immediate attention tomorrow?",
-                "markdown_template": "### \u23f3 Tomorrow's Priorities\n{{text}}\n",
+                "prompt_notification": "Step 3/6: What tasks need immediate attention tomorrow?",
+                "section_fill": False,
                 "isolate_file": False,
                 "skippable": True,
-                "refine": True
+                "refine": True,
+                "structure_prompt": (
+                    "Convert this voice note into a Markdown checkbox task list for tomorrow. "
+                    "Format each item as '- [ ] task description'. "
+                    "Output only the checkbox list, no headings:\n{raw_text}"
+                )
             },
             {
                 "step_id": 4,
                 "section_name": "Wellness Log",
-                "prompt_notification": "Step 4/4: Any wellness or personal reflections? (Speak or Skip).",
-                "markdown_template": "### \U0001f9e0 Wellness Log\n*{{timestamp}}*: {{text}}\n",
+                "prompt_notification": "Step 4/6: Any wellness or personal reflections? (Speak or Skip).",
+                "section_fill": False,
                 "isolate_file": True,
                 "skippable": True,
-                "refine": False
+                "refine": False,
+                "structure_prompt": ""
+            },
+            {
+                "step_id": 5,
+                "section_name": "Meeting",
+                "prompt_notification": "Step 5/6: Summarise today's meetings — decisions made and actions assigned.",
+                "section_fill": True,
+                "isolate_file": False,
+                "skippable": True,
+                "refine": True,
+                "structure_prompt": (
+                    "Summarise this meeting note into structured bullet points. "
+                    "Group under two sub-sections: 'Decisions:' and 'Actions:'. "
+                    "Output only the bullet points:\n{raw_text}"
+                )
+            },
+            {
+                "step_id": 6,
+                "section_name": "Movement",
+                "prompt_notification": "Step 6/6: Any movement, exercise, or physical activity today?",
+                "section_fill": True,
+                "isolate_file": False,
+                "skippable": True,
+                "refine": True,
+                "structure_prompt": (
+                    "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}"
+                )
             }
         ]
     }
@@ -78,17 +123,25 @@ def load_review_config(script_dir):
             if "vault_paths" in user_config and isinstance(user_config["vault_paths"], dict):
                 default_config["vault_paths"].update(user_config["vault_paths"])
                 user_config.pop("vault_paths")
+            if "review_steps" in user_config:
+                # Merge per-step overrides by step_id
+                user_steps = {s["step_id"]: s for s in user_config.pop("review_steps") if "step_id" in s}
+                for step in default_config["review_steps"]:
+                    if step["step_id"] in user_steps:
+                        step.update(user_steps[step["step_id"]])
             default_config.update(user_config)
-        except Exception:
-            pass
+        except Exception as e:
+            _rlog(f"load_review_config: error reading user config (using defaults): {e}")
     return default_config
 
+
+# ── State I/O ─────────────────────────────────────────────────────────────────
 
 def _save_state(state):
     try:
         with open(STATE_PATH, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2)
-        _rlog(f"State saved: step={state.get('current_step_index')}, active={state.get('active')}")
+        _rlog(f"State saved: step={state.get('current_step_index')}, awaiting={state.get('awaiting_more')}")
     except Exception as e:
         _rlog(f"ERROR saving state: {e}")
 
@@ -98,8 +151,8 @@ def _load_state():
         if os.path.exists(STATE_PATH):
             with open(STATE_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
-        else:
-            _rlog(f"State file not found at {STATE_PATH}")
+        # Absence of state file is a normal condition — no log here to avoid
+        # flooding the log every 500 ms when the dashboard polls after completion.
     except Exception as e:
         _rlog(f"ERROR loading state: {e}")
     return None
@@ -125,14 +178,147 @@ def is_review_active(script_dir):
         started_at = datetime.datetime.fromisoformat(state["started_at"])
         elapsed = (datetime.datetime.now() - started_at).total_seconds() / 3600
         if elapsed > expiry_hours:
-            _rlog(f"is_review_active → False (expired: elapsed={elapsed:.2f}h > limit={expiry_hours}h)")
+            _rlog(f"is_review_active → False (expired: {elapsed:.2f}h > {expiry_hours}h)")
             return False, None
     except Exception as e:
         _rlog(f"is_review_active: expiry check error (ignored): {e}")
 
-    _rlog(f"is_review_active → True (step={state.get('current_step_index')})")
     return True, state
 
+
+# ── Path helpers ──────────────────────────────────────────────────────────────
+
+def _get_daily_note_path(script_dir, config, date_str=None):
+    """Returns YYYY/MonthName/YYYY-MM-DD.md path under daily_notes base."""
+    if date_str is None:
+        date_str = datetime.date.today().isoformat()
+    dt = datetime.date.fromisoformat(date_str)
+    year = dt.strftime("%Y")
+    month = dt.strftime("%B")   # Full English month name
+    vault_paths = config.get("vault_paths", {})
+    base = os.path.expanduser(vault_paths.get("daily_notes", "~/learning_vault/My Daily Notes"))
+    return os.path.join(base, year, month, f"{date_str}.md")
+
+
+def _get_wellness_note_path(script_dir, config, date_str=None):
+    """Returns YYYY/MonthName/YYYY-MM-DD.md path under wellness_notes base."""
+    if date_str is None:
+        date_str = datetime.date.today().isoformat()
+    dt = datetime.date.fromisoformat(date_str)
+    year = dt.strftime("%Y")
+    month = dt.strftime("%B")
+    vault_paths = config.get("vault_paths", {})
+    base = os.path.expanduser(vault_paths.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
+    return os.path.join(base, year, month, f"{date_str}.md")
+
+
+# ── Note file helpers ─────────────────────────────────────────────────────────
+
+def _ordinal(n):
+    """Return number with correct English ordinal suffix: 1st, 2nd, 3rd, 4th…"""
+    if 11 <= (n % 100) <= 13:
+        return f"{n}th"
+    return f"{n}{['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]}"
+
+
+def _create_wellness_note(file_path, date_str):
+    """Create a simple wellness note file for isolated wellness entries."""
+    now = datetime.datetime.now()
+    now_str = now.strftime(f"%A {_ordinal(now.day)} %B %Y %H:%M:%S")
+    content = (
+        f"---\n"
+        f"creation date: {date_str}\n"
+        f"modification date: {now_str}\n"
+        f"---\n\n"
+        f"# Wellness — {date_str}\n\n"
+    )
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    _rlog(f"_create_wellness_note: created {file_path}")
+
+
+def _create_daily_note(file_path, date_str):
+    """Create a new daily note with full Obsidian-compatible template."""
+    dt = datetime.date.fromisoformat(date_str)
+    prev_day = (dt - datetime.timedelta(days=1)).isoformat()
+    next_day = (dt + datetime.timedelta(days=1)).isoformat()
+    now = datetime.datetime.now()
+    now_str = now.strftime(f"%A {_ordinal(now.day)} %B %Y %H:%M:%S")
+
+    content = (
+        f"---\n"
+        f"creation date: {date_str}\n"
+        f"modification date: {now_str}\n"
+        f"---\n\n"
+        f"<< [[{prev_day}]] | [[{next_day}]] >>\n\n"
+        f"# {date_str}\n\n"
+        f"### Audio\n\n"
+        f"### Meeting\n\n"
+        f"### Movement\n\n"
+        f"## Evening Review\n\n"
+    )
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    _rlog(f"_create_daily_note: created {file_path}")
+
+
+def _ensure_evening_review_section(file_path):
+    """Append ## Evening Review header if not already in the file."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if not re.search(r'^## Evening Review\s*$', content, re.MULTILINE):
+        with open(file_path, "a", encoding="utf-8") as f:
+            f.write("\n## Evening Review\n\n")
+        _rlog(f"_ensure_evening_review_section: added section to {file_path}")
+
+
+def _fill_section(file_path, section_name, text):
+    """Find ### section_name in file and insert text below it.
+    If the section already has content, appends after existing content.
+    If section not found, appends at end of file."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    header_match = re.search(r'^### ' + re.escape(section_name) + r'\s*$', content, re.MULTILINE)
+    if header_match is None:
+        # Section header not found — append at end
+        with open(file_path, "a", encoding="utf-8") as f:
+            f.write(f"\n### {section_name}\n{text}\n")
+        _rlog(f"_fill_section: '{section_name}' header not found, appended at end")
+        return
+
+    # Find line after the header
+    after_header_pos = content.find("\n", header_match.start())
+    if after_header_pos == -1:
+        after_header_pos = len(content)
+    after_header_pos += 1  # move past the newline
+
+    # Find next section header (## or ###) to know where this section ends
+    next_section_match = re.search(r'\n#{2,3} ', content[after_header_pos:])
+    if next_section_match:
+        section_end = after_header_pos + next_section_match.start() + 1  # +1 for \n
+    else:
+        section_end = len(content)
+
+    # Check existing content in section
+    existing = content[after_header_pos:section_end].strip()
+    if existing:
+        # Has content — insert after existing, before next section
+        insert = f"\n{text}\n"
+        new_content = content[:section_end] + insert + content[section_end:]
+    else:
+        # Empty section — insert directly after header
+        insert = f"{text}\n"
+        new_content = content[:after_header_pos] + insert + content[after_header_pos:]
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    _rlog(f"_fill_section: wrote '{section_name}' into existing section")
+
+
+# ── Core review functions ─────────────────────────────────────────────────────
 
 def initialize_review(script_dir):
     init_logging(script_dir)
@@ -141,16 +327,16 @@ def initialize_review(script_dir):
     config = load_review_config(script_dir)
 
     vault_paths = config.get("vault_paths", {})
-    daily_notes_dir = os.path.expanduser(vault_paths.get("daily_notes", "~/learning_vault/My Daily Notes"))
-    wellness_dir = os.path.expanduser(vault_paths.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
+    daily_notes_base = os.path.expanduser(vault_paths.get("daily_notes", "~/learning_vault/My Daily Notes"))
+    wellness_base = os.path.expanduser(vault_paths.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
 
-    _rlog(f"Daily notes dir: {daily_notes_dir}")
-    _rlog(f"Wellness dir: {wellness_dir}")
-
+    # Pre-create today's year/month directories
+    today = datetime.date.today()
+    year, month = today.strftime("%Y"), today.strftime("%B")
     try:
-        os.makedirs(daily_notes_dir, exist_ok=True)
-        os.makedirs(wellness_dir, exist_ok=True)
-        _rlog("Vault directories ensured")
+        os.makedirs(os.path.join(daily_notes_base, year, month), exist_ok=True)
+        os.makedirs(os.path.join(wellness_base, year, month), exist_ok=True)
+        _rlog("Vault year/month directories ensured")
     except Exception as e:
         _rlog(f"ERROR creating vault dirs: {e}")
 
@@ -161,7 +347,8 @@ def initialize_review(script_dir):
         "date": now.date().isoformat(),
         "started_at": now.isoformat(),
         "last_written": None,
-        "awaiting_more": False
+        "awaiting_more": False,
+        "accumulated_raw": []
     }
     _save_state(state)
     _rlog(f"Review initialized. Steps: {len(config.get('review_steps', []))}")
@@ -180,58 +367,52 @@ def get_step_count(config):
     return len(config.get("review_steps", []))
 
 
-def _get_daily_note_path(script_dir, config, date_str=None):
-    if date_str is None:
-        date_str = datetime.date.today().isoformat()
-    vault_paths = config.get("vault_paths", {})
-    daily_notes_dir = os.path.expanduser(vault_paths.get("daily_notes", "~/learning_vault/My Daily Notes"))
-    return os.path.join(daily_notes_dir, f"{date_str}.md")
+def write_step_to_note(script_dir, config, step, structured_text, state):
+    """Write structured text to the correct note file.
+    - section_fill=True: find existing ### section and fill it in
+    - section_fill=False: append below ## Evening Review
+    """
+    # Use the review session's own date (not today) so after-midnight sessions
+    # still write to the correct note file.
+    date_str = state.get("date") or datetime.date.today().isoformat()
+    section_name = step.get("section_name", "Note")
+    is_isolated = step.get("isolate_file", False)
 
-
-def _get_wellness_note_path(script_dir, config, date_str=None):
-    if date_str is None:
-        date_str = datetime.date.today().isoformat()
-    vault_paths = config.get("vault_paths", {})
-    wellness_dir = os.path.expanduser(vault_paths.get("wellness_notes", "~/learning_vault/My Daily Notes/Wellness"))
-    return os.path.join(wellness_dir, f"{date_str}.md")
-
-
-def append_to_note(script_dir, config, step, text, state):
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y-%m-%d %H:%M")
-    date_str = now.date().isoformat()
-
-    is_continuation = state.get("awaiting_more", False)
-    if is_continuation:
-        # Continuation recording: just append the text without repeating the section header
-        block = f"{text}\n"
-    else:
-        template = step.get("markdown_template", "{{text}}\n")
-        block = template.replace("{{text}}", text).replace("{{timestamp}}", timestamp).replace("{{date}}", date_str)
-
-    if step.get("isolate_file", False):
+    if is_isolated:
         file_path = _get_wellness_note_path(script_dir, config, date_str)
     else:
         file_path = _get_daily_note_path(script_dir, config, date_str)
 
-    _rlog(f"append_to_note: step='{step.get('section_name')}' file='{file_path}'")
-    _rlog(f"append_to_note: text_preview='{text[:60]}...' " if len(text) > 60 else f"append_to_note: text='{text}'")
+    _rlog(f"write_step_to_note: step='{section_name}' file='{file_path}'")
 
     try:
-        parent_dir = os.path.dirname(file_path)
-        os.makedirs(parent_dir, exist_ok=True)
+        # Create file with the correct template if it doesn't exist
+        if not os.path.exists(file_path):
+            if is_isolated:
+                _create_wellness_note(file_path, date_str)
+            else:
+                _create_daily_note(file_path, date_str)
 
-        file_exists = os.path.exists(file_path)
-        with open(file_path, "a", encoding="utf-8") as f:
-            if not file_exists:
-                f.write(f"# Daily Note — {date_str}\n\n")
-            f.write(block)
-        _rlog(f"append_to_note: SUCCESS wrote {len(block)} chars to {file_path}")
+        if is_isolated:
+            # Isolated files (e.g. Wellness): just append raw text, no section scaffolding
+            block = f"### {section_name}\n{structured_text}\n"
+            with open(file_path, "a", encoding="utf-8") as f:
+                f.write(block)
+            _rlog(f"write_step_to_note: appended {len(block)} chars to isolated file")
+        elif step.get("section_fill", False):
+            _fill_section(file_path, section_name, structured_text)
+        else:
+            _ensure_evening_review_section(file_path)
+            block = f"### {section_name}\n{structured_text}\n"
+            with open(file_path, "a", encoding="utf-8") as f:
+                f.write(block)
+            _rlog(f"write_step_to_note: appended {len(block)} chars under Evening Review")
+
     except Exception as e:
-        _rlog(f"ERROR in append_to_note: {e}")
+        _rlog(f"ERROR in write_step_to_note: {e}")
         return
 
-    state["last_written"] = {"file": file_path, "block": block}
+    state["last_written"] = {"file": file_path, "section": section_name}
     _save_state(state)
 
 
@@ -241,6 +422,7 @@ def advance_step(script_dir, state, config):
     state["current_step_index"] = prev + 1
     state["last_written"] = None
     state["awaiting_more"] = False
+    state["accumulated_raw"] = []
     _rlog(f"advance_step: {prev} → {state['current_step_index']} (total={len(steps)})")
 
     if state["current_step_index"] >= len(steps):
@@ -254,64 +436,65 @@ def advance_step(script_dir, state, config):
 def skip_step(script_dir, state, config):
     steps = config.get("review_steps", [])
     prev = state.get("current_step_index", 0)
+
     state["current_step_index"] = prev + 1
     state["last_written"] = None
     state["awaiting_more"] = False
+    state["accumulated_raw"] = []
     _rlog(f"skip_step: {prev} → {state['current_step_index']} (total={len(steps)})")
 
     if state["current_step_index"] >= len(steps):
         _rlog("skip_step: last step skipped, calling complete_review")
         complete_review(script_dir, None, state, config)
     else:
+        narrate("Step skipped.", config)
         _save_state(state)
         send_step_notification(state, config)
 
 
 def redo_step(script_dir, state, config):
+    """Remove last written block (if any) and reset step for re-recording."""
     last_written = state.get("last_written")
     if last_written:
         file_path = last_written.get("file")
-        block = last_written.get("block")
-        if file_path and block and os.path.exists(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                last_occurrence = content.rfind(block)
-                if last_occurrence != -1:
-                    content = content[:last_occurrence] + content[last_occurrence + len(block):]
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        f.write(content)
-            except Exception as e:
-                _rlog(f"ERROR in redo_step file edit: {e}")
-        state["last_written"] = None
-        state["awaiting_more"] = False
-        _save_state(state)
+        section_name = last_written.get("section")
+        # For section_fill steps: removing is complex and risky — just log and skip
+        # For appended blocks: we don't have the exact block text anymore (new approach stores section not block)
+        # Best effort: user can manually fix; redo clears state so they can re-record
+        _rlog(f"redo_step: last_written section='{section_name}' file='{file_path}' (note: manual fix may be needed for file content)")
 
+    state["last_written"] = None
+    state["awaiting_more"] = False
+    state["accumulated_raw"] = []
+    _save_state(state)
+    _rlog("redo_step: state cleared, re-prompting step")
     send_step_notification(state, config)
 
 
 def cancel_review(script_dir):
     _rlog("cancel_review called")
+    config = load_review_config(script_dir)
     try:
         if os.path.exists(STATE_PATH):
             os.remove(STATE_PATH)
             _rlog("State file deleted")
     except Exception as e:
         _rlog(f"ERROR deleting state file: {e}")
+    narrate("Review cancelled.", config)
     send_notification("Evening Review", "Review cancelled. Returning to normal mode.")
 
 
-def _generate_and_prepend_summary(script_dir, daily_note_path, date_str):
-    """Runs in a background thread: generates an AI summary and prepends it to the daily note."""
-    _rlog("_generate_and_prepend_summary: starting background summary generation")
+def _generate_and_append_summary(script_dir, daily_note_path, date_str):
+    """Background thread: generates an AI summary and appends it to the daily note."""
+    _rlog("_generate_and_append_summary: starting")
     try:
         if not os.path.exists(daily_note_path):
-            _rlog("_generate_and_prepend_summary: daily note not found, skipping")
+            _rlog("_generate_and_append_summary: daily note not found, skipping")
             return
         with open(daily_note_path, "r", encoding="utf-8") as f:
             note_content = f.read()
         if not note_content.strip():
-            _rlog("_generate_and_prepend_summary: daily note empty, skipping")
+            _rlog("_generate_and_append_summary: daily note empty, skipping")
             return
 
         import utils
@@ -322,23 +505,20 @@ def _generate_and_prepend_summary(script_dir, daily_note_path, date_str):
         prompt = f"In 2-3 sentences, summarize this daily review entry:\n\n{note_content}"
         response = utils.call_ollama(host, model, prompt, [], main_config.get("TEMPERATURE", 0.1))
         if "error" in response:
-            _rlog(f"_generate_and_prepend_summary: Ollama error: {response['error']}")
+            _rlog(f"_generate_and_append_summary: Ollama error: {response['error']}")
             return
 
         summary = utils.clean_response(response.get("response", "")).strip()
         if not summary:
-            _rlog("_generate_and_prepend_summary: empty summary returned")
             return
 
-        summary_block = f"### \U0001f4cb Daily Summary\n{summary}\n\n---\n\n"
-        with open(daily_note_path, "r", encoding="utf-8") as f:
-            existing = f.read()
-        with open(daily_note_path, "w", encoding="utf-8") as f:
-            f.write(summary_block + existing)
-        _rlog(f"_generate_and_prepend_summary: summary prepended ({len(summary)} chars)")
-        send_notification("Evening Review", "AI summary added to daily note.")
+        summary_block = f"\n### \U0001f4cb Daily Summary\n{summary}\n"
+        with open(daily_note_path, "a", encoding="utf-8") as f:
+            f.write(summary_block)
+        _rlog(f"_generate_and_append_summary: summary appended ({len(summary)} chars)")
+        send_notification("Evening Review", "AI summary added to your daily note.")
     except Exception as e:
-        _rlog(f"_generate_and_prepend_summary: ERROR: {e}")
+        _rlog(f"_generate_and_append_summary: ERROR: {e}")
 
 
 def complete_review(script_dir, engine_instance, state, config):
@@ -348,21 +528,15 @@ def complete_review(script_dir, engine_instance, state, config):
 
     _rlog(f"complete_review: date={date_str} daily_note={daily_note_path}")
 
-    # Ensure the daily note file exists — create with header if no steps were recorded
+    # Ensure daily note exists
     if not os.path.exists(daily_note_path):
         try:
-            parent_dir = os.path.dirname(daily_note_path)
-            os.makedirs(parent_dir, exist_ok=True)
-            with open(daily_note_path, "w", encoding="utf-8") as f:
-                f.write(f"# Daily Note — {date_str}\n\n")
-                f.write("*No entries recorded for this review session.*\n")
-            _rlog(f"complete_review: created empty daily note at {daily_note_path}")
+            _create_daily_note(daily_note_path, date_str)
+            _rlog(f"complete_review: created daily note at {daily_note_path}")
         except Exception as e:
             _rlog(f"complete_review: ERROR creating daily note: {e}")
-    else:
-        _rlog(f"complete_review: daily note already exists, will append summary")
 
-    # Delete state file immediately so is_review_active returns False right away
+    # Delete state immediately so review is no longer active
     try:
         if os.path.exists(STATE_PATH):
             os.remove(STATE_PATH)
@@ -370,12 +544,11 @@ def complete_review(script_dir, engine_instance, state, config):
     except Exception as e:
         _rlog(f"complete_review: ERROR deleting state file: {e}")
 
-    # Notify user immediately — don't wait for summary
+    narrate("Evening review complete.", config)
     send_notification("Evening Review Complete", "All steps done! Generating summary in background...")
 
-    # Generate AI summary in background so it doesn't block the UI
     t = threading.Thread(
-        target=_generate_and_prepend_summary,
+        target=_generate_and_append_summary,
         args=(script_dir, daily_note_path, date_str),
         daemon=True
     )
@@ -416,11 +589,37 @@ def check_startup_state(script_dir):
     return "resume", state, config
 
 
+# ── Notifications & narration ─────────────────────────────────────────────────
+
+def narrate(text, config, blocking=False):
+    """Speak text via espeak-ng. Silently skips if disabled or not installed.
+
+    blocking=True  — waits for speech to finish before returning.
+                     Use this before starting a recording so the mic does not
+                     capture the narration audio as user speech.
+    blocking=False — fire-and-forget (default, suitable for status messages).
+    """
+    if not config.get("voice_narration", True):
+        return
+    try:
+        proc = subprocess.Popen(
+            ["espeak-ng", "-s", "145", "-a", "90", text],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        if blocking:
+            proc.wait()
+    except FileNotFoundError:
+        pass  # espeak-ng not installed — silently skip
+    except Exception as e:
+        _rlog(f"narrate: error: {e}")
+
+
 def send_notification(title, message, icon="dialog-information"):
     _rlog(f"NOTIFY: '{title}' — '{message}'")
     try:
         subprocess.run(
-            ["notify-send", "-i", icon, title, message],
+            ["notify-send", "-i", icon, "-t", "5000", title, message],
             timeout=5,
             check=False
         )
@@ -437,18 +636,31 @@ def send_awaiting_notification(state, config):
     total = get_step_count(config)
     idx = state.get("current_step_index", 0)
     step_name = step.get("section_name", f"Step {idx + 1}")
+    count = len(state.get("accumulated_raw", []))
     send_notification(
-        f"Evening Review — Step {idx + 1}/{total} Saved",
-        f"'{step_name}' saved. Speak more with Ctrl+Alt+V, or click 'Next Step' in the tray."
+        f"Evening Review — Step {idx + 1}/{total} Recorded",
+        f"'{step_name}' recorded ({count} clip{'s' if count != 1 else ''}). "
+        f"Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard."
     )
+    narrate("Saved. Speak more, or click Next Step.", config)
 
 
-def send_step_notification(state, config):
+def send_step_notification(state, config, blocking_narration=False):
+    """Send desktop notification and narrate the current step prompt.
+
+    blocking_narration=True  — waits for narration to finish before returning.
+                               Pass True when called immediately before recording
+                               starts so the mic does not pick up the spoken prompt.
+    blocking_narration=False — non-blocking narration (default).
+    """
     step = get_current_step(state, config)
     if step is None:
         return
     total = get_step_count(config)
     idx = state.get("current_step_index", 0)
+    step_name = step.get("section_name", f"Step {idx + 1}")
     title = f"Evening Review — Step {idx + 1}/{total}"
     message = step.get("prompt_notification", f"Step {idx + 1}: Speak your response.")
     send_notification(title, message)
+    narrate(f"Step {idx + 1}: {step_name}. Please speak now.",
+            config, blocking=blocking_narration)

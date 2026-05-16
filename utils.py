@@ -149,28 +149,3 @@ def clean_response(text):
         text = text[1:-1].strip()
 
     return text
-
-
-def load_review_config(script_dir):
-    config_path = os.path.join(script_dir, "review_config.json")
-    default_config = {
-        "vault_paths": {
-            "base_vault": "~/learning_vault",
-            "daily_notes": "~/learning_vault/My Daily Notes",
-            "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
-        },
-        "review_expiry_hours": 1,
-        "last_n_days_context": 1,
-        "review_steps": []
-    }
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                user_config = json.load(f)
-            if "vault_paths" in user_config and isinstance(user_config["vault_paths"], dict):
-                default_config["vault_paths"].update(user_config["vault_paths"])
-                user_config.pop("vault_paths")
-            default_config.update(user_config)
-        except Exception:
-            pass
-    return default_config

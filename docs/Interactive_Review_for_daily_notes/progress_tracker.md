@@ -47,27 +47,28 @@
 | Task | Status | Note |
 | :--- | :--- | :--- |
 | **Step A: Path format** | | |
-| Update `_get_daily_note_path()` to `YYYY/MonthName/YYYY-MM-DD.md` | 📅 | |
-| Update `_get_wellness_note_path()` with same structure | 📅 | |
-| Ensure `initialize_review()` creates year/month dirs | 📅 | |
+| Update `_get_daily_note_path()` to `YYYY/MonthName/YYYY-MM-DD.md` | ✅ | |
+| Update `_get_wellness_note_path()` with same structure | ✅ | |
+| Ensure `initialize_review()` creates year/month dirs | ✅ | |
 | **Step B: Note template** | | |
-| `_create_daily_note()` with full Obsidian-compatible template | 📅 | Frontmatter, nav links, Audio/Meeting/Movement sections |
-| Append `## Evening Review` header if file exists but section missing | 📅 | |
+| `_create_daily_note()` with full Obsidian-compatible template | ✅ | Frontmatter, nav links, Audio/Meeting/Movement/Evening Review |
+| Append `## Evening Review` header if file exists but section missing | ✅ | `_ensure_evening_review_section()` |
+| `_fill_section()` for section_fill steps | ✅ | Finds existing ### header, inserts content below it |
 | **Step C: Deferred LLM structuring** | | |
-| Add `accumulated_raw: []` to state file | 📅 | |
-| Change recording flow: transcribe only → accumulate raw | 📅 | No LLM during recording |
-| `_structure_and_advance()` background thread on Next Step | 📅 | Icon → blue during structuring |
-| `write_step_to_note()` with `section_fill` support | 📅 | Find header, insert below |
-| Add `structure_prompt` defaults to all steps in `review_config.json` | 📅 | |
-| Add `engine.refine_with_prompt()` method | 📅 | Takes a full prompt string directly |
+| Add `accumulated_raw: []` to state file | ✅ | |
+| Change recording flow: transcribe only → accumulate raw | ✅ | No LLM during recording |
+| `_structure_and_advance()` background thread on Next Step | ✅ | Icon → blue during structuring |
+| `write_step_to_note()` with `section_fill` support | ✅ | |
+| Add `structure_prompt` defaults to all steps in `review_config.json` | ✅ | |
+| Add `engine.refine_with_prompt()` method | ✅ | Takes a full prompt string directly |
 | **Step D: Meeting & Movement steps** | | |
-| Add Step 5 (Meeting) to `review_config.json` | 📅 | `section_fill: true` |
-| Add Step 6 (Movement) to `review_config.json` | 📅 | `section_fill: true` |
-| Implement `section_fill` write logic in `write_step_to_note()` | 📅 | |
+| Add Step 5 (Meeting) to `review_config.json` | ✅ | `section_fill: true` |
+| Add Step 6 (Movement) to `review_config.json` | ✅ | `section_fill: true` |
+| Implement `section_fill` write logic in `write_step_to_note()` | ✅ | |
 | **Step E: Voice narration** | | |
-| Add `narrate(text, config)` using `espeak-ng` (non-blocking) | 📅 | |
-| Add `"voice_narration": true` to `review_config.json` | 📅 | Config toggle |
-| Wire narration at: step start, processing, saved, next, skip, complete, cancel | 📅 | |
+| Add `narrate(text, config)` using `espeak-ng` (non-blocking) | ✅ | Silently skips if not installed |
+| Add `"voice_narration": true` to `review_config.json` | ✅ | Config toggle |
+| Wire narration at: step start, processing, saved, next, skip, complete, cancel | ✅ | |
 
 ---
 
