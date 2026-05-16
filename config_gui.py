@@ -211,26 +211,49 @@ class ConfigApp:
         _label(f, "Voice Narration:", 8)
         self.narration_var = tk.BooleanVar(value=self.review_raw.get("voice_narration", True))
         ctk.CTkCheckBox(f, text="", variable=self.narration_var).grid(row=8, column=1, sticky="w", padx=20, pady=4)
-        _note(f, "Uses espeak-ng to speak step prompts aloud (must be installed).", 9)
+        _note(f, "Speak step prompts aloud when each review step begins.", 9)
 
         _label(f, "Context Days:", 10)
         self.context_days_var = ctk.StringVar(value=str(self.review_raw.get("last_n_days_context", 1)))
         ctk.CTkComboBox(f, variable=self.context_days_var, values=["1","2","3","4","5","6","7"], width=100).grid(row=10, column=1, sticky="w", padx=20, pady=4)
         _note(f, "How many previous days' notes the AI reads for context (Phase 2).", 11)
 
-        _section(f, "🤖  Step Structuring Model", 12)
-        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 13)
-        _label(f, "Structuring Model:", 14)
+        _section(f, "🔊  Text-to-Speech (Step Narration)", 12)
+        _note(f, "Engine used to narrate step prompts. Piper sounds natural; espeak is the fallback.", 13)
+
+        _label(f, "TTS Engine:", 14)
+        self.tts_engine_var = ctk.StringVar(value=self.review_raw.get("tts_engine", "espeak"))
+        tts_cb = ctk.CTkComboBox(f, variable=self.tts_engine_var,
+                                  values=["espeak", "piper"], width=150,
+                                  command=self._on_tts_engine_change)
+        tts_cb.grid(row=14, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 15)
+
+        _label(f, "Piper Model Path:", 16)
+        self.piper_model_var = ctk.StringVar(value=self.review_raw.get("piper_model", ""))
+        self.piper_model_entry = ctk.CTkEntry(f, textvariable=self.piper_model_var, width=300,
+                                               placeholder_text="e.g. ~/voice_to_refinedtext/models/en_US-lessac-medium.onnx")
+        self.piper_model_entry.grid(row=16, column=1, sticky="we", padx=20, pady=4)
+        self._piper_note = ctk.CTkLabel(f,
+            text="Full path to the .onnx model file. The matching .onnx.json must be in the same folder.",
+            text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
+        self._piper_note.grid(row=17, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+
+        self._on_tts_engine_change(self.tts_engine_var.get())  # set initial visibility
+
+        _section(f, "🤖  Step Structuring Model", 18)
+        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 19)
+        _label(f, "Structuring Model:", 20)
         self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
         self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
-        self.struct_cb.grid(row=14, column=1, sticky="we", padx=20, pady=4)
-        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 15)
+        self.struct_cb.grid(row=20, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 21)
 
-        _section(f, "📋  Step Configuration", 16)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 17)
+        _section(f, "📋  Step Configuration", 22)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 23)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=18, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=24, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -241,7 +264,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=19 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=25 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -255,6 +278,14 @@ class ConfigApp:
             self.step_skippable_vars.append(skip_var)
             self.step_refine_vars.append(refine_var)
             self._step_ids.append(step["step_id"])
+
+    def _on_tts_engine_change(self, value):
+        """Show/hide piper model path based on selected engine."""
+        is_piper = value == "piper"
+        state = "normal" if is_piper else "disabled"
+        self.piper_model_entry.configure(state=state)
+        color = TEXT if is_piper else SUBTLE
+        self._piper_note.configure(text_color=color)
 
     def _load_ollama_models(self, *_):
         def _fetch():
@@ -293,38 +324,39 @@ class ConfigApp:
             errors.append(f"config.json: {e}")
 
         try:
-            step_overrides = []
-            for sid, skip_v, refine_v in zip(self._step_ids, self.step_skippable_vars, self.step_refine_vars):
-                step_overrides.append({
-                    "step_id":   sid,
-                    "skippable": skip_v.get(),
-                    "refine":    refine_v.get(),
-                })
-            struct_model = self.struct_model_var.get().strip()
-            new_review = {
-                "vault_paths": {
-                    "base_vault":     self.vault_base_var.get().strip(),
-                    "daily_notes":    self.vault_daily_var.get().strip(),
-                    "wellness_notes": self.vault_well_var.get().strip(),
-                },
-                "review_expiry_hours":  int(self.expiry_var.get()),
-                "voice_narration":      self.narration_var.get(),
-                "last_n_days_context":  int(self.context_days_var.get()),
-                "review_steps":         step_overrides,
-            }
-            if struct_model:
-                new_review["structure_model"] = struct_model
+            # Start from the existing file so fields the GUI doesn't manage are preserved
             existing = load_review_config_raw()
-            if "review_steps" in existing:
-                existing_by_id = {s["step_id"]: s for s in existing["review_steps"] if "step_id" in s}
-                merged_steps = []
-                for s in new_review["review_steps"]:
-                    merged = dict(existing_by_id.get(s["step_id"], {}))
-                    merged.update(s)
-                    merged_steps.append(merged)
-                new_review["review_steps"] = merged_steps
+
+            existing["vault_paths"] = {
+                "base_vault":     self.vault_base_var.get().strip(),
+                "daily_notes":    self.vault_daily_var.get().strip(),
+                "wellness_notes": self.vault_well_var.get().strip(),
+            }
+            existing["review_expiry_hours"] = int(self.expiry_var.get())
+            existing["voice_narration"]     = self.narration_var.get()
+            existing["last_n_days_context"] = int(self.context_days_var.get())
+            existing["tts_engine"]          = self.tts_engine_var.get()
+            existing["piper_model"]         = self.piper_model_var.get().strip()
+
+            struct_model = self.struct_model_var.get().strip()
+            if struct_model:
+                existing["structure_model"] = struct_model
+            else:
+                existing.pop("structure_model", None)
+
+            # Merge per-step skippable/refine flags, preserving all other step fields
+            existing_by_id = {s["step_id"]: s for s in existing.get("review_steps", []) if "step_id" in s}
+            merged_steps = []
+            for sid, skip_v, refine_v in zip(self._step_ids, self.step_skippable_vars, self.step_refine_vars):
+                step = dict(existing_by_id.get(sid, {"step_id": sid}))
+                step["skippable"] = skip_v.get()
+                step["refine"]    = refine_v.get()
+                merged_steps.append(step)
+            if merged_steps:
+                existing["review_steps"] = merged_steps
+
             with open(review_config_path, "w", encoding="utf-8") as fh:
-                json.dump(new_review, fh, indent=2, ensure_ascii=False)
+                json.dump(existing, fh, indent=2, ensure_ascii=False)
         except Exception as e:
             errors.append(f"review_config.json: {e}")
 

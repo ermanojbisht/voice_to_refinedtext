@@ -667,7 +667,13 @@ def _narrate_piper(text, config, blocking):
 
     Falls back to espeak if piper is not installed or the model file is missing.
     """
-    import tempfile, threading as _t
+    import shutil, tempfile, threading as _t
+    # Resolve piper executable: check PATH first, then common pip install location
+    piper_exe = shutil.which("piper") or os.path.expanduser("~/.local/bin/piper")
+    if not os.path.isfile(piper_exe):
+        _rlog("narrate/piper: piper executable not found — falling back to espeak")
+        _narrate_espeak(text, blocking)
+        return
     model = os.path.expanduser(config.get("piper_model", ""))
     if not model or not os.path.exists(model):
         _rlog("narrate/piper: model not found — falling back to espeak")
@@ -676,7 +682,7 @@ def _narrate_piper(text, config, blocking):
     try:
         tmp_path = tempfile.mktemp(suffix=".wav")
         result = subprocess.run(
-            ["piper", "--model", model, "--output_file", tmp_path],
+            [piper_exe, "--model", model, "--output_file", tmp_path],
             input=text.encode(),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

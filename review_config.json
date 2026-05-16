@@ -1,72 +1,74 @@
 {
-  "vault_paths": {
-    "base_vault": "~/learning_vault",
-    "daily_notes": "~/learning_vault/My Daily Notes",
-    "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
-  },
-  "review_expiry_hours": 1,
-  "last_n_days_context": 1,
-  "voice_narration": true,
-  "review_steps": [
-    {
-      "step_id": 1,
-      "section_name": "Focus Word",
-      "prompt_notification": "Step 1/6: Speak today's core focus word or overarching theme.",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}"
+    "vault_paths": {
+        "base_vault": "~/learning_vault",
+        "daily_notes": "~/learning_vault/My Daily Notes",
+        "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
     },
-    {
-      "step_id": 2,
-      "section_name": "Achievements",
-      "prompt_notification": "Step 2/6: What did you accomplish, build, or unblock today?",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Convert this voice note into a concise bullet-point list of achievements. Each bullet must start with a past-tense action verb. Output only the bullet points, no headings:\n{raw_text}"
-    },
-    {
-      "step_id": 3,
-      "section_name": "Tomorrow's Priorities",
-      "prompt_notification": "Step 3/6: What tasks need immediate attention tomorrow?",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}"
-    },
-    {
-      "step_id": 4,
-      "section_name": "Wellness Log",
-      "prompt_notification": "Step 4/6: Any wellness or personal reflections? (Speak or Skip).",
-      "section_fill": false,
-      "isolate_file": true,
-      "skippable": true,
-      "refine": false,
-      "structure_prompt": ""
-    },
-    {
-      "step_id": 5,
-      "section_name": "Meeting",
-      "prompt_notification": "Step 5/6: Summarise today's meetings — decisions made and actions assigned.",
-      "section_fill": true,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Summarise this meeting note into structured bullet points. Group under two sub-sections labelled 'Decisions:' and 'Actions:'. Output only the bullet points:\n{raw_text}"
-    },
-    {
-      "step_id": 6,
-      "section_name": "Movement",
-      "prompt_notification": "Step 6/6: Any movement, exercise, or physical activity today?",
-      "section_fill": true,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}"
-    }
-  ]
+    "review_expiry_hours": 1,
+    "last_n_days_context": 1,
+    "voice_narration": true,
+    "review_steps": [
+        {
+            "step_id": 1,
+            "section_name": "Focus Word",
+            "prompt_notification": "Step 1/6: Speak today's core focus word or overarching theme.",
+            "section_fill": false,
+            "isolate_file": false,
+            "skippable": true,
+            "refine": true,
+            "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}"
+        },
+        {
+            "step_id": 2,
+            "section_name": "Achievements",
+            "prompt_notification": "Step 2/6: What did you accomplish, build, or unblock today?",
+            "section_fill": false,
+            "isolate_file": false,
+            "skippable": true,
+            "refine": true,
+            "structure_prompt": "Convert this voice note into a concise bullet-point list of achievements. Each bullet must start with a past-tense action verb. Output only the bullet points, no headings:\n{raw_text}"
+        },
+        {
+            "step_id": 3,
+            "section_name": "Tomorrow's Priorities",
+            "prompt_notification": "Step 3/6: What tasks need immediate attention tomorrow?",
+            "section_fill": false,
+            "isolate_file": false,
+            "skippable": true,
+            "refine": true,
+            "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}"
+        },
+        {
+            "step_id": 4,
+            "section_name": "Wellness Log",
+            "prompt_notification": "Step 4/6: Any wellness or personal reflections? (Speak or Skip).",
+            "section_fill": false,
+            "isolate_file": true,
+            "skippable": true,
+            "refine": false,
+            "structure_prompt": ""
+        },
+        {
+            "step_id": 5,
+            "section_name": "Meeting",
+            "prompt_notification": "Step 5/6: Summarise today's meetings \u2014 decisions made and actions assigned.",
+            "section_fill": true,
+            "isolate_file": false,
+            "skippable": true,
+            "refine": true,
+            "structure_prompt": "Summarise this meeting note into structured bullet points. Group under two sub-sections labelled 'Decisions:' and 'Actions:'. Output only the bullet points:\n{raw_text}"
+        },
+        {
+            "step_id": 6,
+            "section_name": "Movement",
+            "prompt_notification": "Step 6/6: Any movement, exercise, or physical activity today?",
+            "section_fill": true,
+            "isolate_file": false,
+            "skippable": true,
+            "refine": true,
+            "structure_prompt": "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}"
+        }
+    ],
+    "tts_engine": "piper",
+    "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-lessac-medium.onnx"
 }

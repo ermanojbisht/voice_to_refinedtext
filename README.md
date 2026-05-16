@@ -26,7 +26,7 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Obsidian-compatible daily notes** — writes to `YYYY/MonthName/YYYY-MM-DD.md` with full YAML frontmatter and nav links
 - **Section-fill mode** — Meeting and Movement fill existing `### Header` blocks; other steps append under `## Evening Review`
 - **Isolated wellness notes** — Wellness step writes to a separate file
-- **Voice narration** — `espeak-ng` narrates each step prompt so you know what to speak without looking at the screen
+- **Voice narration** — speaks each step prompt aloud; supports **piper** (neural, natural-sounding, offline) or **espeak-ng** (built-in fallback); switchable in Settings
 - **Live dashboard** — tkinter window showing all steps with status icons, progress bar, and control buttons
 - **AI end-of-review summary** — appends a 2-3 sentence AI-generated summary to the daily note on completion
 - **After-midnight safe** — sessions started before midnight write to the correct date
@@ -155,6 +155,8 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
     },
     "review_expiry_hours": 1,
     "voice_narration": true,
+    "tts_engine": "piper",
+    "piper_model": "~/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
     "structure_model": null,
     "review_steps": [ ... ]
 }
@@ -165,7 +167,9 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `vault_paths.daily_notes` | Root folder for daily notes (year/month subfolders created automatically) |
 | `vault_paths.wellness_notes` | Root folder for Wellness step notes |
 | `review_expiry_hours` | Hours before an in-progress session is considered stale |
-| `voice_narration` | Enable/disable `espeak-ng` step narration |
+| `voice_narration` | Enable/disable step narration |
+| `tts_engine` | `"espeak"` (built-in) or `"piper"` (neural, natural; needs model file) |
+| `piper_model` | Full path to the piper `.onnx` model file (used when `tts_engine` is `"piper"`) |
 | `structure_model` | Ollama model for per-step LLM structuring; `null` uses the English model |
 | `review_steps[].structure_prompt` | LLM prompt per step; use `{raw_text}` as the placeholder |
 | `review_steps[].section_fill` | `true` = fill existing `### Header` in the note; `false` = append under `## Evening Review` |
@@ -328,6 +332,13 @@ cat /tmp/review_state.json
 **Test espeak-ng narration:**
 ```bash
 espeak-ng "Step 1: Focus Word. Please speak now."
+```
+
+**Test piper narration:**
+```bash
+echo "Step 1: Focus Word. Please speak now." | \
+    ~/.local/bin/piper --model models/en_US-lessac-medium.onnx --output_file /tmp/test.wav
+paplay /tmp/test.wav
 ```
 
 **List installed Ollama models:**

@@ -95,20 +95,73 @@ Open **Startup Applications** → **Add**:
 
 The Evening Review feature records structured daily reflections and writes them into an Obsidian-compatible Markdown vault.
 
-### 4.1. New System Dependency: `espeak-ng`
+### 4.1. Voice Narration (TTS)
 
-Install separately if not using the installer:
+The system speaks each step prompt aloud when a review step begins. Two engines are supported:
+
+#### Option A — espeak-ng (default, no setup needed)
 
 ```bash
 sudo apt install espeak-ng
+espeak-ng "Hello, Evening Review is ready."   # verify it works
 ```
 
-Test it:
+espeak-ng is the fallback engine. It works immediately after install with no model files required.
+
+#### Option B — Piper (neural voice, much more natural)
+
+Piper is a local neural TTS engine that produces high-quality speech with no cloud dependency.
+
+**1. Install piper:**
+
 ```bash
-espeak-ng "Hello, Evening Review is ready."
+.venv/bin/pip install piper-tts
 ```
 
-If you hear speech, it works. If you prefer silent operation, disable narration in Settings → Evening Review → "Voice Narration".
+Piper installs to `~/.local/bin/piper`. It is found automatically — no PATH changes needed.
+
+**2. Download a voice model:**
+
+Models live in the project `models/` directory. Download both files (the `.onnx` model and its `.onnx.json` config):
+
+```bash
+mkdir -p models
+cd models
+wget "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+wget "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+```
+
+The lessac-medium model is ~61 MB and sounds natural for narration.
+
+**3. Switch to piper in Settings:**
+
+Open **Settings → Evening Review → Text-to-Speech**:
+- Set **TTS Engine** to `piper`
+- Set **Piper Model Path** to the full path of the `.onnx` file, e.g.:
+  `/home/you/voice_to_refinedtext/models/en_US-lessac-medium.onnx`
+
+Or edit `review_config.json` directly:
+
+```json
+{
+    "tts_engine": "piper",
+    "piper_model": "/home/you/voice_to_refinedtext/models/en_US-lessac-medium.onnx"
+}
+```
+
+**Test piper directly:**
+
+```bash
+echo "Step one: speak your focus word." | ~/.local/bin/piper \
+    --model models/en_US-lessac-medium.onnx --output_file /tmp/test.wav
+paplay /tmp/test.wav
+```
+
+> **Fallback**: if piper is not found or the model file is missing, the system automatically falls back to espeak-ng so narration never silently breaks.
+
+**Disabling narration entirely:**
+
+Set `"voice_narration": false` in `review_config.json`, or uncheck **Voice Narration** in Settings.
 
 ### 4.2. Obsidian Vault Structure
 
@@ -143,6 +196,8 @@ This file is created in the project directory after the first run (or you can cr
     },
     "review_expiry_hours": 1,
     "voice_narration": true,
+    "tts_engine": "piper",
+    "piper_model": "~/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
     "last_n_days_context": 1,
     "structure_model": null,
     "review_steps": [
@@ -165,7 +220,9 @@ This file is created in the project directory after the first run (or you can cr
 | `vault_paths.daily_notes` | `~/learning_vault/My Daily Notes` | Root folder for daily notes |
 | `vault_paths.wellness_notes` | `~/learning_vault/My Daily Notes/Wellness` | Root folder for wellness notes |
 | `review_expiry_hours` | `1` | Hours before an unfinished review session is considered stale |
-| `voice_narration` | `true` | Whether `espeak-ng` narrates each step prompt |
+| `voice_narration` | `true` | Whether step prompts are narrated aloud |
+| `tts_engine` | `"espeak"` | TTS engine: `"espeak"` (built-in, no setup) or `"piper"` (neural, natural-sounding) |
+| `piper_model` | `""` | Full path to the piper `.onnx` model file (only used when `tts_engine` is `"piper"`) |
 | `structure_model` | `null` | Ollama model for LLM structuring; `null` uses the English model from `config.json` |
 | `review_steps[].section_fill` | `false` | If `true`, fills an existing `### SectionName` block in the note rather than appending under `## Evening Review` |
 | `review_steps[].isolate_file` | `false` | If `true`, writes to the wellness note instead of the daily note |
