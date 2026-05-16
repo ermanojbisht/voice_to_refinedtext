@@ -12,6 +12,7 @@ echo "🚀 Starting AI Voice Refiner Installation..."
 echo "📦 Installing system packages (sudo required)..."
 sudo apt update
 sudo apt install -y python3-pip python3-venv python3-tk xclip xbindkeys pulseaudio-utils curl \
+    espeak-ng \
     python3-gi gir1.2-ayatanaappindicator3-0.1
 
 # 2. Install Ollama if not present
@@ -78,8 +79,11 @@ echo "===================================================="
 echo "🎉 INSTALLATION COMPLETE!"
 echo "===================================================="
 echo "1. Run the Tray App: .venv/bin/python tray_app.py"
-echo "2. Run the Dashboard: .venv/bin/python main_gui.py"
-echo "3. Use the Hotkey: Press Ctrl+Alt+V from anywhere"
+echo "2. Use the Hotkey: Ctrl+Alt+V (X11) or GNOME Custom Shortcut (Wayland)"
+echo "3. Evening Review: right-click tray → Start Evening Review"
 echo ""
-echo "Note: Ensure Ollama is running in the background."
+echo "Wayland users: add a GNOME Custom Shortcut with command:"
+echo "  pkill -USR1 -f tray_app.py"
+echo ""
+echo "Note: Ensure Ollama is running before starting the tray."
 echo "===================================================="

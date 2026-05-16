@@ -20,6 +20,8 @@ import review_engine
 
 # Route dashboard logs to the project log file (not stdout)
 review_engine.init_logging(script_dir)
+review_engine._rlog("=" * 40)
+review_engine._rlog(f"[dashboard] Starting (pid={os.getpid()})")
 
 # ── Palette (Catppuccin Mocha) ─────────────────────────────────────────────────
 BG      = "#1e1e2e"
@@ -174,11 +176,27 @@ class ReviewDashboard:
             if active and state:
                 self._update_ui(state)
             else:
-                # Only show complete if the state file is truly gone
                 raw_state = review_engine._load_state()
                 if raw_state is None:
+                    # State file gone — review completed normally
                     self._show_complete()
-                    return  # _show_complete sets _review_done; don't reschedule
+                    return
+                # State file exists but review is no longer active (expired or
+                # active=False). Either way the session is over for the dashboard.
+                if not raw_state.get("active", True):
+                    self._show_complete()
+                    return
+                # Check expiry ourselves to avoid the dashboard freezing on "Initialising…"
+                try:
+                    import datetime
+                    started = datetime.datetime.fromisoformat(raw_state["started_at"])
+                    expiry_h = self.config.get("review_expiry_hours", 1)
+                    if (datetime.datetime.now() - started).total_seconds() / 3600 > expiry_h:
+                        self._show_complete()
+                        return
+                except Exception:
+                    pass
+                # Transient false return — keep polling
         except Exception:
             pass
 
@@ -398,6 +416,16 @@ def main():
         style.theme_use("clam")
     except Exception:
         pass
+
+    # Bring window to front so it's not hidden behind other windows
+    root.lift()
+    root.attributes("-topmost", True)
+    root.after(2000, lambda: root.attributes("-topmost", False))
+    try:
+        root.focus_force()
+    except Exception:
+        pass
+
     app = ReviewDashboard(root)
     root.mainloop()
 

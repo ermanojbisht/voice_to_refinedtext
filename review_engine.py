@@ -453,15 +453,20 @@ def skip_step(script_dir, state, config):
 
 
 def redo_step(script_dir, state, config):
-    """Remove last written block (if any) and reset step for re-recording."""
+    """Reset the current step for re-recording.
+
+    NOTE: Previously written content for this step remains in the note file.
+    The user is notified and must remove it manually.
+    """
     last_written = state.get("last_written")
     if last_written:
-        file_path = last_written.get("file")
-        section_name = last_written.get("section")
-        # For section_fill steps: removing is complex and risky — just log and skip
-        # For appended blocks: we don't have the exact block text anymore (new approach stores section not block)
-        # Best effort: user can manually fix; redo clears state so they can re-record
-        _rlog(f"redo_step: last_written section='{section_name}' file='{file_path}' (note: manual fix may be needed for file content)")
+        section_name = last_written.get("section", "this step")
+        file_path = last_written.get("file", "the note file")
+        _rlog(f"redo_step: last_written section='{section_name}' file='{file_path}' — notifying user to clean up manually")
+        send_notification(
+            "Evening Review — Redo",
+            f"'{section_name}' text still exists in the note — remove it manually before saving. Re-recording now."
+        )
 
     state["last_written"] = None
     state["awaiting_more"] = False

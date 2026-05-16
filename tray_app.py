@@ -302,11 +302,25 @@ class VoiceAssistantTray:
         self.is_in_review = True
         self.update_icon("review")
         self._refresh_menu()
-        # Open the review dashboard window
-        subprocess.Popen(
-            [sys.executable, os.path.join(self.script_dir, "review_dashboard.py")],
-            close_fds=True
-        )
+        # Kill any stale dashboard windows before opening a fresh one
+        try:
+            subprocess.run(["pkill", "-f", "review_dashboard.py"], capture_output=True)
+        except Exception:
+            pass
+
+        # Open the review dashboard window; redirect stderr to log so crashes are visible
+        log_path = os.path.join(self.script_dir, "review_debug.log")
+        try:
+            with open(log_path, "a") as log_fh:
+                subprocess.Popen(
+                    [sys.executable, os.path.join(self.script_dir, "review_dashboard.py")],
+                    close_fds=True,
+                    stderr=log_fh,
+                    stdout=log_fh,
+                )
+            _tlog("Dashboard subprocess launched")
+        except Exception as e:
+            _tlog(f"ERROR launching dashboard: {e}")
 
     def next_step_review(self, icon=None, item=None):
         """Trigger structuring + advance in a background thread so the menu stays responsive."""
@@ -336,6 +350,13 @@ class VoiceAssistantTray:
         """Background: run LLM structuring prompt, write to note, then advance step."""
         import review_engine
         _tlog("_structure_and_advance: started")
+        # Capture a local snapshot of review_config so that a concurrent
+        # cancel_review() calling _review_finished() (which sets self.review_config = None)
+        # cannot crash this thread mid-execution.
+        review_config = self.review_config
+        if review_config is None:
+            _tlog("_structure_and_advance: review_config is None at thread start, bailing")
+            return
         acquired_lock = False
         try:
             # Re-read freshest state from disk so we capture any clips accumulated
@@ -356,7 +377,7 @@ class VoiceAssistantTray:
             acquired_lock = True  # We own the lock — finally must clean it up
             state = fresh_state
 
-            step = review_engine.get_current_step(state, self.review_config)
+            step = review_engine.get_current_step(state, review_config)
             if step is None:
                 _tlog("_structure_and_advance: no step found")
                 self.update_icon("review")
@@ -368,7 +389,7 @@ class VoiceAssistantTray:
 
             if not raw_combined:
                 _tlog("_structure_and_advance: no accumulated raw, treating as skip")
-                review_engine.skip_step(self.script_dir, state, self.review_config)
+                review_engine.skip_step(self.script_dir, state, review_config)
             else:
                 self._notify("Voice Refiner", f"Structuring '{step_name}'...")
                 _tlog(f"_structure_and_advance: structuring '{step_name}' ({len(raw_list)} clips)")
@@ -376,7 +397,7 @@ class VoiceAssistantTray:
                 if step.get("refine", True):
                     structure_prompt = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
                     full_prompt = structure_prompt.replace("{raw_text}", raw_combined)
-                    struct_model = self.review_config.get("structure_model") or None
+                    struct_model = review_config.get("structure_model") or None
                     structured_text = self.engine.refine_with_prompt(full_prompt, structure_model=struct_model)
                 else:
                     structured_text = raw_combined
@@ -385,8 +406,8 @@ class VoiceAssistantTray:
 
                 state["accumulated_raw"] = []
                 state["awaiting_more"] = False
-                review_engine.write_step_to_note(self.script_dir, self.review_config, step, structured_text, state)
-                review_engine.advance_step(self.script_dir, state, self.review_config)
+                review_engine.write_step_to_note(self.script_dir, review_config, step, structured_text, state)
+                review_engine.advance_step(self.script_dir, state, review_config)
 
             still_active, new_state = review_engine.is_review_active(self.script_dir)
             _tlog(f"_structure_and_advance: still_active={still_active}")

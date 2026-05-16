@@ -1087,3 +1087,21 @@
 [2026-05-16 09:20:26] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
 [2026-05-16 09:20:31] [tray] exit_app called
 [2026-05-16 09:20:31] [tray] exit_app called
+[2026-05-16 09:23:58] [tray] ==================================================
+[2026-05-16 09:23:58] [tray] VoiceAssistantTray starting
+[2026-05-16 09:23:58] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:23:58] [tray] Resumed review session at step 0
+[2026-05-16 09:23:58] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-16 09:24:03] [review_engine] cancel_review called
+[2026-05-16 09:24:03] [review_engine] State file deleted
+[2026-05-16 09:24:03] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-16 09:24:03] [tray] _review_finished called
+[2026-05-16 09:24:06] [tray] start_review called
+[2026-05-16 09:24:06] [review_engine] ==================================================
+[2026-05-16 09:24:06] [review_engine] initialize_review called
+[2026-05-16 09:24:06] [review_engine] Vault year/month directories ensured
+[2026-05-16 09:24:06] [review_engine] State saved: step=0, awaiting=False
+[2026-05-16 09:24:06] [review_engine] Review initialized. Steps: 6
+[2026-05-16 09:24:06] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Speak today's core focus word or overarching theme.'
+[2026-05-16 09:24:13] [tray] exit_app called
+[2026-05-16 09:24:13] [tray] exit_app called
