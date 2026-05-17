@@ -214,46 +214,51 @@ class ConfigApp:
         _note(f, "Speak step prompts aloud when each review step begins.", 9)
 
         _label(f, "Context Days:", 10)
-        self.context_days_var = ctk.StringVar(value=str(self.review_raw.get("last_n_days_context", 1)))
-        ctk.CTkComboBox(f, variable=self.context_days_var, values=["1","2","3","4","5","6","7"], width=100).grid(row=10, column=1, sticky="w", padx=20, pady=4)
-        _note(f, "How many previous days' notes the AI reads for context (Phase 2).", 11)
+        self.context_days_var = ctk.StringVar(value=str(self.review_raw.get("last_n_days_context", 3)))
+        ctk.CTkComboBox(f, variable=self.context_days_var, values=["0","1","2","3","4","5","6","7"], width=100).grid(row=10, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Days of past notes read at review start. Set 0 to disable.", 11)
 
-        _section(f, "🔊  Text-to-Speech (Step Narration)", 12)
-        _note(f, "Engine used to narrate step prompts. Piper sounds natural; espeak is the fallback.", 13)
+        _label(f, "Per-step Context:", 12)
+        self.per_step_ctx_var = tk.BooleanVar(value=self.review_raw.get("per_step_context", False))
+        ctk.CTkCheckBox(f, text="", variable=self.per_step_ctx_var).grid(row=12, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Show step-relevant history in the context panel as each step starts.", 13)
 
-        _label(f, "TTS Engine:", 14)
+        _section(f, "🔊  Text-to-Speech (Step Narration)", 14)
+        _note(f, "Engine used to narrate step prompts. Piper sounds natural; espeak is the fallback.", 15)
+
+        _label(f, "TTS Engine:", 16)
         self.tts_engine_var = ctk.StringVar(value=self.review_raw.get("tts_engine", "espeak"))
         tts_cb = ctk.CTkComboBox(f, variable=self.tts_engine_var,
                                   values=["espeak", "piper"], width=150,
                                   command=self._on_tts_engine_change)
-        tts_cb.grid(row=14, column=1, sticky="w", padx=20, pady=4)
-        _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 15)
+        tts_cb.grid(row=16, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 17)
 
-        _label(f, "Piper Model Path:", 16)
+        _label(f, "Piper Model Path:", 18)
         self.piper_model_var = ctk.StringVar(value=self.review_raw.get("piper_model", ""))
         self.piper_model_entry = ctk.CTkEntry(f, textvariable=self.piper_model_var, width=300,
                                                placeholder_text="e.g. ~/voice_to_refinedtext/models/en_US-lessac-medium.onnx")
-        self.piper_model_entry.grid(row=16, column=1, sticky="we", padx=20, pady=4)
+        self.piper_model_entry.grid(row=18, column=1, sticky="we", padx=20, pady=4)
         self._piper_note = ctk.CTkLabel(f,
             text="Full path to the .onnx model file. The matching .onnx.json must be in the same folder.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
-        self._piper_note.grid(row=17, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+        self._piper_note.grid(row=19, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
         self._on_tts_engine_change(self.tts_engine_var.get())  # set initial visibility
 
-        _section(f, "🤖  Step Structuring Model", 18)
-        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 19)
-        _label(f, "Structuring Model:", 20)
+        _section(f, "🤖  Step Structuring Model", 20)
+        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 21)
+        _label(f, "Structuring Model:", 22)
         self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
         self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
-        self.struct_cb.grid(row=20, column=1, sticky="we", padx=20, pady=4)
-        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 21)
+        self.struct_cb.grid(row=22, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 23)
 
-        _section(f, "📋  Step Configuration", 22)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 23)
+        _section(f, "📋  Step Configuration", 24)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 25)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=24, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=26, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -264,7 +269,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=25 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=27 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -335,6 +340,7 @@ class ConfigApp:
             existing["review_expiry_hours"] = int(self.expiry_var.get())
             existing["voice_narration"]     = self.narration_var.get()
             existing["last_n_days_context"] = int(self.context_days_var.get())
+            existing["per_step_context"]    = self.per_step_ctx_var.get()
             existing["tts_engine"]          = self.tts_engine_var.get()
             existing["piper_model"]         = self.piper_model_var.get().strip()
 

@@ -513,6 +513,8 @@ class VoiceAssistantTray:
 
     def cancel_review(self, icon=None, item=None):
         import review_engine
+        import traceback
+        _tlog(f"cancel_review called from tray. Stack:\n{''.join(traceback.format_stack())}")
         review_engine.cancel_review(self.script_dir)
         self._review_finished()
 

@@ -5,7 +5,7 @@
     "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
   },
   "review_expiry_hours": 1,
-  "last_n_days_context": 1,
+  "last_n_days_context": 3,
   "voice_narration": true,
   "review_steps": [
     {
@@ -71,5 +71,6 @@
     }
   ],
   "tts_engine": "piper",
-  "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-lessac-medium.onnx"
+  "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
+  "per_step_context": false
 }

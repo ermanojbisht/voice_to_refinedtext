@@ -74,13 +74,26 @@
 
 ---
 
+## Phase 1.6 — Context & Template
+
+| Task | Status | Note |
+| :--- | :--- | :--- |
+| Config-based note template | ✅ | `templates/daily_note.md` + `templates/wellness_note.md`; `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; hardcoded fallback if file missing |
+| `skip_default` field on steps | ✅ | Text written to note when step is skipped (Movement → "only office") |
+| Past-date review support | ✅ | Date prompt on launch; `state["date"]` vs `state["started_at"]` separation |
+| Read last N days of Obsidian notes | ✅ | `_read_last_n_notes()` extracts `## Evening Review` sections from last N daily notes |
+| LLM synthesises context brief | ✅ | `_run_context_brief()` background thread: synthesised insight + nudge, narrated aloud then shown in dashboard |
+| Dashboard context panel | ✅ | `📅 Context` panel shows "Analysing…" then brief text; polls `context_ready` from state |
+| Per-step context (config toggle) | ✅ | `per_step_context: true` → context panel updates per step to show step-relevant history from past notes |
+| Context Days + Per-step toggle in Settings GUI | ✅ | Settings → Evening Review → Review Behaviour |
+
+---
+
 ## Phase 2 — Intelligent Reflection (Future)
 
 | Task | Status | Note |
 | :--- | :--- | :--- |
-| Read last N days of Obsidian notes | 📅 | N configurable, default 1, range 1-7 |
-| LLM generates contextual follow-up questions | 📅 | Prepended to step prompts |
-| Config-based note template | ✅ | `templates/daily_note.md` + `templates/wellness_note.md`; `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; hardcoded fallback if file missing |
+| LLM generates contextual follow-up questions | 📅 | Injected into step prompts based on past-note patterns |
 | Desktop launcher (`EveningReview.desktop`) | 📅 | Single-click from app drawer |
 | Review history & streak tracking | 📅 | |
 | Weekly/monthly summary generation | 📅 | |

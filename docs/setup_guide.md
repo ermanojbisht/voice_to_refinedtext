@@ -198,7 +198,8 @@ This file is created in the project directory after the first run (or you can cr
     "voice_narration": true,
     "tts_engine": "piper",
     "piper_model": "~/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
-    "last_n_days_context": 1,
+    "last_n_days_context": 3,
+    "per_step_context": false,
     "structure_model": null,
     "review_steps": [
         {
@@ -223,27 +224,60 @@ This file is created in the project directory after the first run (or you can cr
 | `voice_narration` | `true` | Whether step prompts are narrated aloud |
 | `tts_engine` | `"espeak"` | TTS engine: `"espeak"` (built-in, no setup) or `"piper"` (neural, natural-sounding) |
 | `piper_model` | `""` | Full path to the piper `.onnx` model file (only used when `tts_engine` is `"piper"`) |
+| `last_n_days_context` | `3` | Days of past notes read at review start for the AI context brief; set `0` to disable |
+| `per_step_context` | `false` | Show step-relevant history from past notes in the context panel as each step starts |
 | `structure_model` | `null` | Ollama model for LLM structuring; `null` uses the English model from `config.json` |
 | `review_steps[].section_fill` | `false` | If `true`, fills an existing `### SectionName` block in the note rather than appending under `## Evening Review` |
 | `review_steps[].isolate_file` | `false` | If `true`, writes to the wellness note instead of the daily note |
 | `review_steps[].refine` | `true` | If `false`, raw transcription is saved without LLM structuring |
 | `review_steps[].structure_prompt` | (varies) | LLM prompt template; use `{raw_text}` as the placeholder for the transcription |
+| `review_steps[].skip_default` | `""` | Text written to the note when this step is skipped (e.g. Movement → `"only office"`) |
 
-### 4.4. Daily Note Template
+### 4.4. Last-N-Days Context Brief
 
-When the system creates a new daily note (because Obsidian hasn't created it yet), it uses this template:
+When a review starts, the system reads the last N daily notes (default: 3), extracts their `## Evening Review` sections, and asks the local LLM to synthesise a brief insight. This brief is:
+
+- **Narrated aloud** (via piper/espeak) before Step 1 begins
+- **Displayed** in the `📅 Context` panel at the top of the dashboard
+
+The dashboard shows "Analysing last N days…" while the LLM runs in the background. Once ready, the brief appears and the Step 1 prompt is narrated.
+
+**If no past notes exist:**
+> "No evening review notes found for the last 3 days."
+
+**Configuring:**
+
+| Setting | Default | Effect |
+|---|---|---|
+| `last_n_days_context` | `3` | Number of past days to read; set `0` to skip context entirely |
+| `per_step_context` | `false` | When `true`, the context panel updates per step to show that step's history from past notes |
+
+Both are available in **Settings → Evening Review → Review Behaviour**.
+
+### 4.5. Daily Note Template
+
+When the system creates a new daily note (because Obsidian hasn't created it yet), it reads from `templates/daily_note.md` in the project directory. You can edit this file freely — no code changes needed.
+
+**Supported tokens:**
+
+| Token | Replaced with |
+|---|---|
+| `{{date}}` | Note date (e.g. `2026-05-16`) |
+| `{{prev_day}}` | Previous day ISO date |
+| `{{next_day}}` | Next day ISO date |
+| `{{mod_date}}` | Current datetime (e.g. `Saturday 16th May 2026 21:30:00`) |
+
+**Default template (`templates/daily_note.md`):**
 
 ```markdown
 ---
-creation date: 2025-05-16
-modification date: Friday 16th May 2025 21:30:00
+creation date: {{date}}
+modification date: {{mod_date}}
 ---
 
-<< [[2025-05-15]] | [[2025-05-17]] >>
+<< [[{{prev_day}}]] | [[{{next_day}}]] >>
 
-# 2025-05-16
-
-### Audio
+# {{date}}
 
 ### Meeting
 
@@ -251,6 +285,8 @@ modification date: Friday 16th May 2025 21:30:00
 
 ## Evening Review
 ```
+
+> If `templates/daily_note.md` is missing, the system falls back to a hardcoded template and logs a warning.
 
 Evening Review sections are appended below `## Evening Review`. Steps configured with `section_fill: true` (Meeting, Movement) fill their matching `### Header` blocks.
 
@@ -270,13 +306,15 @@ Evening Review sections are appended below `## Evening Review`. Steps configured
 ### 5.2. Starting an Evening Review
 
 1. Right-click the tray icon → **Start Evening Review**
-2. The **Evening Review Dashboard** window opens automatically
-3. The first step prompt is narrated: *"Step 1: Focus Word. Please speak now."*
-4. Press the **Record** button in the dashboard (or use `Ctrl+Alt+V` / the GNOME shortcut)
-5. Speak your response; recording stops automatically on silence
-6. Click **▶ Next Step** to run LLM structuring and advance
-7. Repeat for each step; click **⏭ Skip** to skip a step without recording
-8. When all steps complete, the daily note is updated and an AI summary is appended
+2. A date prompt appears — press OK for today, or type a past date (`YYYY-MM-DD`) for a back-fill review
+3. The **Evening Review Dashboard** opens; the `📅 Context` panel shows "Analysing last N days…"
+4. The system reads the last N daily notes, generates an AI brief, and narrates it aloud
+5. Step 1 is then narrated: *"Step 1: Focus Word. Please speak now."*
+6. Press the **Record** button (or use `Ctrl+Alt+V` / the GNOME shortcut) and speak
+7. Recording stops automatically on silence
+8. Click **▶ Next Step** to run LLM structuring and advance
+9. Repeat for each step; click **⏭ Skip** to skip (steps with a `skip_default` write it automatically)
+10. When all steps complete, the daily note is updated and an AI summary is appended
 
 ### 5.3. Wayland Hotkey (GNOME Only)
 

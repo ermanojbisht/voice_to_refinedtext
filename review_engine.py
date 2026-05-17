@@ -35,7 +35,8 @@ def load_review_config(script_dir):
             "wellness_notes": "~/learning_vault/My Daily Notes/Wellness"
         },
         "review_expiry_hours": 1,
-        "last_n_days_context": 1,
+        "last_n_days_context": 3,
+        "per_step_context": False,
         "voice_narration": True,
         "tts_engine": "espeak",   # "espeak" or "piper"
         "piper_model": "",        # path to .onnx model file (only used when tts_engine="piper")
@@ -151,14 +152,25 @@ def _save_state(state):
 
 
 def _load_state():
-    try:
-        if os.path.exists(STATE_PATH):
-            with open(STATE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+    if not os.path.exists(STATE_PATH):
         # Absence of state file is a normal condition — no log here to avoid
         # flooding the log every 500 ms when the dashboard polls after completion.
-    except Exception as e:
-        _rlog(f"ERROR loading state: {e}")
+        return None
+    # Retry up to 3 times to handle transient write-in-progress (race condition
+    # between tray background thread saving state and dashboard polling it).
+    for attempt in range(3):
+        try:
+            with open(STATE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            if attempt < 2:
+                import time as _time
+                _time.sleep(0.05)  # wait 50 ms and retry
+            else:
+                _rlog("ERROR loading state: JSONDecodeError after 3 attempts (file mid-write?)")
+        except Exception as e:
+            _rlog(f"ERROR loading state: {e}")
+            break
     return None
 
 
@@ -321,6 +333,116 @@ def _ensure_evening_review_section(file_path):
         _rlog(f"_ensure_evening_review_section: added section to {file_path}")
 
 
+# ── Last-N-days context ────────────────────────────────────────────────────────
+
+def _extract_evening_review_section(note_path):
+    """Extract text under ## Evening Review from a daily note. Returns '' if not found."""
+    try:
+        with open(note_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        m = re.search(r'^## Evening Review\s*\n(.*?)(?=^## |\Z)',
+                      content, re.MULTILINE | re.DOTALL)
+        if m:
+            return m.group(1).strip()
+    except Exception:
+        pass
+    return ""
+
+
+def _extract_step_section(section_name, evening_review_content):
+    """Extract text under ### SectionName from an evening review content string."""
+    m = re.search(
+        r'^### ' + re.escape(section_name) + r'\s*\n(.*?)(?=^### |\Z)',
+        evening_review_content, re.MULTILINE | re.DOTALL
+    )
+    if m:
+        return m.group(1).strip()
+    return ""
+
+
+def _read_last_n_notes(script_dir, config, n, before_date_str):
+    """Return [{date, content}] for last n days before before_date_str that have ## Evening Review content."""
+    results = []
+    try:
+        base_dt = datetime.date.fromisoformat(before_date_str)
+    except Exception:
+        return results
+    for i in range(1, n + 1):
+        day = base_dt - datetime.timedelta(days=i)
+        day_str = day.isoformat()
+        note_path = _get_daily_note_path(script_dir, config, day_str)
+        if not os.path.exists(note_path):
+            _rlog(f"context: no note for {day_str}")
+            continue
+        section = _extract_evening_review_section(note_path)
+        if section:
+            results.append({"date": day_str, "content": section})
+            _rlog(f"context: loaded {day_str} ({len(section)} chars)")
+        else:
+            _rlog(f"context: note exists for {day_str} but no Evening Review section")
+    return results
+
+
+def _run_context_brief(script_dir, config, state):
+    """Background thread: synthesise last N days, save to state, narrate, then prompt Step 1."""
+    import utils as _utils
+    n = config.get("last_n_days_context", 3)
+    date_str = state.get("date") or datetime.date.today().isoformat()
+    _rlog(f"context_brief: reading last {n} days before {date_str}")
+
+    notes_data = _read_last_n_notes(script_dir, config, n, date_str)
+
+    if not notes_data:
+        brief = f"No evening review notes found for the last {n} day{'s' if n != 1 else ''}."
+        _rlog("context_brief: no notes found")
+    else:
+        notes_block = ""
+        for note in reversed(notes_data):  # oldest first
+            notes_block += f"--- {note['date']} ---\n{note['content']}\n\n"
+        prompt = (
+            f"Here are the last {len(notes_data)} day(s) of evening journal entries:\n\n"
+            f"{notes_block}"
+            "Write a brief 3-4 sentence synthesis: what patterns do you see, "
+            "what was recurring or unfinished, and one forward-looking nudge for today. "
+            "Be specific and concise. No bullet points."
+        )
+        try:
+            main_config = _utils.load_config(script_dir)
+            host  = main_config.get("OLLAMA_HOST", "http://localhost:11434")
+            model = config.get("structure_model") or main_config.get("OLLAMA_MODELS", {}).get("en", "qwen2.5:3b")
+            temp  = main_config.get("TEMPERATURE", 0.3)
+            response = _utils.call_ollama(host, model, prompt, [], temp)
+            if isinstance(response, dict) and response.get("error"):
+                _rlog(f"context_brief: LLM error: {response['error']}")
+                brief = f"Notes loaded for {len(notes_data)} day(s). AI synthesis unavailable."
+            elif isinstance(response, dict):
+                raw = response.get("response", "").strip()
+                brief = _utils.clean_response(raw) if raw else f"Notes loaded for {len(notes_data)} day(s). Empty response."
+                _rlog(f"context_brief: generated ({len(brief)} chars)")
+            else:
+                brief = str(response).strip()
+                _rlog(f"context_brief: unexpected response type {type(response)}, using str()")
+        except Exception as e:
+            _rlog(f"context_brief: exception during LLM call: {e}")
+            brief = f"Notes loaded for {len(notes_data)} day(s). Could not generate synthesis."
+
+    # Write back to live state file
+    live_state = _load_state()
+    if live_state:
+        live_state["context_brief"] = brief
+        live_state["context_ready"] = True
+        live_state["context_notes"] = notes_data
+        _save_state(live_state)
+        _rlog("context_brief: state updated with context_ready=True")
+        # Narrate the brief only when actual past notes were found.
+        # Skip the "no notes found" fallback — it adds no value as audio.
+        if notes_data:
+            narrate(brief, config, blocking=True)
+        send_step_notification(live_state, config)
+    else:
+        _rlog("context_brief: state gone before brief was ready — skipping narration")
+
+
 def _fill_section(file_path, section_name, text):
     """Find ### section_name in file and insert text below it.
     If the section already has content, appends after existing content.
@@ -411,9 +533,25 @@ def initialize_review(script_dir, date_str=None):
         "awaiting_more": False,
         "accumulated_raw": []
     }
+    n = config.get("last_n_days_context", 3)
+    if n and n > 0:
+        # Context brief runs async; it narrates then calls send_step_notification for Step 1
+        state["context_brief"] = None
+        state["context_ready"] = False
+        state["context_notes"] = []
+    else:
+        state["context_brief"] = ""
+        state["context_ready"] = True
+        state["context_notes"] = []
+
     _save_state(state)
-    _rlog(f"Review initialized for {date_str}. Steps: {len(config.get('review_steps', []))}")
-    send_step_notification(state, config)
+    _rlog(f"Review initialized for {date_str}. Steps: {len(config.get('review_steps', []))}. context_n={n}")
+
+    if n and n > 0:
+        import threading as _t
+        _t.Thread(target=_run_context_brief, args=(script_dir, config, dict(state)), daemon=True).start()
+    else:
+        send_step_notification(state, config)
 
 
 def get_current_step(state, config):

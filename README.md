@@ -27,9 +27,14 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Section-fill mode** — Meeting and Movement fill existing `### Header` blocks; other steps append under `## Evening Review`
 - **Isolated wellness notes** — Wellness step writes to a separate file
 - **Voice narration** — speaks each step prompt aloud; supports **piper** (neural, natural-sounding, offline) or **espeak-ng** (built-in fallback); switchable in Settings
-- **Live dashboard** — tkinter window showing all steps with status icons, progress bar, and control buttons
+- **Last-N-days context brief** — at review start, reads the last N daily notes, synthesises them with an AI, narrates the brief aloud, and shows it in the dashboard context panel; helps you see patterns and decide what to focus on today
+- **Per-step context** (optional) — shows step-relevant history from past notes in the context panel as each step becomes active
+- **Customisable daily note template** — edit `templates/daily_note.md` with `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; no code changes needed
+- **Skip defaults** — skipping a step with a configured default (e.g. Movement → `only office`) writes that default to the note automatically
+- **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, and control buttons
 - **AI end-of-review summary** — appends a 2-3 sentence AI-generated summary to the daily note on completion
 - **After-midnight safe** — sessions started before midnight write to the correct date
+- **Past-date reviews** — start a review for any past date via the date prompt on launch
 
 ---
 
@@ -157,24 +162,29 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
     "voice_narration": true,
     "tts_engine": "piper",
     "piper_model": "~/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
+    "last_n_days_context": 3,
+    "per_step_context": false,
     "structure_model": null,
     "review_steps": [ ... ]
 }
 ```
 
-| Key | Description |
-|---|---|
-| `vault_paths.daily_notes` | Root folder for daily notes (year/month subfolders created automatically) |
-| `vault_paths.wellness_notes` | Root folder for Wellness step notes |
-| `review_expiry_hours` | Hours before an in-progress session is considered stale |
-| `voice_narration` | Enable/disable step narration |
-| `tts_engine` | `"espeak"` (built-in) or `"piper"` (neural, natural; needs model file) |
-| `piper_model` | Full path to the piper `.onnx` model file (used when `tts_engine` is `"piper"`) |
-| `structure_model` | Ollama model for per-step LLM structuring; `null` uses the English model |
-| `review_steps[].structure_prompt` | LLM prompt per step; use `{raw_text}` as the placeholder |
-| `review_steps[].section_fill` | `true` = fill existing `### Header` in the note; `false` = append under `## Evening Review` |
-| `review_steps[].isolate_file` | `true` = write to wellness note instead of daily note |
-| `review_steps[].refine` | `false` = save raw transcription without LLM processing |
+| Key | Default | Description |
+|---|---|---|
+| `vault_paths.daily_notes` | `~/learning_vault/My Daily Notes` | Root folder for daily notes (year/month subfolders created automatically) |
+| `vault_paths.wellness_notes` | `~/learning_vault/My Daily Notes/Wellness` | Root folder for Wellness step notes |
+| `review_expiry_hours` | `1` | Hours before an in-progress session is considered stale |
+| `voice_narration` | `true` | Enable/disable step narration |
+| `tts_engine` | `"espeak"` | `"espeak"` (built-in) or `"piper"` (neural, natural; needs model file) |
+| `piper_model` | `""` | Full path to the piper `.onnx` model file (used when `tts_engine` is `"piper"`) |
+| `last_n_days_context` | `3` | Days of past notes read at review start for the context brief; set `0` to disable |
+| `per_step_context` | `false` | Show step-relevant history from past notes in the dashboard panel as each step starts |
+| `structure_model` | `null` | Ollama model for per-step LLM structuring; `null` uses the English model |
+| `review_steps[].structure_prompt` | (varies) | LLM prompt per step; use `{raw_text}` as the placeholder |
+| `review_steps[].section_fill` | `false` | `true` = fill existing `### Header` in the note; `false` = append under `## Evening Review` |
+| `review_steps[].isolate_file` | `false` | `true` = write to wellness note instead of daily note |
+| `review_steps[].refine` | `true` | `false` = save raw transcription without LLM processing |
+| `review_steps[].skip_default` | `""` | Text written to the note when this step is skipped (e.g. Movement → `"only office"`) |
 
 ---
 
@@ -204,13 +214,22 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 ## Evening Review — How It Works
 
 ```
-Start Review (tray menu)
+Start Review (tray menu) ── date prompt (today or past date)
         │
         ▼
 initialize_review() ──── creates /tmp/review_state.json
-        │                narrates Step 1 prompt
+        │                starts context brief background thread
         ▼
 Dashboard opens ──────── polls state every 500 ms
+        │                shows "📅 Analysing last N days…"
+        │
+        ▼  (background thread)
+_run_context_brief() ─── reads last N daily notes
+        │                LLM synthesises insight + nudge
+        │                narrates brief aloud (piper/espeak)
+        │                updates dashboard context panel
+        ▼
+Step 1 prompt narrated ── "Step 1: Focus Word. Please speak now."
         │
 [User records Ctrl+Alt+V]
         │
@@ -227,10 +246,10 @@ LLM structures with step's structure_prompt
         │
         ▼
 write_step_to_note() ──── appends to ~/learning_vault/.../YYYY-MM-DD.md
-        │
+        │                  (section_fill steps replace existing ### block)
         ▼
 advance_step() ──────────── moves to next step, narrates prompt
-        │
+        │                    (per_step_context: context panel updates)
         ▼  (repeat for each step)
         │
 complete_review() ───────── deletes state file
