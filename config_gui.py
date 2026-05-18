@@ -234,31 +234,41 @@ class ConfigApp:
         tts_cb.grid(row=16, column=1, sticky="w", padx=20, pady=4)
         _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 17)
 
-        _label(f, "Piper Model Path:", 18)
+        _label(f, "Piper Model (EN):", 18)
         self.piper_model_var = ctk.StringVar(value=self.review_raw.get("piper_model", ""))
         self.piper_model_entry = ctk.CTkEntry(f, textvariable=self.piper_model_var, width=300,
-                                               placeholder_text="e.g. ~/voice_to_refinedtext/models/en_US-lessac-medium.onnx")
+                                               placeholder_text="e.g. ~/models/en_US-ryan-high.onnx")
         self.piper_model_entry.grid(row=18, column=1, sticky="we", padx=20, pady=4)
         self._piper_note = ctk.CTkLabel(f,
-            text="Full path to the .onnx model file. The matching .onnx.json must be in the same folder.",
+            text="English .onnx model. The matching .onnx.json must be in the same folder.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
         self._piper_note.grid(row=19, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
+        _label(f, "Piper Model (HI):", 20)
+        self.piper_model_hi_var = ctk.StringVar(value=self.review_raw.get("piper_model_hi", ""))
+        self.piper_model_hi_entry = ctk.CTkEntry(f, textvariable=self.piper_model_hi_var, width=300,
+                                                  placeholder_text="e.g. ~/models/hi_IN-dhvani-medium.onnx")
+        self.piper_model_hi_entry.grid(row=20, column=1, sticky="we", padx=20, pady=4)
+        self._piper_hi_note = ctk.CTkLabel(f,
+            text="Hindi .onnx model. Used when narration text contains Devanagari. Falls back to EN model if blank.",
+            text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
+        self._piper_hi_note.grid(row=21, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+
         self._on_tts_engine_change(self.tts_engine_var.get())  # set initial visibility
 
-        _section(f, "🤖  Step Structuring Model", 20)
-        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 21)
-        _label(f, "Structuring Model:", 22)
+        _section(f, "🤖  Step Structuring Model", 22)
+        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 23)
+        _label(f, "Structuring Model:", 24)
         self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
         self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
-        self.struct_cb.grid(row=22, column=1, sticky="we", padx=20, pady=4)
-        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 23)
+        self.struct_cb.grid(row=24, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 25)
 
-        _section(f, "📋  Step Configuration", 24)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 25)
+        _section(f, "📋  Step Configuration", 26)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 27)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=26, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=28, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -269,7 +279,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=27 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=29 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -285,12 +295,14 @@ class ConfigApp:
             self._step_ids.append(step["step_id"])
 
     def _on_tts_engine_change(self, value):
-        """Show/hide piper model path based on selected engine."""
+        """Show/hide piper model paths based on selected engine."""
         is_piper = value == "piper"
         state = "normal" if is_piper else "disabled"
-        self.piper_model_entry.configure(state=state)
         color = TEXT if is_piper else SUBTLE
+        self.piper_model_entry.configure(state=state)
         self._piper_note.configure(text_color=color)
+        self.piper_model_hi_entry.configure(state=state)
+        self._piper_hi_note.configure(text_color=color)
 
     def _load_ollama_models(self, *_):
         def _fetch():
@@ -343,6 +355,7 @@ class ConfigApp:
             existing["per_step_context"]    = self.per_step_ctx_var.get()
             existing["tts_engine"]          = self.tts_engine_var.get()
             existing["piper_model"]         = self.piper_model_var.get().strip()
+            existing["piper_model_hi"]      = self.piper_model_hi_var.get().strip()
 
             struct_model = self.struct_model_var.get().strip()
             if struct_model:

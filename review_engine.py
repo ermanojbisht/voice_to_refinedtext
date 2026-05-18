@@ -39,7 +39,8 @@ def load_review_config(script_dir):
         "per_step_context": False,
         "voice_narration": True,
         "tts_engine": "espeak",   # "espeak" or "piper"
-        "piper_model": "",        # path to .onnx model file (only used when tts_engine="piper")
+        "piper_model": "",        # path to English .onnx model file (only used when tts_engine="piper")
+        "piper_model_hi": "",     # path to Hindi .onnx model file (falls back to piper_model if empty)
         "review_steps": [
             {
                 "step_id": 1,
@@ -653,7 +654,7 @@ def skip_step(script_dir, state, config):
         _rlog("skip_step: last step skipped, calling complete_review")
         complete_review(script_dir, None, state, config)
     else:
-        narrate("Step skipped.", config)
+        narrate(_ui_narration("step_skipped", config), config, blocking=True)
         _save_state(state)
         send_step_notification(state, config)
 
@@ -691,7 +692,7 @@ def cancel_review(script_dir):
             _rlog("State file deleted")
     except Exception as e:
         _rlog(f"ERROR deleting state file: {e}")
-    narrate("Review cancelled.", config)
+    narrate(_ui_narration("review_cancelled", config), config)
     send_notification("Evening Review", "Review cancelled. Returning to normal mode.")
 
 
@@ -755,7 +756,7 @@ def complete_review(script_dir, engine_instance, state, config):
     except Exception as e:
         _rlog(f"complete_review: ERROR deleting state file: {e}")
 
-    narrate("Evening review complete.", config)
+    narrate(_ui_narration("review_complete", config), config)
     send_notification("Evening Review Complete", "All steps done! Generating summary in background...")
 
     t = threading.Thread(
@@ -832,15 +833,19 @@ def _best_espeak_voice():
 
 
 def _narrate_espeak(text, blocking):
-    """Speak via espeak-ng with tuned settings. Mbrola preferred if installed."""
-    voice = _best_espeak_voice()
-    if voice.startswith("mb-"):
-        # mbrola voices: good defaults; speed 145 works well with mbrola
-        cmd = ["espeak-ng", "-v", voice, "-s", "145", "-a", "90", text]
+    """Speak via espeak-ng with tuned settings.
+
+    Uses Hindi voice for Devanagari text, mbrola/en-us otherwise.
+    """
+    is_hindi = any('\u0900' <= ch <= '\u097F' for ch in text)
+    if is_hindi:
+        cmd = ["espeak-ng", "-v", "hi", "-s", "130", "-a", "90", text]
     else:
-        # Plain espeak: lower pitch (-p 38) + small word gap (-g 3) make it
-        # sound noticeably less robotic than the defaults
-        cmd = ["espeak-ng", "-v", voice, "-s", "135", "-p", "38", "-g", "3", "-a", "90", text]
+        voice = _best_espeak_voice()
+        if voice.startswith("mb-"):
+            cmd = ["espeak-ng", "-v", voice, "-s", "145", "-a", "90", text]
+        else:
+            cmd = ["espeak-ng", "-v", voice, "-s", "135", "-p", "38", "-g", "3", "-a", "90", text]
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if blocking:
         proc.wait()
@@ -874,7 +879,12 @@ def _narrate_piper(text, config, blocking):
         _rlog("narrate/piper: piper executable not found — falling back to espeak")
         _narrate_espeak(text, blocking)
         return
-    model = os.path.expanduser(config.get("piper_model", ""))
+    # Pick Hindi model if text contains Devanagari characters, else English model
+    is_hindi = any('\u0900' <= ch <= '\u097F' for ch in text)
+    if is_hindi:
+        model = os.path.expanduser(config.get("piper_model_hi", "") or config.get("piper_model", ""))
+    else:
+        model = os.path.expanduser(config.get("piper_model", ""))
     if not model or not os.path.exists(model):
         _rlog("narrate/piper: model not found — falling back to espeak")
         _narrate_espeak(text, blocking)
@@ -908,6 +918,19 @@ def _narrate_piper(text, config, blocking):
     except Exception as e:
         _rlog(f"narrate/piper: error ({e}) — falling back to espeak")
         _narrate_espeak(text, blocking)
+
+
+_UI_NARRATION_DEFAULTS = {
+    "step_skipped":    "Step skipped.",
+    "review_cancelled": "Review cancelled.",
+    "review_complete":  "Evening review complete.",
+    "saved_speak_more": "Saved. Speak more, or click Next Step.",
+}
+
+
+def _ui_narration(key, config):
+    """Return the configured UI narration string for key, falling back to English default."""
+    return config.get("ui_narrations", {}).get(key, _UI_NARRATION_DEFAULTS[key])
 
 
 def narrate(text, config, blocking=False):
@@ -963,7 +986,7 @@ def send_awaiting_notification(state, config):
         f"'{step_name}' recorded ({count} clip{'s' if count != 1 else ''}). "
         f"Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard."
     )
-    narrate("Saved. Speak more, or click Next Step.", config)
+    narrate(_ui_narration("saved_speak_more", config), config)
 
 
 def send_step_notification(state, config, blocking_narration=False):
@@ -983,5 +1006,9 @@ def send_step_notification(state, config, blocking_narration=False):
     title = f"Evening Review — Step {idx + 1}/{total}"
     message = step.get("prompt_notification", f"Step {idx + 1}: Speak your response.")
     send_notification(title, message)
-    narrate(f"Step {idx + 1}: {step_name}. Please speak now.",
-            config, blocking=blocking_narration)
+    variants = step.get("narration_variants", [])
+    narration_text = (
+        __import__("random").choice(variants) if variants
+        else f"Step {idx + 1}: {step_name}. Please speak now."
+    )
+    narrate(narration_text, config, blocking=blocking_narration)

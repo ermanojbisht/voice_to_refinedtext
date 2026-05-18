@@ -16,7 +16,14 @@
       "isolate_file": false,
       "skippable": true,
       "refine": true,
-      "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}"
+      "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}",
+      "narration_variants": [
+        "दोस्त, आज आपका ध्यान सबसे ज़्यादा किस चीज़ पर रहा?",
+        "यार, आज किस बात ने आपका सबसे ज़्यादा ध्यान खींचा?",
+        "बताइए, आज का आपका मुख्य फोकस क्या था?",
+        "अरे दोस्त, आज दिन भर आप किस चीज़ पर सबसे ज़्यादा ध्यान देते रहे?",
+        "मित्र, आज आपकी सबसे बड़ी प्राथमिकता क्या रही?"
+      ]
     },
     {
       "step_id": 2,
@@ -26,7 +33,15 @@
       "isolate_file": false,
       "skippable": true,
       "refine": true,
-      "structure_prompt": "Convert this voice note into a concise bullet-point list of achievements. Each bullet must start with a past-tense action verb. Output only the bullet points, no headings:\n{raw_text}"
+      "structure_prompt": "Convert this voice note into a concise bullet-point list of achievements. Each bullet must start with a past-tense action verb. Output only the bullet points, no headings:\n{raw_text}",
+      "narration_variants": [
+        "दोस्त, आज आपने क्या-क्या किया? अपनी उपलब्धियाँ बताइए",
+        "यार, आज आपने कौन-कौन से अच्छे काम पूरे किए?",
+        "मित्र, आज कौन से काम पूरे हुए, ज़रा बताइए",
+        "बताइए, आज आपने क्या हासिल किया? कोई रुकावट भी पार की?",
+        "तो बताइए, आज आपने क्या-क्या पूरा किया?",
+        "So what did you get done today? Speak your wins."
+      ]
     },
     {
       "step_id": 3,
@@ -36,7 +51,15 @@
       "isolate_file": false,
       "skippable": true,
       "refine": true,
-      "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}"
+      "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}",
+      "narration_variants": [
+        "अच्छा दोस्त, कल के लिए आपकी क्या योजना है?",
+        "यार, कल सबसे पहले किस काम पर ध्यान देना है?",
+        "बताइए, कल आपकी सबसे ज़रूरी प्राथमिकताएँ क्या हैं?",
+        "कल के लिए कौन से काम सबसे अधिक ज़रूरी हैं, ज़रा बताइए",
+        "तो बताइए, कल सुबह सबसे पहले किस काम पर ध्यान देंगे?",
+        "What needs your attention first thing tomorrow?"
+      ]
     },
     {
       "step_id": 4,
@@ -46,7 +69,15 @@
       "isolate_file": true,
       "skippable": true,
       "refine": false,
-      "structure_prompt": ""
+      "structure_prompt": "",
+      "narration_variants": [
+        "मित्र, आज आपकी तबियत कैसी रही? कुछ निजी बात साझा करना चाहें तो बताइए",
+        "यार, अपना हाल बताइए — सेहत हो या मन की बात",
+        "दोस्त, आज अपनी सेहत या मन के बारे में कुछ कहना है?",
+        "बताइए, आज आपका मूड और तबियत कैसी रही?",
+        "तो बताइए, आज के लिए कोई निजी विचार या सेहत से जुड़ी बात?",
+        "Any wellness notes or personal reflections for today?"
+      ]
     },
     {
       "step_id": 5,
@@ -56,7 +87,15 @@
       "isolate_file": false,
       "skippable": true,
       "refine": true,
-      "structure_prompt": "Summarise this meeting note into structured bullet points. Group under two sub-sections labelled 'Decisions:' and 'Actions:'. Output only the bullet points:\n{raw_text}"
+      "structure_prompt": "Summarise this meeting note into structured bullet points. Group under two sub-sections labelled 'Decisions:' and 'Actions:'. Output only the bullet points:\n{raw_text}",
+      "narration_variants": [
+        "मित्र, आज की बैठकों में क्या हुआ? लिए गए फैसले और तय काम बताइए",
+        "यार, आज कौन-कौन सी बैठकें हुईं और उनसे क्या नतीजा निकला?",
+        "बताइए दोस्त, आज की बैठकों का सार क्या रहा?",
+        "आज की बैठकों में क्या तय हुआ और किसे क्या काम मिला?",
+        "तो बताइए, आज की बैठकों में लिए गए फैसले और सौंपे गए काम क्या हैं?",
+        "Summarise today's meetings — decisions made and actions assigned."
+      ]
     },
     {
       "step_id": 6,
@@ -67,10 +106,26 @@
       "skippable": true,
       "refine": true,
       "structure_prompt": "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}",
+      "narration_variants": [
+        "मित्र, आज आपने कोई व्यायाम या शारीरिक गतिविधि की?",
+        "यार, आज आप शारीरिक रूप से कितने सक्रिय रहे?",
+        "बताइए दोस्त, आज कोई कसरत या चलना-फिरना हुआ?",
+        "आज की शारीरिक गतिविधि के बारे में कुछ बताइए",
+        "तो बताइए, आज आपने कोई व्यायाम या सक्रियता रखी?",
+        "Any movement, exercise, or physical activity today?"
+      ],
       "skip_default": "only office"
     }
   ],
+  "ui_narrations": {
+    "step_skipped": "यह चरण छोड़ दिया गया।",
+    "review_cancelled": "समीक्षा रद्द कर दी गई।",
+    "review_complete": "शाम की समीक्षा पूरी हो गई। बढ़िया काम!",
+    "saved_speak_more": "सेव हो गया। और बताना चाहें तो बोलें, या अगले चरण पर बढ़ें।"
+  },
   "tts_engine": "piper",
-  "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
-  "per_step_context": false
+  "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-ryan-high.onnx",
+  "piper_model_hi": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
+  "per_step_context": true,
+  "structure_model": "qwen2.5:3b"
 }

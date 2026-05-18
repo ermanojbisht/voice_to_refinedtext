@@ -3,3 +3,8 @@
 input.wav
 log.json
 __pycache__
+review_debug.log
+en_US-ryan-high.onnx
+en_US-ryan-high.onnx.json
+hi_IN-priyamvada-medium.onnx
+hi_IN-priyamvada-medium.onnx.json
