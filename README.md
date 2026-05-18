@@ -80,15 +80,24 @@ chmod +x install.sh
 
 The installer handles system packages, Python venv, Ollama, AI models, and the global hotkey automatically.
 
-### 2. Start the tray
+### 2. Install desktop launchers (optional)
 
 ```bash
-.venv/bin/python tray_app.py
+bash install_desktop.sh
+```
+
+Adds **AI Voice Refiner** and **Evening Review** to the GNOME app drawer. Run once after installation.
+
+### 3. Start the tray
+
+```bash
+python3 tray_app.py
+# or from the GNOME app drawer: search "Voice Refiner"
 ```
 
 A dot appears in your system tray. Right-click for the full menu.
 
-### 3. Record
+### 4. Record
 
 - **X11**: Press `Ctrl+Alt+V` anywhere
 - **Wayland**: Configure a GNOME Custom Shortcut (see [Wayland Setup](#wayland-setup))
@@ -96,7 +105,7 @@ A dot appears in your system tray. Right-click for the full menu.
 
 Speak. Pause. The refined text appears in your clipboard.
 
-### 4. Evening Review
+### 5. Evening Review
 
 Right-click tray → **Start Evening Review**. The dashboard opens and guides you through each step with voice narration.
 
@@ -201,13 +210,17 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | Dashboard permanently stuck on "Initialising…" | ✅ Fixed | Expired-session detection added to `_poll_state` |
 | Processing lock left set when another process held it | ✅ Fixed | `acquired_lock` pattern — `finally` only clears lock we actually set |
 | Multiple dashboard windows from repeated cancel+start | ✅ Fixed | `pkill -f review_dashboard.py` before launching new instance |
-| Dashboard hidden behind other windows | ✅ Fixed | `root.lift()` + temporary `topmost` + `focus_force()` on launch |
+| Dashboard hidden behind other windows | ✅ Fixed | `root.lift()` + temporary `topmost` on launch (`focus_force()` removed — caused GNOME focus-steal kill on Wayland) |
 | Crash if cancel fires while LLM structuring thread runs | ✅ Fixed | `review_config` captured as local copy at thread start |
 | `_fill_section` matching `### Meeting Notes` when looking for `### Meeting` | ✅ Fixed | Exact regex match instead of substring `find()` |
 | `cycle_mode` clobbering all config settings | ✅ Fixed | Re-reads config from disk before writing, only updates `MODE` key |
 | Log flooded with "State file not found" every 500 ms | ✅ Fixed | Removed log from `_load_state`; `_review_done` flag stops polling after completion |
 | Redo leaves previous text in note file silently | ✅ Fixed | Desktop notification warns user to remove old text manually |
 | Wellness step got wrong note template | ✅ Fixed | Separate `_create_wellness_note()` function |
+| Dashboard opens then immediately disappears | ✅ Fixed | `_poll_state()` was called synchronously before `mainloop()` — `CTkButton.configure()` crashed Tcl/Tk; fixed by scheduling via `root.after(200, ...)` |
+| Context panel shows raw token numbers (151644, 8948…) | ✅ Fixed | `str(response)` was dumping the full Ollama JSON dict; now uses `response.get("response", "")` |
+| TTS narrating Ollama JSON / long garbage text | ✅ Fixed | Same root cause as above; also removed narration for "no notes found" fallback message |
+| Exit menu item does not close tray app | ✅ Fixed | `faster-whisper` background thread kept process alive; `os._exit(0)` added after `icon.stop()` |
 
 ---
 
@@ -281,7 +294,8 @@ voice_to_refinedtext/
 ├── review_debug.log      Evening Review detailed trace log
 │
 ├── requirements.txt      Python dependencies
-├── install.sh            One-click installer for Ubuntu
+├── install.sh            One-click system installer for Ubuntu
+├── install_desktop.sh    GNOME app drawer launcher installer (run once after install.sh)
 │
 ├── sounds/
 │   ├── start.oga         Recording start chime
@@ -291,6 +305,10 @@ voice_to_refinedtext/
 ├── prompts/
 │   ├── stops.json        Per-model stop tokens
 │   └── {model}/{lang}.txt  Per-model, per-language prompt templates
+│
+├── templates/
+│   ├── daily_note.md     Daily note template (supports {{date}}, {{prev_day}}, {{next_day}}, {{mod_date}})
+│   └── wellness_note.md  Wellness note template
 │
 └── docs/
     ├── setup_guide.md        Full installation and configuration reference

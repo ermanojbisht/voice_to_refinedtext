@@ -94,7 +94,7 @@
 | Task | Status | Note |
 | :--- | :--- | :--- |
 | LLM generates contextual follow-up questions | 📅 | Injected into step prompts based on past-note patterns |
-| Desktop launcher (`EveningReview.desktop`) | 📅 | Single-click from app drawer |
+| Desktop launcher (`EveningReview.desktop`) | ✅ | `install_desktop.sh` — installs both tray + review launchers to `~/.local/share/applications/` |
 | Review history & streak tracking | 📅 | |
 | Weekly/monthly summary generation | 📅 | |
 

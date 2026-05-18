@@ -561,6 +561,9 @@ class VoiceAssistantTray:
             self.listener.stop()
         if self.icon:
             self.icon.stop()
+        # Force-exit so faster-whisper / background threads don't keep process alive
+        import os as _os
+        _os._exit(0)
 
     # ── Entry point ───────────────────────────────────────────────────────────
 

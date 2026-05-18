@@ -82,12 +82,36 @@ ollama run qwen2.5:3b "Hello"   # quick smoke test
 
 A coloured dot appears in the system tray. Right-click for the menu.
 
-### 3.5. Auto-Start on Boot (Optional)
+### 3.5. Desktop Launcher (GNOME App Drawer)
+
+Run the desktop installer once to add launchers to your GNOME app drawer:
+
+```bash
+bash install_desktop.sh
+```
+
+This installs two entries:
+- **AI Voice Refiner** — launches the tray app
+- **Evening Review** — launches the review dashboard standalone
+
+After install, search for them in the GNOME app drawer (Super key).
+
+To launch from terminal (correct way to run `.desktop` files):
+```bash
+gtk-launch ai-voice-refiner
+gtk-launch ai-evening-review
+```
+
+> **Never run `.desktop` files with `bash file.desktop`** — bash treats each line as a shell command and will error on fields like `Categories=` and `Keywords=`.
+
+### 3.6. Auto-Start on Boot (Optional)
 
 Open **Startup Applications** → **Add**:
 
 - **Name**: AI Voice Refiner
-- **Command**: `/absolute/path/to/project/.venv/bin/python /absolute/path/to/project/tray_app.py`
+- **Command**: `/usr/bin/python3 /absolute/path/to/project/tray_app.py`
+
+Or use the GNOME app drawer launcher (installed above) as the startup command.
 
 ---
 
@@ -332,11 +356,11 @@ This sends a `SIGUSR1` signal to the running tray, which toggles recording exact
 
 | Button | Action |
 |---|---|
-| 🎤 Record | Toggle recording for the current step (same as hotkey) |
-| ▶ Next Step | Run LLM structuring on recorded clips and advance to next step |
-| ⏭ Skip | Skip the current step without recording |
-| ↩ Redo | Clear recorded clips and re-prompt (note: previous text in the file must be removed manually) |
-| ✕ Cancel Review | Cancel the review; progress so far is preserved in the note |
+| [Rec] Record | Toggle recording for the current step (same as hotkey) |
+| >> Next Step | Run LLM structuring on recorded clips and advance to next step |
+| >> Skip | Skip the current step without recording |
+| << Redo | Clear recorded clips and re-prompt (note: previous text in the file must be removed manually) |
+| X Cancel | Cancel the review; progress so far is preserved in the note |
 
 ---
 
@@ -384,13 +408,22 @@ tail -f /path/to/project/review_debug.log
 | Symptom | Fix |
 |---|---|
 | Dashboard doesn't appear | Restart the tray — it kills any stale dashboard windows before opening a new one |
-| Dashboard opens behind other windows | It auto-raises for 2 seconds on launch; if still hidden, check your window manager's focus rules |
+| Dashboard opens and immediately disappears | Fixed in current version — was caused by `CTkButton.configure()` running before Tk mainloop was ready |
+| Dashboard opens behind other windows | It auto-raises for 3 seconds on launch; if still hidden, check your window manager's focus rules |
 | "Initialising…" stuck after 1 hour | Review session expired; cancel via tray menu and start a new review |
 | No voice narration | Install `espeak-ng` (`sudo apt install espeak-ng`); or disable narration in Settings |
+| Context panel shows long numbers / token IDs | Fixed in current version — was a bug where the full Ollama JSON response was converted to string instead of extracting the `.response` field |
 | Note not created in vault | Check vault path in Settings → Evening Review matches your actual Obsidian vault location |
 | Redo leaves duplicate text in note | By design — redo only clears the recording buffer; remove the previous text from the note file manually |
 | `pkill -USR1` not working on Wayland | Ensure the tray is running and use the exact command `pkill -USR1 -f tray_app.py` |
 | Review debug log shows `is_review_active → False (expired)` | `review_expiry_hours` is too short for your review pace; increase it in Settings |
+
+### Tray App
+
+| Symptom | Fix |
+|---|---|
+| Exit menu item doesn't close the app | Fixed in current version — `os._exit(0)` added after `icon.stop()` to force-exit despite background threads |
+| `.desktop` file errors when run from terminal | Don't run `.desktop` files with `bash`. Use `gtk-launch ai-voice-refiner` or launch from the GNOME app drawer |
 
 ---
 
@@ -398,23 +431,28 @@ tail -f /path/to/project/review_debug.log
 
 ```
 voice_to_refinedtext/
-├── tray_app.py          # System tray app — main entry point
-├── engine.py            # Recording, Whisper transcription, Ollama refinement
-├── review_engine.py     # Evening Review state machine and note writing
-├── review_dashboard.py  # Evening Review GUI dashboard
-├── config_gui.py        # Settings window (both tabs)
-├── utils.py             # Shared helpers (config loading, Ollama calls)
-├── config.json          # Voice Refiner settings (auto-created)
-├── review_config.json   # Evening Review settings (auto-created)
-├── review_debug.log     # Evening Review debug log
-├── log.json             # Voice transcription history
-├── requirements.txt     # Python dependencies
-├── install.sh           # One-click installer
+├── tray_app.py           # System tray app — main entry point
+├── engine.py             # Recording, Whisper transcription, Ollama refinement
+├── review_engine.py      # Evening Review state machine and note writing
+├── review_dashboard.py   # Evening Review GUI dashboard
+├── config_gui.py         # Settings window (both tabs)
+├── utils.py              # Shared helpers (config loading, Ollama calls)
+├── main_gui.py           # Standalone interactive GUI
+├── config.json           # Voice Refiner settings (auto-created)
+├── review_config.json    # Evening Review settings (auto-created)
+├── review_debug.log      # Evening Review debug log
+├── log.json              # Voice transcription history
+├── requirements.txt      # Python dependencies
+├── install.sh            # One-click system installer
+├── install_desktop.sh    # GNOME app drawer launcher installer
 ├── sounds/
-│   ├── start.oga        # Recording start chime
-│   ├── end.oga          # Recording end chime
-│   └── complete.oga     # Refinement complete chime
-└── prompts/
-    ├── stops.json        # Per-model stop tokens
-    └── {model}/{lang}.txt  # Per-model, per-language prompt templates
+│   ├── start.oga         # Recording start chime
+│   ├── end.oga           # Recording end chime
+│   └── complete.oga      # Refinement complete chime
+├── prompts/
+│   ├── stops.json        # Per-model stop tokens
+│   └── {model}/{lang}.txt  # Per-model, per-language prompt templates
+└── templates/
+    ├── daily_note.md     # Daily note template (edit freely; {{date}} etc. tokens)
+    └── wellness_note.md  # Wellness note template
 ```

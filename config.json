@@ -11,7 +11,7 @@
     },
     "OLLAMA_HOST": "http://localhost:11434",
     "SILENCE_THRESHOLD": 300,
-    "SILENCE_DURATION": 2.0,
+    "SILENCE_DURATION": 4.0,
     "TEMPERATURE": 0.0,
     "MODE": "refine",
     "SAVE_TO_MARKDOWN": false,
