@@ -41,6 +41,19 @@ echo "📥 Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# 4b. Install Piper TTS (Optional but recommended for Evening Review)
+read -p "🎤 Install Piper TTS for natural voice narration? (y/N): " install_piper
+if [[ $install_piper =~ ^[Yy]$ ]]; then
+    echo "📥 Installing Piper TTS..."
+    pip install piper-tts
+    
+    echo "📥 Downloading Piper voice model (en_US-lessac-medium)..."
+    mkdir -p models
+    wget -P models -nc "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+    wget -P models -nc "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+    echo "✅ Piper setup complete."
+fi
+
 # 5. Link System GObject (gi) to Venv
 # This is required for pystray to use the AppIndicator backend on Ubuntu/GNOME
 echo "🔗 Linking system GObject (gi) to virtual environment..."

@@ -851,10 +851,26 @@ def _narrate_piper(text, config, blocking):
 
     Falls back to espeak if piper is not installed or the model file is missing.
     """
-    import shutil, tempfile, threading as _t
-    # Resolve piper executable: check PATH first, then common pip install location
-    piper_exe = shutil.which("piper") or os.path.expanduser("~/.local/bin/piper")
-    if not os.path.isfile(piper_exe):
+    import shutil, tempfile, sys, threading as _t
+    # Resolve piper executable: check current venv bin first, then PATH, then common pip install location
+    piper_exe = None
+    
+    # 1. Check current venv bin if running from one (highest priority)
+    venv_bin = os.path.join(os.path.dirname(sys.executable), "piper")
+    if os.path.isfile(venv_bin):
+        piper_exe = venv_bin
+        
+    # 2. Check PATH
+    if not piper_exe:
+        piper_exe = shutil.which("piper")
+        
+    # 3. Check ~/.local/bin
+    if not piper_exe:
+        local_bin = os.path.expanduser("~/.local/bin/piper")
+        if os.path.isfile(local_bin):
+            piper_exe = local_bin
+
+    if not piper_exe or not os.path.isfile(piper_exe):
         _rlog("narrate/piper: piper executable not found — falling back to espeak")
         _narrate_espeak(text, blocking)
         return

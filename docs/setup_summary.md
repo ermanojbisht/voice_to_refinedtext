@@ -18,6 +18,10 @@ The local voice-to-text AI assistant setup is now complete and highly optimized.
     *   **Clickable Menu Fix**: Optimized for Ubuntu/Wayland by requiring `gir1.2-ayatanaappindicator3-0.1` and symlinking system `gi` to the virtual environment.
     *   **Robust Termination**: Uses signal handlers and `pynput.keyboard.Listener` for clean exit without errors.
 
+5. **Piper TTS Integration:**
+    *   Added support for **Piper** (neural, local TTS) for much more natural voice narration in Evening Review.
+    *   Manual setup required: `pip install piper-tts` and downloading `.onnx` models to the `models/` folder.
+
 **How to use the system:**
 
 1.  **Run the Tray App (Recommended):** Use `.venv/bin/python tray_app.py`. This gives you a persistent icon and hotkey.

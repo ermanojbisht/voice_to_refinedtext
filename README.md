@@ -88,7 +88,23 @@ bash install_desktop.sh
 
 Adds **AI Voice Refiner** and **Evening Review** to the GNOME app drawer. Run once after installation.
 
-### 3. Start the tray
+### 3. Piper TTS Setup (Recommended)
+
+For natural-sounding voice narration in Evening Review:
+
+```bash
+# Install Piper
+.venv/bin/pip install piper-tts
+
+# Download model
+mkdir -p models
+wget -P models "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+wget -P models "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+```
+
+Then switch **TTS Engine** to `piper` in **Settings → Evening Review**.
+
+### 4. Start the tray
 
 ```bash
 python3 tray_app.py
