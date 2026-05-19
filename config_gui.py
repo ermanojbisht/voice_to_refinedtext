@@ -264,11 +264,50 @@ class ConfigApp:
         self.struct_cb.grid(row=24, column=1, sticky="we", padx=20, pady=4)
         _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 25)
 
-        _section(f, "📋  Step Configuration", 26)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 27)
+        _section(f, "🌐  Context Brief", 26)
+        _note(f, "Language and model(s) used to generate the nightly context synthesis.", 27)
+
+        _label(f, "Brief Language:", 28)
+        self.brief_lang_var = ctk.StringVar(value=self.review_raw.get("context_brief_language", "en"))
+        ctk.CTkComboBox(f, variable=self.brief_lang_var,
+                        values=["en", "hi"], width=100).grid(row=28, column=1, sticky="w", padx=20, pady=4)
+
+        _label(f, "Brief Mode:", 29)
+        _has_two = bool(self.review_raw.get("brief_model_en") or self.review_raw.get("brief_model_hi"))
+        self.brief_mode_var = ctk.StringVar(value="Two Models" if _has_two else "Single Model")
+        ctk.CTkComboBox(f, variable=self.brief_mode_var,
+                        values=["Single Model", "Two Models"], width=150,
+                        command=self._on_brief_mode_change).grid(row=29, column=1, sticky="w", padx=20, pady=4)
+        self._brief_mode_note = ctk.CTkLabel(f,
+            text="Single Model: one call returns both languages.  Two Models: parallel calls, one per language.",
+            text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
+        self._brief_mode_note.grid(row=30, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+
+        _label(f, "Brief Model:", 31)
+        self.brief_model_var = ctk.StringVar(value=self.review_raw.get("brief_model", ""))
+        self.brief_model_entry = ctk.CTkEntry(f, textvariable=self.brief_model_var, width=300,
+                                               placeholder_text="e.g. qwen2.5:7b  (blank = structure model)")
+        self.brief_model_entry.grid(row=31, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "Brief Model (EN):", 32)
+        self.brief_model_en_var = ctk.StringVar(value=self.review_raw.get("brief_model_en", ""))
+        self.brief_model_en_entry = ctk.CTkEntry(f, textvariable=self.brief_model_en_var, width=300,
+                                                  placeholder_text="e.g. qwen2.5:7b")
+        self.brief_model_en_entry.grid(row=32, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "Brief Model (HI):", 33)
+        self.brief_model_hi_var = ctk.StringVar(value=self.review_raw.get("brief_model_hi", ""))
+        self.brief_model_hi_entry = ctk.CTkEntry(f, textvariable=self.brief_model_hi_var, width=300,
+                                                  placeholder_text="e.g. aya-expanse:8b")
+        self.brief_model_hi_entry.grid(row=33, column=1, sticky="we", padx=20, pady=4)
+
+        self._on_brief_mode_change(self.brief_mode_var.get())  # set initial visibility
+
+        _section(f, "📋  Step Configuration", 34)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 35)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=28, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=36, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -279,7 +318,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=29 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=37 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -293,6 +332,13 @@ class ConfigApp:
             self.step_skippable_vars.append(skip_var)
             self.step_refine_vars.append(refine_var)
             self._step_ids.append(step["step_id"])
+
+    def _on_brief_mode_change(self, value):
+        """Show single-model field or two-model fields based on selected mode."""
+        is_single = value == "Single Model"
+        self.brief_model_entry.configure(state="normal" if is_single else "disabled")
+        self.brief_model_en_entry.configure(state="disabled" if is_single else "normal")
+        self.brief_model_hi_entry.configure(state="disabled" if is_single else "normal")
 
     def _on_tts_engine_change(self, value):
         """Show/hide piper model paths based on selected engine."""
@@ -356,6 +402,15 @@ class ConfigApp:
             existing["tts_engine"]          = self.tts_engine_var.get()
             existing["piper_model"]         = self.piper_model_var.get().strip()
             existing["piper_model_hi"]      = self.piper_model_hi_var.get().strip()
+            existing["context_brief_language"] = self.brief_lang_var.get()
+            if self.brief_mode_var.get() == "Single Model":
+                existing["brief_model"]    = self.brief_model_var.get().strip()
+                existing.pop("brief_model_en", None)
+                existing.pop("brief_model_hi", None)
+            else:
+                existing.pop("brief_model", None)
+                existing["brief_model_en"] = self.brief_model_en_var.get().strip()
+                existing["brief_model_hi"] = self.brief_model_hi_var.get().strip()
 
             struct_model = self.struct_model_var.get().strip()
             if struct_model:

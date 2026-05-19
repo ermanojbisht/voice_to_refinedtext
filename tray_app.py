@@ -101,11 +101,14 @@ class VoiceAssistantTray:
                 return f"Step {idx+1}/{total}: {name}"
             return "Review in progress"
 
-        def _in_review(item):       return self.is_in_review
-        def _not_in_review(item):   return not self.is_in_review
-        def _awaiting(item):        return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more"))
-        def _not_awaiting(item):    return self.is_in_review and not bool(self.review_state and self.review_state.get("awaiting_more"))
-        def _mode_label(item):      return f"Mode: {self.engine.config.get('MODE', 'refine').capitalize()}"
+        def _in_review(item):           return self.is_in_review
+        def _not_in_review(item):       return not self.is_in_review
+        def _awaiting(item):            return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more"))
+        def _not_awaiting(item):        return self.is_in_review and not bool(self.review_state and self.review_state.get("awaiting_more"))
+        def _mode_label(item):          return f"Mode: {self.engine.config.get('MODE', 'refine').capitalize()}"
+        def _has_morning_brief(item):
+            import morning_brief as _mb
+            return not self.is_in_review and _mb.load_brief_state() is not None
 
         return pystray.Menu(
             # ── Review mode ──
@@ -116,40 +119,47 @@ class VoiceAssistantTray:
             pystray.MenuItem("Cancel Review",      self.cancel_review,                     visible=_in_review),
             pystray.Menu.SEPARATOR,
             # ── Normal mode ──
-            pystray.MenuItem("Start Recording",     self.toggle_recording,                  visible=_not_in_review),
-            pystray.MenuItem(_mode_label,           self.cycle_mode,                        visible=_not_in_review),
-            pystray.MenuItem("Start Evening Review",self.start_review,                      visible=_not_in_review),
-            pystray.MenuItem("Open Dashboard",      self.open_gui,                          visible=_not_in_review),
-            pystray.MenuItem("Settings",            self.open_settings,                     visible=_not_in_review),
+            pystray.MenuItem("Start Recording",        self.toggle_recording,               visible=_not_in_review),
+            pystray.MenuItem(_mode_label,              self.cycle_mode,                     visible=_not_in_review),
+            pystray.MenuItem("Start Evening Review",   self.start_review,                   visible=_not_in_review),
+            pystray.MenuItem("🌅 Replay Morning Brief", self.replay_morning_brief,          visible=_has_morning_brief),
+            pystray.MenuItem("Open Dashboard",         self.open_gui,                       visible=_not_in_review),
+            pystray.MenuItem("Settings",               self.open_settings,                  visible=_not_in_review),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit", self.exit_app)
         )
 
     # ── Hotkey listener ───────────────────────────────────────────────────────
 
-    def on_press(self, key):
-        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
-            self.pressed_keys.add(keyboard.Key.ctrl_l if key != keyboard.Key.ctrl_r else keyboard.Key.ctrl_r)
-        elif key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
-            self.pressed_keys.add(keyboard.Key.alt_l if key != keyboard.Key.alt_r else keyboard.Key.alt_r)
-        elif hasattr(key, "char") and key.char == "v":
-            self.pressed_keys.add(keyboard.KeyCode.from_char("v"))
+    def _ctrl(self):
+        return any(k in self.pressed_keys for k in (
+            keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r))
 
-        if (
-            all(k in self.pressed_keys for k in [keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.KeyCode.from_char("v")]) or
-            all(k in self.pressed_keys for k in [keyboard.Key.ctrl_r, keyboard.Key.alt_r, keyboard.KeyCode.from_char("v")])
-        ):
-            self.toggle_recording()
+    def _alt(self):
+        return any(k in self.pressed_keys for k in (
+            keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r))
+
+    def on_press(self, key):
+        # Only track modifier keys and the three hotkey chars — everything else
+        # is dead weight and would grow pressed_keys unboundedly over a session.
+        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r,
+                   keyboard.Key.alt,  keyboard.Key.alt_l,  keyboard.Key.alt_r):
+            self.pressed_keys.add(key)
+        elif hasattr(key, "char") and key.char in ("v", "s", "r"):
+            self.pressed_keys.add(key)
+        if not (self._ctrl() and self._alt()):
+            return
+        if hasattr(key, "char"):
+            if key.char == "v":
+                self.toggle_recording()
+            elif key.char == "s":
+                threading.Thread(target=review_engine.stop_narration, daemon=True).start()
+            elif key.char == "r":
+                cfg = self.review_config or review_engine.load_review_config(self.script_dir)
+                threading.Thread(target=review_engine.replay_narration, args=(cfg,), daemon=True).start()
 
     def on_release(self, key):
-        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
-            self.pressed_keys.discard(keyboard.Key.ctrl_l)
-            self.pressed_keys.discard(keyboard.Key.ctrl_r)
-        elif key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
-            self.pressed_keys.discard(keyboard.Key.alt_l)
-            self.pressed_keys.discard(keyboard.Key.alt_r)
-        elif hasattr(key, "char") and key.char == "v":
-            self.pressed_keys.discard(keyboard.KeyCode.from_char("v"))
+        self.pressed_keys.discard(key)
 
     # ── Icon helpers ──────────────────────────────────────────────────────────
 
@@ -528,6 +538,24 @@ class VoiceAssistantTray:
         self._refresh_menu()
 
     # ── Normal mode controls ──────────────────────────────────────────────────
+
+    def replay_morning_brief(self, icon=None, item=None):
+        import morning_brief as _mb
+        import review_engine
+        state = _mb.load_brief_state()
+        if not state:
+            return
+        text = state.get("text", "")
+        if not text:
+            return
+        cfg = review_engine.load_review_config(self.script_dir)
+        lang = cfg.get("context_brief_language", "en")
+        if lang == "hi":
+            intro = f"गुड मॉर्निंग! कल की प्राथमिकताएं:\n{text}"
+        else:
+            intro = f"Good morning! Here are your priorities for today:\n{text}"
+        threading.Thread(target=review_engine.narrate, args=(intro, cfg), daemon=True).start()
+        _tlog("replay_morning_brief: narrating")
 
     def open_gui(self, icon=None, item=None):
         subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])

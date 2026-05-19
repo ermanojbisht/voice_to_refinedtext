@@ -6,6 +6,7 @@ Polls /tmp/review_state.json every 500 ms to stay in sync with the tray.
 Buttons communicate with the tray via SIGUSR1 (record) or call review_engine
 directly (skip / redo / cancel / next-step structuring).
 """
+import datetime
 import os
 import sys
 import threading
@@ -42,8 +43,8 @@ class ReviewDashboard:
         self.root = root
         self.root.title("Evening Review")
         review_engine._rlog("[dashboard] title set")
-        self.root.geometry("690x925")
-        self.root.minsize(600, 700)
+        self.root.geometry("980x760")
+        self.root.minsize(750, 580)
         review_engine._rlog("[dashboard] geometry set")
         self.root.configure(fg_color=BG)
         review_engine._rlog("[dashboard] fg_color configured")
@@ -53,17 +54,22 @@ class ReviewDashboard:
         self.config = review_engine.load_review_config(script_dir)
         review_engine._rlog("[dashboard] config loaded")
         self.steps  = self.config.get("review_steps", [])
-        self.is_processing = False
-        self._review_done  = False
+        self.is_processing    = False
+        self._review_done     = False
         self._last_context_step = -1
-        self._engine = None
+        self._engine          = None
+        self._last_streak_n   = None          # change-detection guard for streak label
+        # Language currently shown in the right panel brief ("en" or "hi")
+        self._ctx_lang        = self.config.get("context_brief_language", "en")
+        # True when the right panel is showing the AI brief; False for per-step history
+        self._showing_brief   = False
 
         review_engine._rlog("[dashboard] calling _build_ui")
         self._build_ui()
         review_engine._rlog("[dashboard] _build_ui done, scheduling first poll")
-        # Schedule _poll_state via after() so it runs INSIDE mainloop, not before.
-        # Calling it synchronously before mainloop causes CTkButton.configure() to
-        # run before Tcl/Tk is ready, silently crashing the process.
+        # Schedule via after() so _poll_state runs INSIDE mainloop, not before.
+        # Calling it synchronously here causes CTkButton.configure() to run
+        # before Tcl/Tk is ready, silently crashing the process.
         self.root.after(200, self._poll_state)
         review_engine._rlog("[dashboard] __init__ complete")
 
@@ -80,7 +86,7 @@ class ReviewDashboard:
 
     def _build_ui(self):
         review_engine._rlog("[dashboard] _build_ui: header frame")
-        # Header bar
+        # ── Header bar (full width) ────────────────────────────────────────────
         hdr = ctk.CTkFrame(self.root, fg_color=ACCENT, corner_radius=0, height=50)
         hdr.pack(fill=ctk.X)
         hdr.pack_propagate(False)
@@ -88,48 +94,115 @@ class ReviewDashboard:
                      font=("Inter", 18, "bold")).pack(side=ctk.LEFT, padx=20)
         ctk.CTkLabel(hdr, text="powered by AI Voice Refiner", text_color=BG,
                      font=("Inter", 12)).pack(side=ctk.RIGHT, padx=20)
+        self.streak_lbl = ctk.CTkLabel(hdr, text="", text_color=BG,
+                                        font=("Inter", 13, "bold"))
+        self.streak_lbl.pack(side=ctk.RIGHT, padx=(0, 8))
 
-        review_engine._rlog("[dashboard] _build_ui: subtitle")
-        # Subtitle (current step description)
-        self.subtitle_var = ctk.StringVar(value="Initialising…")
-        ctk.CTkLabel(self.root, textvariable=self.subtitle_var, fg_color="transparent", text_color=TEXT,
-                     font=("Inter", 14), anchor="w").pack(fill=ctk.X, padx=24, pady=(20, 5))
+        # ── Body (two-column split) ────────────────────────────────────────────
+        body = ctk.CTkFrame(self.root, fg_color="transparent")
+        body.pack(fill=ctk.BOTH, expand=True, padx=8, pady=8)
 
-        review_engine._rlog("[dashboard] _build_ui: progress bar")
-        # Progress bar
-        self.prog_canvas = ctk.CTkProgressBar(self.root, height=8, fg_color=OVERLAY,
-                                     progress_color=GREEN, corner_radius=4)
-        self.prog_canvas.pack(fill=ctk.X, padx=24, pady=(0, 15))
-        self.prog_canvas.set(0)
+        # ── Right panel (context sidebar) ─── pack first so left gets remainder
+        review_engine._rlog("[dashboard] _build_ui: right panel")
+        right_panel = ctk.CTkFrame(body, fg_color=SURFACE, corner_radius=8, width=300)
+        right_panel.pack(side=ctk.RIGHT, fill=ctk.Y, padx=(8, 4), pady=4)
+        right_panel.pack_propagate(False)
 
-        review_engine._rlog("[dashboard] _build_ui: context panel")
-        # Context panel (last N days brief)
-        ctx_outer = ctk.CTkFrame(self.root, fg_color=SURFACE, corner_radius=8)
-        ctx_outer.pack(fill=ctk.X, padx=16, pady=(0, 10))
-
-        ctx_hdr = ctk.CTkFrame(ctx_outer, fg_color="transparent")
-        ctx_hdr.pack(fill=ctk.X, padx=10, pady=(6, 0))
+        # Right panel: title row
+        ctx_hdr = ctk.CTkFrame(right_panel, fg_color="transparent")
+        ctx_hdr.pack(fill=ctk.X, padx=10, pady=(8, 0))
         ctk.CTkLabel(ctx_hdr, text="📅 Context", text_color=ACCENT,
                      font=("Inter", 11, "bold")).pack(side=ctk.LEFT)
-        self.ctx_days_lbl = ctk.CTkLabel(ctx_hdr, text="", text_color=SUBTLE,
+
+        # Narration controls — right side of title row
+        self.regen_btn = ctk.CTkButton(
+            ctx_hdr, text="↺", width=28, height=22, font=("Inter", 13),
+            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            command=self._regen_brief)
+        self.regen_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+        self.replay_btn = ctk.CTkButton(
+            ctx_hdr, text="🔁", width=28, height=22, font=("Inter", 13),
+            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            command=self._replay_brief)
+        self.replay_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+        self.stop_btn = ctk.CTkButton(
+            ctx_hdr, text="⏹", width=28, height=22, font=("Inter", 13),
+            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            command=review_engine.stop_narration)
+        self.stop_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+
+        # Right panel: EN/HI language toggle + stats label
+        lang_row = ctk.CTkFrame(right_panel, fg_color="transparent")
+        lang_row.pack(fill=ctk.X, padx=10, pady=(6, 0))
+
+        self.en_btn = ctk.CTkButton(
+            lang_row, text="EN", width=36, height=22, font=("Inter", 10, "bold"),
+            corner_radius=4, command=lambda: self._switch_lang("en"))
+        self.hi_btn = ctk.CTkButton(
+            lang_row, text="HI", width=36, height=22, font=("Inter", 10, "bold"),
+            corner_radius=4, command=lambda: self._switch_lang("hi"))
+        self.en_btn.pack(side=ctk.LEFT, padx=(0, 4))
+        self.hi_btn.pack(side=ctk.LEFT)
+        self._refresh_lang_buttons()
+
+        self.ctx_days_lbl = ctk.CTkLabel(lang_row, text="", text_color=SUBTLE,
                                           font=("Inter", 10))
         self.ctx_days_lbl.pack(side=ctk.RIGHT)
 
-        review_engine._rlog("[dashboard] _build_ui: ctx_text (CTkTextbox)")
-        self.ctx_text = ctk.CTkTextbox(ctx_outer, height=160, fg_color="transparent",
+        # Right panel content pane — grid so ctx_text and tasks_outer share height cleanly
+        review_engine._rlog("[dashboard] _build_ui: content_pane")
+        content_pane = ctk.CTkFrame(right_panel, fg_color="transparent")
+        content_pane.pack(fill=ctk.BOTH, expand=True)
+        content_pane.grid_rowconfigure(0, weight=1)   # ctx_text — expands
+        content_pane.grid_rowconfigure(1, weight=0)   # tasks panel — fixed
+        content_pane.grid_columnconfigure(0, weight=1)
+
+        review_engine._rlog("[dashboard] _build_ui: ctx_text")
+        self.ctx_text = ctk.CTkTextbox(content_pane, fg_color="transparent",
                                         text_color=SUBTLE, font=("Inter", 11),
                                         wrap="word", activate_scrollbars=True)
-        review_engine._rlog("[dashboard] _build_ui: ctx_text created, packing")
-        self.ctx_text.pack(fill=ctk.X, padx=10, pady=(2, 8))
-        review_engine._rlog("[dashboard] _build_ui: ctx_text insert")
+        self.ctx_text.grid(row=0, column=0, sticky="nsew", padx=10, pady=(6, 4))
         self.ctx_text.insert("end", "Analysing last days…")
-        review_engine._rlog("[dashboard] _build_ui: ctx_text disable")
         self.ctx_text.configure(state="disabled")
 
-        review_engine._rlog("[dashboard] _build_ui: CTkScrollableFrame")
+        # Tasks panel — shown only when at the carry-forward step
+        review_engine._rlog("[dashboard] _build_ui: tasks panel")
+        self.tasks_outer = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
+        ctk.CTkLabel(self.tasks_outer, text="📋 Yesterday's open tasks",
+                     text_color=ACCENT, font=("Inter", 10, "bold")).pack(
+                     fill=ctk.X, padx=8, pady=(6, 2))
+        self.tasks_scroll = ctk.CTkScrollableFrame(
+            self.tasks_outer, fg_color="transparent", height=140)
+        self.tasks_scroll.pack(fill=ctk.X, padx=4, pady=(0, 6))
+        self._tasks_showing = False
+        self._last_tasks    = []    # guard: avoid rebuilding when task list unchanged
+        self._task_vars     = []    # keep BooleanVar refs alive; cleared on each rebuild
+        # Pre-register grid options while hidden; grid_remove() remembers them for grid()
+        self.tasks_outer.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 8))
+        self.tasks_outer.grid_remove()
+
+        # ── Left column ───────────────────────────────────────────────────────
+        review_engine._rlog("[dashboard] _build_ui: left column")
+        left_col = ctk.CTkFrame(body, fg_color="transparent")
+        left_col.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
+
+        # Subtitle (current step description)
+        self.subtitle_var = ctk.StringVar(value="Initialising…")
+        ctk.CTkLabel(left_col, textvariable=self.subtitle_var, fg_color="transparent",
+                     text_color=TEXT, font=("Inter", 14), anchor="w").pack(
+                     fill=ctk.X, padx=16, pady=(8, 4))
+
+        # Progress bar
+        review_engine._rlog("[dashboard] _build_ui: progress bar")
+        self.prog_canvas = ctk.CTkProgressBar(left_col, height=8, fg_color=OVERLAY,
+                                     progress_color=GREEN, corner_radius=4)
+        self.prog_canvas.pack(fill=ctk.X, padx=16, pady=(0, 10))
+        self.prog_canvas.set(0)
+
         # Steps list
-        steps_frame = ctk.CTkScrollableFrame(self.root, fg_color="transparent")
-        steps_frame.pack(fill=ctk.BOTH, expand=True, padx=16)
+        review_engine._rlog("[dashboard] _build_ui: CTkScrollableFrame")
+        steps_frame = ctk.CTkScrollableFrame(left_col, fg_color="transparent")
+        steps_frame.pack(fill=ctk.BOTH, expand=True, padx=8)
 
         self.row_frames    = []
         self.icon_labels   = []
@@ -161,8 +234,8 @@ class ReviewDashboard:
         try:
             # Primary buttons (Record + Next Step)
             review_engine._rlog("[dashboard] _build_ui: btn_row1 frame")
-            btn_row1 = ctk.CTkFrame(self.root, fg_color="transparent")
-            btn_row1.pack(fill=ctk.X, padx=24, pady=(15, 8))
+            btn_row1 = ctk.CTkFrame(left_col, fg_color="transparent")
+            btn_row1.pack(fill=ctk.X, padx=16, pady=(12, 6))
 
             review_engine._rlog("[dashboard] _build_ui: record_btn")
             self.record_btn = ctk.CTkButton(
@@ -182,8 +255,8 @@ class ReviewDashboard:
 
             review_engine._rlog("[dashboard] _build_ui: btn_row2 frame")
             # Secondary buttons (Skip, Redo, Cancel)
-            btn_row2 = ctk.CTkFrame(self.root, fg_color="transparent")
-            btn_row2.pack(fill=ctk.X, padx=24, pady=(0, 20))
+            btn_row2 = ctk.CTkFrame(left_col, fg_color="transparent")
+            btn_row2.pack(fill=ctk.X, padx=16, pady=(0, 16))
 
             review_engine._rlog("[dashboard] _build_ui: skip_btn")
             self.skip_btn = ctk.CTkButton(
@@ -217,10 +290,39 @@ class ReviewDashboard:
             )
             raise
 
+    # ── Language toggle ────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _brief_key(lang):
+        """Return the state key for the brief in the given language."""
+        return "context_brief_en" if lang == "en" else "context_brief_hi"
+
+    def _refresh_lang_buttons(self):
+        """Update EN/HI button colours to reflect the active language."""
+        for lang, btn in (("en", self.en_btn), ("hi", self.hi_btn)):
+            if lang == self._ctx_lang:
+                btn.configure(fg_color=ACCENT, text_color=BG)
+            else:
+                btn.configure(fg_color=OVERLAY, text_color=SUBTLE)
+
+    def _switch_lang(self, lang):
+        """Switch right-panel language, re-render brief, and narrate."""
+        self._ctx_lang = lang
+        self._refresh_lang_buttons()
+        if not self._showing_brief:
+            return
+        state = review_engine._load_state()
+        if state is None:
+            return
+        brief = state.get(self._brief_key(lang)) or state.get("context_brief", "")
+        self._set_ctx_text(brief or "No context available.", TEXT if brief else SUBTLE)
+        if brief:
+            threading.Thread(
+                target=review_engine.narrate, args=(brief, self.config), daemon=True).start()
+
     # ── Live polling ───────────────────────────────────────────────────────────
 
     def _poll_state(self):
-        # Stop polling once the review is done to avoid 500ms timer spam
         if self._review_done:
             return
         review_engine._rlog("[dashboard] _poll_state: tick")
@@ -231,19 +333,14 @@ class ReviewDashboard:
             else:
                 raw_state = review_engine._load_state()
                 if raw_state is None:
-                    # State file gone — review completed normally
                     review_engine._rlog("[dashboard] _poll_state: state gone → showing complete")
                     self._show_complete()
                     return
-                # State file exists but review is no longer active (expired or
-                # active=False). Either way the session is over for the dashboard.
                 if not raw_state.get("active", True):
                     review_engine._rlog("[dashboard] _poll_state: active=False → showing complete")
                     self._show_complete()
                     return
-                # Check expiry ourselves to avoid the dashboard freezing on "Initialising…"
                 try:
-                    import datetime
                     started = datetime.datetime.fromisoformat(raw_state["started_at"])
                     expiry_h = self.config.get("review_expiry_hours", 1)
                     if (datetime.datetime.now() - started).total_seconds() / 3600 > expiry_h:
@@ -252,7 +349,6 @@ class ReviewDashboard:
                         return
                 except Exception:
                     pass
-                # Transient false return — keep polling
         except Exception as e:
             import traceback
             review_engine._rlog(f"[dashboard] _poll_state exception: {traceback.format_exc()}")
@@ -264,7 +360,6 @@ class ReviewDashboard:
         total    = len(self.steps)
         awaiting = state.get("awaiting_more", False)
         clips    = len(state.get("accumulated_raw", []))
-        # Treat "processing" flag in state as busy (set by tray or dashboard)
         remote_processing = state.get("processing", False)
         busy = self.is_processing or remote_processing
 
@@ -277,8 +372,7 @@ class ReviewDashboard:
             self.subtitle_var.set(f"All {total} steps complete — wrapping up…")
 
         # Progress bar
-        filled = idx / total if total else 0
-        self.prog_canvas.set(filled)
+        self.prog_canvas.set(idx / total if total else 0)
 
         # Step rows
         for i in range(len(self.steps)):
@@ -292,11 +386,9 @@ class ReviewDashboard:
                 name_lbl.configure(text_color=SUBTLE)
                 st_lbl.configure(text="Saved", text_color=GREEN)
                 frame.configure(fg_color=SURFACE)
-
             elif i == idx:
                 frame.configure(fg_color=OVERLAY)
                 name_lbl.configure(text_color=TEXT)
-
                 if busy:
                     icon_lbl.configure(text="⏳", text_color=YELLOW)
                     st_lbl.configure(text="Processing…", text_color=YELLOW)
@@ -306,14 +398,19 @@ class ReviewDashboard:
                 else:
                     icon_lbl.configure(text="🎤", text_color=RED)
                     st_lbl.configure(text="Speak now", text_color=RED)
-
             else:
                 icon_lbl.configure(text="○", text_color=SUBTLE)
                 name_lbl.configure(text_color=SUBTLE)
                 st_lbl.configure(text="Pending", text_color=SUBTLE)
                 frame.configure(fg_color=SURFACE)
 
-        # Context panel
+        # Streak label in header — only reconfigure when value changes
+        streak_n = state.get("streak_current", 0)
+        if streak_n != self._last_streak_n:
+            self._last_streak_n = streak_n
+            self.streak_lbl.configure(text=f"🔥 {streak_n}" if streak_n > 0 else "")
+
+        # Right panel
         self._update_context_panel(state)
 
         # Button states
@@ -326,46 +423,144 @@ class ReviewDashboard:
         self.skip_btn.configure(state="disabled" if busy else "normal")
         self.redo_btn.configure(state="disabled" if busy else "normal")
 
+    def _replay_brief(self):
+        threading.Thread(
+            target=review_engine.replay_narration, args=(self.config,), daemon=True).start()
+
+    def _regen_brief(self):
+        """Bust today's brief cache and regenerate."""
+        state = review_engine._load_state()
+        if state is None:
+            return
+        date_str = state.get("date") or datetime.date.today().isoformat()
+        review_engine._bust_brief_cache(script_dir, date_str)
+        state.pop("context_brief", None)
+        state.pop("context_brief_en", None)
+        state.pop("context_brief_hi", None)
+        state["context_ready"] = False
+        review_engine._save_state(state)
+        self._last_context_step = -1
+        self._showing_brief = False
+        self._set_ctx_text("Regenerating…", SUBTLE)
+        threading.Thread(
+            target=review_engine._run_context_brief,
+            args=(script_dir, self.config, dict(state)),
+            daemon=True).start()
+
     def _update_context_panel(self, state):
-        """Refresh the context panel from state. Called from _update_ui."""
+        """Refresh the right context panel from state. Called from _update_ui."""
         n = self.config.get("last_n_days_context", 3)
         per_step = self.config.get("per_step_context", False)
         idx = state.get("current_step_index", 0)
         notes_data = state.get("context_notes", [])
 
         if not state.get("context_ready"):
-            # Still loading
+            self._showing_brief = False
             self.ctx_days_lbl.configure(text=f"last {n} days")
             self._set_ctx_text("Analysing last days…", SUBTLE)
             return
 
+        # Always show the AI brief first on initial load, before any per-step content.
+        # Without this guard the per-step branch fires immediately at step 0 (because
+        # idx=0 != _last_context_step=-1) and the brief is never shown.
+        if self._last_context_step == -1:
+            self._last_context_step = idx   # arm per-step: fires on next step change
+            self._showing_brief = True
+            brief = state.get(self._brief_key(self._ctx_lang)) or state.get("context_brief", "")
+            found = len(notes_data)
+            model = (self.config.get("brief_model")
+                     or self.config.get("structure_model")
+                     or "default")
+            date_str  = state.get("date", "")
+            days_part = f"{found} day(s)" if found else f"{n} days"
+            self.ctx_days_lbl.configure(text=f"{days_part} · {date_str} · {model}")
+            self._set_ctx_text(brief or "No context available.", TEXT if brief else SUBTLE)
+            return
+
+        # Carry-forward tasks panel: show at the configured step
+        carry_step_id   = self.config.get("carryforward_step_id", 3)
+        current_step    = self.steps[idx] if idx < len(self.steps) else None
+        at_carry_step   = (self.config.get("carryforward_tasks", False)
+                           and current_step
+                           and current_step.get("step_id") == carry_step_id)
+        tasks           = state.get("carryforward_tasks", [])
+        note_date_str   = state.get("carryforward_date", "")
+
+        if at_carry_step and tasks:
+            self._show_tasks_panel(tasks, note_date_str)
+        else:
+            self._hide_tasks_panel()
+
         if per_step and notes_data and idx < len(self.steps):
-            # Per-step: show only the relevant section from past notes
+            # Per-step: show section-relevant history from past notes
             section_name = self.steps[idx]["section_name"]
             if idx != self._last_context_step:
                 self._last_context_step = idx
+                self._showing_brief = False
                 lines = []
                 for note in reversed(notes_data):
                     snippet = review_engine._extract_step_section(section_name, note["content"])
                     if snippet:
                         lines.append(f"{note['date']}: {snippet}")
                 if lines:
-                    text = "\n".join(lines)
+                    text  = "\n".join(lines)
                     label = f"{section_name} · last {len(notes_data)} day(s)"
                 else:
-                    text = f"No {section_name} entries found in last {len(notes_data)} day(s)."
+                    text  = f"No {section_name} entries found in last {len(notes_data)} day(s)."
                     label = f"last {len(notes_data)} day(s)"
                 self.ctx_days_lbl.configure(text=label)
                 self._set_ctx_text(text, TEXT)
-        else:
-            # Global brief (show once, don't repeat on step change)
-            if self._last_context_step == -1:
-                self._last_context_step = 0
-                brief = state.get("context_brief", "")
-                found = len(notes_data)
-                label = f"last {found} day(s)" if found else f"last {n} days"
-                self.ctx_days_lbl.configure(text=label)
-                self._set_ctx_text(brief or "No context available.", TEXT if brief else SUBTLE)
+        # else: brief already shown and no step change — nothing to update
+
+    # ── Carry-forward task panel ───────────────────────────────────────────────
+
+    def _show_tasks_panel(self, tasks, note_date_str):
+        """Populate and reveal the carry-forward checkboxes.
+        Skips rebuild if the task list hasn't changed since last render."""
+        if self._tasks_showing and self._last_tasks == tasks:
+            return  # nothing changed — avoid widget churn every 500ms
+        self._last_tasks = list(tasks)
+        # Clear old vars first (removes lambda closure refs → allows GC)
+        self._task_vars = []
+        for widget in self.tasks_scroll.winfo_children():
+            widget.destroy()
+        for task in tasks:
+            var = ctk.BooleanVar(value=False)
+            self._task_vars.append(var)
+            cb = ctk.CTkCheckBox(
+                self.tasks_scroll, text=task, variable=var,
+                font=("Inter", 11), text_color=TEXT,
+                fg_color=ACCENT, hover_color="#b4befe", checkmark_color=BG,
+                command=lambda t=task, v=var: self._on_task_checked(t, note_date_str, v)
+            )
+            cb.pack(fill=ctk.X, padx=4, pady=2, anchor="w")
+        if not self._tasks_showing:
+            self.tasks_outer.grid()
+        self._tasks_showing = True
+
+    def _hide_tasks_panel(self):
+        if self._tasks_showing:
+            self.tasks_outer.grid_remove()
+            self._task_vars = []   # release BooleanVar refs
+            self._last_tasks = []
+            self._tasks_showing = False
+
+    def _on_task_checked(self, task_text, note_date_str, var):
+        if not var.get():
+            return  # unchecking — do nothing (can't un-complete a task in vault)
+        # Run in background so file I/O doesn't block the UI thread
+        def _do_mark():
+            ok = review_engine._mark_task_done(script_dir, self.config, task_text, note_date_str)
+            if not ok:
+                self.root.after(0, lambda: (
+                    var.set(False),
+                    messagebox.showwarning(
+                        "Vault update failed",
+                        f"Could not mark task done in vault.\n"
+                        f"Please update manually in Obsidian:\n\n- [x] {task_text}"
+                    )
+                ))
+        threading.Thread(target=_do_mark, daemon=True).start()
 
     def _set_ctx_text(self, text, color):
         self.ctx_text.configure(state="normal")
@@ -374,7 +569,7 @@ class ReviewDashboard:
         self.ctx_text.configure(state="disabled", text_color=color)
 
     def _show_complete(self):
-        self._review_done = True  # stop the polling loop
+        self._review_done = True
         self.subtitle_var.set("✅ Evening Review complete!")
         for i in range(len(self.steps)):
             self.icon_labels[i].configure(text="✅", text_color=GREEN)
@@ -410,11 +605,9 @@ class ReviewDashboard:
     def _do_next(self):
         if self.is_processing:
             return
-        # Re-read freshest state from disk
         state = review_engine._load_state()
         if state is None:
             return
-        # Honour the processing lock set by either tray or this dashboard
         if state.get("processing"):
             messagebox.showinfo("Busy", "Processing is already underway — please wait.")
             return
@@ -429,12 +622,10 @@ class ReviewDashboard:
     def _structure_and_advance(self, state):
         acquired_lock = False
         try:
-            # Re-read once more inside the thread for the absolute freshest state
             fresh_state = review_engine._load_state()
             if fresh_state is None:
                 return
             if fresh_state.get("processing"):
-                # Tray grabbed the lock first — bail without touching anything
                 return
             fresh_state["processing"] = True
             review_engine._save_state(fresh_state)
@@ -470,7 +661,6 @@ class ReviewDashboard:
                 "Structuring error", str(e)[:200]
             ))
         finally:
-            # Only release the lock if WE set it
             if acquired_lock:
                 final_state = review_engine._load_state()
                 if final_state is not None:
@@ -518,12 +708,9 @@ def main():
     import sys as _sys
     import traceback as _tb_mod
 
-    # Catch any unhandled Python exception (including ones not printed to stderr)
-    # and write them to the log so crashes are always visible.
     def _excepthook(exc_type, exc_val, exc_tb):
         msg = "".join(_tb_mod.format_exception(exc_type, exc_val, exc_tb))
         review_engine._rlog(f"[dashboard] UNHANDLED EXCEPTION:\n{msg}")
-        # Also write to stderr so it appears in the subprocess log_fh
         _sys.__stderr__.write(f"[dashboard] UNHANDLED EXCEPTION:\n{msg}\n")
     _sys.excepthook = _excepthook
 
@@ -540,13 +727,14 @@ def main():
     root.protocol("WM_DELETE_WINDOW", lambda: None)
     review_engine._rlog("[dashboard] WM_DELETE_WINDOW suppressed")
 
-    # Bring window to front — lift() is safe; focus_force() can trigger
-    # GNOME focus-stealing defenses on Wayland, so we skip it.
+    # lift() is safe on Wayland; focus_force() triggers GNOME focus-stealing
+    # defenses and can cause the window to be immediately hidden.
     root.lift()
     root.attributes("-topmost", True)
     root.after(3000, lambda: root.attributes("-topmost", False))
 
-    # Override tkinter's exception reporter so ALL callback errors go to log
+    # Route ALL tkinter callback exceptions to the log file, not just stderr,
+    # so crashes inside after() callbacks and widget commands are always visible.
     def _report_tk_error(exc, val, tb):
         review_engine._rlog(
             f"[dashboard] tkinter callback exception: {val}\n"
@@ -565,28 +753,22 @@ def main():
         raise
     review_engine._rlog("[dashboard] ReviewDashboard built, entering mainloop")
 
-    # Now that the window is fully built, route close to the cancel dialog
     def _bind_close():
         root.protocol("WM_DELETE_WINDOW", app._do_cancel)
-
     root.after(2000, _bind_close)
 
-    # Heartbeat: log every 5 s so we can confirm the dashboard is alive
     def _heartbeat():
         if not app._review_done:
             review_engine._rlog("[dashboard] heartbeat — alive")
             root.after(5000, _heartbeat)
-
     root.after(5000, _heartbeat)
 
-    # Wayland: wmctrl can raise XWayland windows to the foreground
     def _wmctrl_focus():
         try:
             subprocess.run(["wmctrl", "-a", "Evening Review"],
                            capture_output=True, timeout=2)
         except Exception:
             pass
-
     root.after(500, _wmctrl_focus)
 
     root.mainloop()

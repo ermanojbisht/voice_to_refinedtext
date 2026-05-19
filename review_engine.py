@@ -4,6 +4,7 @@ import re
 import json
 import datetime
 import subprocess
+import threading
 
 STATE_PATH = "/tmp/review_state.json"
 _LOG_FILE = None  # set by init_logging()
@@ -41,6 +42,12 @@ def load_review_config(script_dir):
         "tts_engine": "espeak",   # "espeak" or "piper"
         "piper_model": "",        # path to English .onnx model file (only used when tts_engine="piper")
         "piper_model_hi": "",     # path to Hindi .onnx model file (falls back to piper_model if empty)
+        "carryforward_tasks": False,   # read yesterday's - [ ] items and narrate at step
+        "carryforward_step_id": 3,     # step_id at which to narrate + show pending tasks
+        "show_streak": True,           # narrate + display consecutive-review streak
+        "focus_word_trend": True,      # append focus word to focus_words.jsonl; narrate weekly trend on Sundays
+        "morning_briefing_enabled": False,  # narrate Tomorrow's Priorities each morning
+        "morning_briefing_time": "08:00",   # HH:MM — used by install_morning_brief.sh to set the systemd timer
         "review_steps": [
             {
                 "step_id": 1,
@@ -384,61 +391,219 @@ def _read_last_n_notes(script_dir, config, n, before_date_str):
     return results
 
 
+# ── Brief cache helpers ───────────────────────────────────────────────────────
+
+def _brief_cache_path(script_dir):
+    return os.path.join(script_dir, "brief_cache.json")
+
+
+def _load_brief_cache(script_dir, date_str):
+    """Return cached {en, hi} dict for date_str, or None if missing."""
+    try:
+        with open(_brief_cache_path(script_dir), "r", encoding="utf-8") as f:
+            cache = json.load(f)
+        entry = cache.get(date_str)
+        if entry and entry.get("en") and entry.get("hi"):
+            _rlog(f"context_brief: cache hit for {date_str}")
+            return entry
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        _rlog(f"context_brief: cache load error: {e}")
+    return None
+
+
+def _bust_brief_cache(script_dir, date_str):
+    """Remove today's entry from brief_cache.json so next call regenerates."""
+    path = _brief_cache_path(script_dir)
+    try:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return
+        if date_str in cache:
+            del cache[date_str]
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(cache, f, ensure_ascii=False, indent=2)
+            _rlog(f"context_brief: cache busted for {date_str}")
+    except Exception as e:
+        _rlog(f"context_brief: cache bust error: {e}")
+
+
+def _save_brief_cache(script_dir, date_str, en, hi):
+    """Write EN+HI briefs to cache, pruning entries older than 7 days."""
+    path = _brief_cache_path(script_dir)
+    try:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            cache = {}
+        cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+        cache = {k: v for k, v in cache.items() if k >= cutoff}
+        cache[date_str] = {
+            "en": en, "hi": hi,
+            "generated_at": datetime.datetime.now().isoformat(timespec="seconds")
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+        _rlog(f"context_brief: cached for {date_str}")
+    except Exception as e:
+        _rlog(f"context_brief: cache save error: {e}")
+
+
+def _build_brief_base(notes_block, n):
+    """Shared base prompt for brief generation."""
+    return (
+        f"Here are the last {n} day(s) of evening journal entries:\n\n"
+        f"{notes_block}"
+        "Write a 3-4 sentence synthesis: what patterns do you see, "
+        "what was recurring or unfinished, and one forward-looking nudge for today. "
+        "Be specific and concise. No bullet points."
+    )
+
+
+def _parse_ollama_text(response, utils):
+    """Extract clean text from an Ollama response dict."""
+    if isinstance(response, dict) and not response.get("error"):
+        return utils.clean_response(response.get("response", "").strip())
+    if not isinstance(response, dict):
+        return str(response).strip()
+    return ""
+
+
+def _call_brief_single(notes_block, n, host, model, temp):
+    """One Ollama call → returns (en_text, hi_text) using EN:/HI: block format."""
+    import utils as _utils
+    prompt = (
+        _build_brief_base(notes_block, n) + "\n\n"
+        "Return your response in EXACTLY this format (no other text):\n"
+        "EN: <English synthesis>\n"
+        "HI: <Same synthesis in natural Hindi>"
+    )
+    raw = _parse_ollama_text(_utils.call_ollama(host, model, prompt, [], temp), _utils)
+    en, hi = "", ""
+    for line in raw.splitlines():
+        if line.startswith("EN:"):
+            en = line[3:].strip()
+        elif line.startswith("HI:"):
+            hi = line[3:].strip()
+    # Fallback: model didn't follow format — use full response for both
+    return en or raw, hi or raw
+
+
+def _call_brief_parallel(notes_block, n, host, model_en, model_hi, temp):
+    """Two parallel Ollama calls — one per language. Returns (en_text, hi_text)."""
+    import utils as _utils
+    import queue as _q
+
+    base = _build_brief_base(notes_block, n)
+    prompt_en = base + "\n\nWrite in English only."
+    prompt_hi = base + "\n\nWrite in natural Hindi only."
+    out = _q.Queue()
+
+    def _call(lang, model, prompt):
+        try:
+            text = _parse_ollama_text(_utils.call_ollama(host, model, prompt, [], temp), _utils)
+        except Exception as e:
+            _rlog(f"context_brief/{lang}: error: {e}")
+            text = ""
+        out.put((lang, text))
+
+    t_en = threading.Thread(target=_call, args=("en", model_en, prompt_en), daemon=True)
+    t_hi = threading.Thread(target=_call, args=("hi", model_hi, prompt_hi), daemon=True)
+    t_en.start(); t_hi.start()
+    t_en.join(); t_hi.join()
+    results = dict(out.get() for _ in range(2))
+    return results.get("en", ""), results.get("hi", "")
+
+
 def _run_context_brief(script_dir, config, state):
-    """Background thread: synthesise last N days, save to state, narrate, then prompt Step 1."""
+    """Background thread: synthesise last N days (EN+HI), cache, narrate, then prompt Step 1."""
     import utils as _utils
     n = config.get("last_n_days_context", 3)
     date_str = state.get("date") or datetime.date.today().isoformat()
     _rlog(f"context_brief: reading last {n} days before {date_str}")
 
     notes_data = _read_last_n_notes(script_dir, config, n, date_str)
+    fallback_en = f"No evening review notes found for the last {n} day{'s' if n != 1 else ''}."
+    fallback_hi = f"पिछले {n} दिनों की कोई समीक्षा नहीं मिली।"
 
     if not notes_data:
-        brief = f"No evening review notes found for the last {n} day{'s' if n != 1 else ''}."
+        brief_en, brief_hi = fallback_en, fallback_hi
         _rlog("context_brief: no notes found")
     else:
-        notes_block = ""
-        for note in reversed(notes_data):  # oldest first
-            notes_block += f"--- {note['date']} ---\n{note['content']}\n\n"
-        prompt = (
-            f"Here are the last {len(notes_data)} day(s) of evening journal entries:\n\n"
-            f"{notes_block}"
-            "Write a brief 3-4 sentence synthesis: what patterns do you see, "
-            "what was recurring or unfinished, and one forward-looking nudge for today. "
-            "Be specific and concise. No bullet points."
-        )
-        try:
-            main_config = _utils.load_config(script_dir)
-            host  = main_config.get("OLLAMA_HOST", "http://localhost:11434")
-            model = config.get("structure_model") or main_config.get("OLLAMA_MODELS", {}).get("en", "qwen2.5:3b")
-            temp  = main_config.get("TEMPERATURE", 0.3)
-            response = _utils.call_ollama(host, model, prompt, [], temp)
-            if isinstance(response, dict) and response.get("error"):
-                _rlog(f"context_brief: LLM error: {response['error']}")
-                brief = f"Notes loaded for {len(notes_data)} day(s). AI synthesis unavailable."
-            elif isinstance(response, dict):
-                raw = response.get("response", "").strip()
-                brief = _utils.clean_response(raw) if raw else f"Notes loaded for {len(notes_data)} day(s). Empty response."
-                _rlog(f"context_brief: generated ({len(brief)} chars)")
-            else:
-                brief = str(response).strip()
-                _rlog(f"context_brief: unexpected response type {type(response)}, using str()")
-        except Exception as e:
-            _rlog(f"context_brief: exception during LLM call: {e}")
-            brief = f"Notes loaded for {len(notes_data)} day(s). Could not generate synthesis."
+        # Check cache first
+        cached = _load_brief_cache(script_dir, date_str)
+        if cached:
+            brief_en = cached["en"]
+            brief_hi = cached["hi"]
+        else:
+            notes_block = ""
+            for note in reversed(notes_data):
+                notes_block += f"--- {note['date']} ---\n{note['content']}\n\n"
+            try:
+                main_config = _utils.load_config(script_dir)
+                host  = main_config.get("OLLAMA_HOST", "http://localhost:11434")
+                temp  = main_config.get("TEMPERATURE", 0.3)
+                default_model = config.get("structure_model") or main_config.get("OLLAMA_MODELS", {}).get("en", "qwen2.5:3b")
+
+                model_en = config.get("brief_model_en") or config.get("brief_model") or default_model
+                model_hi = config.get("brief_model_hi") or config.get("brief_model") or default_model
+
+                if model_en == model_hi:
+                    brief_en, brief_hi = _call_brief_single(notes_block, n, host, model_en, temp)
+                    _rlog(f"context_brief: single-model generation done (model={model_en})")
+                else:
+                    brief_en, brief_hi = _call_brief_parallel(notes_block, n, host, model_en, model_hi, temp)
+                    _rlog(f"context_brief: parallel generation done (en={model_en}, hi={model_hi})")
+
+                if not brief_en:
+                    brief_en = f"Notes loaded for {len(notes_data)} day(s). AI synthesis unavailable."
+                if not brief_hi:
+                    brief_hi = f"{len(notes_data)} दिनों के नोट्स लोड हुए। AI synthesis उपलब्ध नहीं।"
+
+                _save_brief_cache(script_dir, date_str, brief_en, brief_hi)
+            except Exception as e:
+                _rlog(f"context_brief: exception: {e}")
+                brief_en = f"Notes loaded for {len(notes_data)} day(s). Could not generate synthesis."
+                brief_hi = f"{len(notes_data)} दिनों के नोट्स लोड हुए। synthesis नहीं हो सकी।"
+
+    # Pick language for narration and display
+    lang = config.get("context_brief_language", "en")
+    brief = brief_hi if lang == "hi" else brief_en
 
     # Write back to live state file
     live_state = _load_state()
     if live_state:
-        live_state["context_brief"] = brief
-        live_state["context_ready"] = True
-        live_state["context_notes"] = notes_data
+        live_state["context_brief"]    = brief
+        live_state["context_brief_en"] = brief_en
+        live_state["context_brief_hi"] = brief_hi
+        live_state["context_ready"]    = True
+        live_state["context_notes"]    = notes_data
         _save_state(live_state)
         _rlog("context_brief: state updated with context_ready=True")
-        # Narrate the brief only when actual past notes were found.
-        # Skip the "no notes found" fallback — it adds no value as audio.
         if notes_data:
             narrate(brief, config, blocking=True)
+
+        # Narrate streak after brief (blocking so mic doesn't open mid-speech)
+        if config.get("show_streak", True):
+            streak_n = live_state.get("streak_current", 0)
+            if streak_n > 0:
+                streak_text = f"आपकी लगातार {streak_n} दिनों की streak है!"
+                narrate(streak_text, config, blocking=True)
+
+        # Narrate weekly focus word trend on Sundays (blocking)
+        if config.get("focus_word_trend", True):
+            review_date = datetime.date.fromisoformat(date_str)
+            if review_date.weekday() == 6:   # Sunday
+                word, count = _get_weekly_focus_trend(script_dir)
+                if word and count >= 2:
+                    trend_text = f"इस हफ्ते आपका सबसे ज़्यादा ध्यान '{word}' पर रहा।"
+                    narrate(trend_text, config, blocking=True)
+                    _rlog(f"focus_word: Sunday trend narrated: '{word}' (×{count})")
+
         send_step_notification(live_state, config)
     else:
         _rlog("context_brief: state gone before brief was ready — skipping narration")
@@ -486,6 +651,144 @@ def _fill_section(file_path, section_name, text):
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(new_content)
     _rlog(f"_fill_section: wrote '{section_name}' into existing section")
+
+
+# ── Streak helpers ────────────────────────────────────────────────────────────
+
+_STREAK_MILESTONES = {7: "एक हफ्ता", 14: "दो हफ्ते", 30: "एक महीना", 100: "सौ दिन"}
+
+
+def _streak_path(script_dir):
+    return os.path.join(script_dir, "streak.json")
+
+
+def _load_streak(script_dir):
+    try:
+        with open(_streak_path(script_dir), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"current": 0, "last_date": "", "best": 0}
+
+
+def _save_streak(script_dir, streak):
+    try:
+        with open(_streak_path(script_dir), "w", encoding="utf-8") as f:
+            json.dump(streak, f, ensure_ascii=False, indent=2)
+        _rlog(f"streak: saved current={streak['current']}, best={streak['best']}")
+    except Exception as e:
+        _rlog(f"streak: save error: {e}")
+
+
+def update_streak(script_dir, date_str):
+    """Increment streak for date_str (called at review completion). Returns updated dict."""
+    streak = _load_streak(script_dir)
+    last_date = streak.get("last_date", "")
+    current   = streak.get("current", 0)
+    best      = streak.get("best", 0)
+
+    if last_date == date_str:
+        return streak   # already recorded today — no double-count
+
+    yesterday = (datetime.date.fromisoformat(date_str) - datetime.timedelta(days=1)).isoformat()
+    current = current + 1 if (last_date == yesterday or not last_date) else 1
+    best    = max(best, current)
+    updated = {"current": current, "last_date": date_str, "best": best}
+    _save_streak(script_dir, updated)
+    return updated
+
+
+# ── Focus word trend helpers ──────────────────────────────────────────────────
+
+def _focus_words_path(script_dir):
+    return os.path.join(script_dir, "focus_words.jsonl")
+
+
+def _append_focus_word(script_dir, date_str, word):
+    """Append {date, word} as a JSON line to focus_words.jsonl."""
+    word = word.strip()
+    if not word:
+        return
+    try:
+        with open(_focus_words_path(script_dir), "a", encoding="utf-8") as f:
+            f.write(json.dumps({"date": date_str, "word": word}, ensure_ascii=False) + "\n")
+        _rlog(f"focus_word: appended '{word}' for {date_str}")
+    except Exception as e:
+        _rlog(f"focus_word: append error: {e}")
+
+
+def _get_weekly_focus_trend(script_dir):
+    """Return (most_common_word, count) from the last 7 focus_words.jsonl entries.
+    Returns (None, 0) if the file is missing or has fewer than 2 entries."""
+    import collections
+    path = _focus_words_path(script_dir)
+    entries = []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        entries.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+    except FileNotFoundError:
+        return None, 0
+    except Exception as e:
+        _rlog(f"focus_word: trend read error: {e}")
+        return None, 0
+
+    last_7 = entries[-7:]
+    if len(last_7) < 2:
+        return None, 0
+    counts = collections.Counter(e["word"].lower() for e in last_7 if e.get("word"))
+    if not counts:
+        return None, 0
+    word, count = counts.most_common(1)[0]
+    return word, count
+
+
+# ── Carry-forward task helpers ────────────────────────────────────────────────
+
+def _read_unchecked_tasks(script_dir, config, date_str):
+    """Return list of unchecked task strings from the day-before date_str's daily note."""
+    prev_date = (datetime.date.fromisoformat(date_str) - datetime.timedelta(days=1)).isoformat()
+    note_path = _get_daily_note_path(script_dir, config, prev_date)
+    tasks = []
+    try:
+        with open(note_path, "r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped.startswith("- [ ]"):
+                    task_text = stripped[5:].strip()
+                    if task_text:
+                        tasks.append(task_text)
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        _rlog(f"_read_unchecked_tasks: error reading {note_path}: {e}")
+    _rlog(f"_read_unchecked_tasks: found {len(tasks)} tasks from {prev_date}")
+    return tasks
+
+
+def _mark_task_done(script_dir, config, task_text, note_date_str):
+    """Replace '- [ ] task_text' with '- [x] task_text' in note_date_str's daily note.
+    Returns True on success, False if the line was not found or an error occurred."""
+    note_path = _get_daily_note_path(script_dir, config, note_date_str)
+    old_line = f"- [ ] {task_text}"
+    new_line = f"- [x] {task_text}"
+    try:
+        with open(note_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        if old_line not in content:
+            _rlog(f"_mark_task_done: line not found in {note_path}: {task_text!r}")
+            return False
+        with open(note_path, "w", encoding="utf-8") as f:
+            f.write(content.replace(old_line, new_line, 1))
+        _rlog(f"_mark_task_done: marked done in {note_path}: {task_text!r}")
+        return True
+    except Exception as e:
+        _rlog(f"_mark_task_done: error: {e}")
+        return False
 
 
 # ── Core review functions ─────────────────────────────────────────────────────
@@ -544,6 +847,22 @@ def initialize_review(script_dir, date_str=None):
         state["context_brief"] = ""
         state["context_ready"] = True
         state["context_notes"] = []
+
+    # Carry-forward: read yesterday's unchecked tasks now (fast — just file parse)
+    if config.get("carryforward_tasks", False):
+        prev_date = (datetime.date.fromisoformat(date_str) - datetime.timedelta(days=1)).isoformat()
+        state["carryforward_tasks"] = _read_unchecked_tasks(script_dir, config, date_str)
+        state["carryforward_date"] = prev_date
+    else:
+        state["carryforward_tasks"] = []
+        state["carryforward_date"] = ""
+
+    # Streak: load current count so dashboard can display it from the start
+    if config.get("show_streak", True):
+        streak = _load_streak(script_dir)
+        state["streak_current"] = streak.get("current", 0)
+    else:
+        state["streak_current"] = 0
 
     _save_state(state)
     _rlog(f"Review initialized for {date_str}. Steps: {len(config.get('review_steps', []))}. context_n={n}")
@@ -614,6 +933,12 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
 
     state["last_written"] = {"file": file_path, "section": section_name}
     _save_state(state)
+
+    # Track focus word for weekly trend (step 1 only, non-isolated)
+    if (step.get("step_id") == 1
+            and not is_isolated
+            and config.get("focus_word_trend", True)):
+        _append_focus_word(script_dir, date_str, structured_text.strip())
 
 
 def advance_step(script_dir, state, config):
@@ -748,7 +1073,17 @@ def complete_review(script_dir, engine_instance, state, config):
         except Exception as e:
             _rlog(f"complete_review: ERROR creating daily note: {e}")
 
-    # Delete state immediately so review is no longer active
+    # Update streak before deleting state so the dashboard's final poll tick
+    # can display the newly-incremented value before _show_complete() fires.
+    if config.get("show_streak", True):
+        updated = update_streak(script_dir, date_str)
+        new_n = updated.get("current", 0)
+        state["streak_current"] = new_n
+        _save_state(state)   # brief write so dashboard picks up new value
+    else:
+        new_n = 0
+
+    # Delete state so review is no longer active
     try:
         if os.path.exists(STATE_PATH):
             os.remove(STATE_PATH)
@@ -757,6 +1092,12 @@ def complete_review(script_dir, engine_instance, state, config):
         _rlog(f"complete_review: ERROR deleting state file: {e}")
 
     narrate(_ui_narration("review_complete", config), config)
+
+    # Narrate milestone if applicable
+    if new_n in _STREAK_MILESTONES:
+        milestone_text = f"वाह! {_STREAK_MILESTONES[new_n]} लगातार समीक्षा के! बहुत शानदार!"
+        narrate(milestone_text, config)
+
     send_notification("Evening Review Complete", "All steps done! Generating summary in background...")
 
     t = threading.Thread(
@@ -811,6 +1152,34 @@ def check_startup_state(script_dir):
 # Cache the best available espeak voice so we don't probe the filesystem every call
 _espeak_voice_cache = None
 
+# Universal narration control — updated by every narrate() call
+_active_narration_proc = None   # currently playing subprocess (paplay or espeak)
+_last_narration_text   = None   # last text spoken, used by replay_narration()
+_narration_lock        = threading.Lock()
+
+
+def stop_narration():
+    """Kill the currently playing narration, if any."""
+    global _active_narration_proc
+    with _narration_lock:
+        proc = _active_narration_proc
+        if proc is not None:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            _active_narration_proc = None
+            _rlog("narrate: stopped by request")
+
+
+def replay_narration(config):
+    """Re-narrate the last spoken text."""
+    if _last_narration_text:
+        _rlog(f"narrate: replaying ({len(_last_narration_text)} chars)")
+        narrate(_last_narration_text, config, blocking=False)
+    else:
+        _rlog("narrate: replay requested but nothing to replay")
+
 
 def _best_espeak_voice():
     """Return the best available espeak-ng voice. Prefers mbrola (more natural)."""
@@ -847,6 +1216,9 @@ def _narrate_espeak(text, blocking):
         else:
             cmd = ["espeak-ng", "-v", voice, "-s", "135", "-p", "38", "-g", "3", "-a", "90", text]
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    with _narration_lock:
+        global _active_narration_proc
+        _active_narration_proc = proc
     if blocking:
         proc.wait()
 
@@ -891,19 +1263,25 @@ def _narrate_piper(text, config, blocking):
         return
     try:
         tmp_path = tempfile.mktemp(suffix=".wav")
-        result = subprocess.run(
+        # Use Popen+wait so the synthesis process is tracked and stoppable
+        synth = subprocess.Popen(
             [piper_exe, "--model", model, "--output_file", tmp_path],
-            input=text.encode(),
+            stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=15
         )
-        if result.returncode != 0 or not os.path.exists(tmp_path):
+        with _narration_lock:
+            global _active_narration_proc
+            _active_narration_proc = synth
+        synth.communicate(input=text.encode(), timeout=15)
+        if synth.returncode != 0 or not os.path.exists(tmp_path):
             _rlog("narrate/piper: piper failed — falling back to espeak")
             _narrate_espeak(text, blocking)
             return
         play = subprocess.Popen(["paplay", tmp_path],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        with _narration_lock:
+            _active_narration_proc = play
         if blocking:
             play.wait()
         # Clean up the temp wav after playback (in background if non-blocking)
@@ -945,8 +1323,11 @@ def narrate(text, config, blocking=False):
                      audio is not captured as user speech.
     blocking=False — fire-and-forget (default).
     """
+    global _last_narration_text
     if not config.get("voice_narration", True):
         return
+    stop_narration()  # stop any currently playing narration before starting new one
+    _last_narration_text = text
     engine = config.get("tts_engine", "espeak")
     try:
         if engine == "piper":
@@ -1006,6 +1387,17 @@ def send_step_notification(state, config, blocking_narration=False):
     title = f"Evening Review — Step {idx + 1}/{total}"
     message = step.get("prompt_notification", f"Step {idx + 1}: Speak your response.")
     send_notification(title, message)
+
+    # Narrate pending carry-forward tasks before the step prompt (blocking so mic
+    # doesn't open while the list is still being spoken)
+    if (config.get("carryforward_tasks", False)
+            and step.get("step_id") == config.get("carryforward_step_id", 3)):
+        tasks = state.get("carryforward_tasks", [])
+        if tasks:
+            task_list = "، ".join(tasks[:5])   # max 5 for narration, Hindi list separator
+            intro = f"कल के ये काम अभी बाकी हैं: {task_list}"
+            narrate(intro, config, blocking=True)
+
     variants = step.get("narration_variants", [])
     narration_text = (
         __import__("random").choice(variants) if variants
