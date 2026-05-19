@@ -139,5 +139,7 @@
   "structure_model": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "context_brief_language": "hi",
   "brief_model_en": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
-  "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+  "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
+  "voice_control": true,
+  "voice_control_threshold": 500
 }

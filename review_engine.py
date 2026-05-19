@@ -5,6 +5,7 @@ import json
 import datetime
 import subprocess
 import threading
+import collections
 
 STATE_PATH = "/tmp/review_state.json"
 _LOG_FILE = None  # set by init_logging()
@@ -53,6 +54,8 @@ def load_review_config(script_dir):
         "focus_word_trend": True,      # append focus word to focus_words.jsonl; narrate weekly trend on Sundays
         "morning_briefing_enabled": False,  # narrate Tomorrow's Priorities each morning
         "morning_briefing_time": "08:00",   # HH:MM — used by install_morning_brief.sh to set the systemd timer
+        "voice_control": False,             # opt-in: listen for "stop"/"again" keywords during narration
+        "voice_control_threshold": 500,     # energy gate in int16-scale RMS; raise if TTS bleed triggers false positives
         "telegram_enabled": False,          # send key events to Telegram on mobile
         "telegram_bot_token": "",           # from @BotFather
         "telegram_chat_id": "",             # your personal chat ID
@@ -724,35 +727,46 @@ def _append_focus_word(script_dir, date_str, word):
         _rlog(f"focus_word: append error: {e}")
 
 
-def _get_weekly_focus_trend(script_dir):
-    """Return (most_common_word, count) from the last 7 focus_words.jsonl entries.
-    Returns (None, 0) if the file is missing or has fewer than 2 entries."""
-    import collections
+def _read_focus_words(script_dir, n):
+    """Return the last n valid entries from focus_words.jsonl as a list of dicts.
+    Reads only the tail of the file to avoid loading unbounded history into memory.
+    Returns empty list if the file is missing or unreadable."""
     path = _focus_words_path(script_dir)
-    entries = []
+    buf = collections.deque(maxlen=n)
     try:
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:
                     try:
-                        entries.append(json.loads(line))
+                        buf.append(json.loads(line))
                     except json.JSONDecodeError:
                         pass
     except FileNotFoundError:
-        return None, 0
+        return []
     except Exception as e:
-        _rlog(f"focus_word: trend read error: {e}")
-        return None, 0
+        _rlog(f"focus_word: read error: {e}")
+        return []
+    return list(buf)
 
-    last_7 = entries[-7:]
-    if len(last_7) < 2:
+
+def _get_weekly_focus_trend(script_dir):
+    """Return (most_common_word, count) from the last 7 focus_words.jsonl entries.
+    Returns (None, 0) if the file is missing or has fewer than 2 entries."""
+    if len(_read_focus_words(script_dir, 7)) < 2:
         return None, 0
-    counts = collections.Counter(e["word"].lower() for e in last_7 if e.get("word"))
-    if not counts:
+    ranked = _get_focus_word_counts(script_dir, n=7)
+    if not ranked:
         return None, 0
-    word, count = counts.most_common(1)[0]
-    return word, count
+    return ranked[0]
+
+
+def _get_focus_word_counts(script_dir, n=7):
+    """Return sorted [(word, count)] from the last n focus_words.jsonl entries.
+    Returns empty list if the file is missing or has no valid entries."""
+    entries = _read_focus_words(script_dir, n)
+    counts = collections.Counter(e["word"].lower() for e in entries if e.get("word"))
+    return counts.most_common()
 
 
 # ── Carry-forward task helpers ────────────────────────────────────────────────
@@ -1168,6 +1182,13 @@ _espeak_voice_cache = None
 _active_narration_proc = None   # currently playing subprocess (paplay or espeak)
 _last_narration_text   = None   # last text spoken, used by replay_narration()
 _narration_lock        = threading.Lock()
+
+
+def is_narrating():
+    """Return True if a narration subprocess is currently active."""
+    with _narration_lock:
+        return (_active_narration_proc is not None
+                and _active_narration_proc.poll() is None)
 
 
 def stop_narration():

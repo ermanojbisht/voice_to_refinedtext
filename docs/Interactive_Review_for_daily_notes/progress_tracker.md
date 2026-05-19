@@ -213,19 +213,23 @@
 | Weekly scan (Sunday) — find most frequent word in last 7 entries | ✅ | `_get_weekly_focus_trend()` — `collections.Counter` on last 7 entries |
 | Narrate trend at review start on Sundays | ✅ | Blocking narration in `_run_context_brief()` after streak; skipped if count < 2 |
 | Config toggle `"focus_word_trend": true` | ✅ | Disables both tracking and narration when false |
-| Simple frequency chart in dashboard (optional) | 📅 | Deferred — nice-to-have, not blocking |
+| Simple frequency chart in dashboard (optional) | ✅ | Horizontal bar chart in right panel using tk.Canvas; shown at dashboard start; hidden if no data or feature disabled |
 
 ---
 
-## Phase 8 — Voice Wake-Word Control (Futuristic)
+## Phase 8 — Voice Wake-Word Control ✅ Complete
 
 | Task | Status | Note |
 | :--- | :--- | :--- |
-| Evaluate `openwakeword` — offline, pip-installable, custom phrases | 📅 | Needs mic conflict testing with active TTS |
-| Background listener thread during narration | 📅 | Detects "रुको"/"stop" → `stop_narration()`, "फिर से"/"again" → `replay_narration()` |
-| VAD energy threshold to reject TTS bleed into mic | 📅 | |
-| Config flag `"voice_control": false` — opt-in | 📅 | |
-| Wire to same `stop_narration()` / `replay_narration()` as hotkeys | 📅 | No new engine code needed — just a new trigger |
+| Evaluate wake-word library | ✅ | Using `faster_whisper` tiny (already installed) instead of `openwakeword` — handles Hindi + English natively, no extra deps |
+| Background listener thread during narration | ✅ | `voice_control.py` — `WakeWordListener` class; daemon thread; listens only while `is_narrating()` is True |
+| Detects "रुको"/"stop" → `stop_narration()` | ✅ | Substring match on lowercased Whisper transcript |
+| Detects "फिर से"/"again" → `replay_narration()` | ✅ | Same pattern |
+| VAD energy threshold to reject TTS bleed into mic | ✅ | RMS energy gate in int16-scale (0–32768); configurable `voice_control_threshold` (default 500) |
+| `is_narrating()` helper in review_engine | ✅ | Checks `_active_narration_proc.poll() is None` under `_narration_lock` |
+| Config flag `"voice_control": false` — opt-in | ✅ | + `"voice_control_threshold": 500` in review_config.json defaults |
+| Wire to same `stop_narration()` / `replay_narration()` as hotkeys | ✅ | `tray_app._init_wake_listener()` passes same callbacks as Ctrl+Alt+S/R |
+| Settings GUI | ✅ | Settings → Notifications → Voice Wake-Word Control: enable toggle + threshold field |
 
 ---
 

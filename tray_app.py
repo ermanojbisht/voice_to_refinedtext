@@ -9,6 +9,7 @@ import time
 import json
 import datetime
 from engine import VoiceEngine
+import review_engine
 import sys
 import signal
 
@@ -32,7 +33,6 @@ class VoiceAssistantTray:
         global _LOG_FILE
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         _LOG_FILE = os.path.join(self.script_dir, "review_debug.log")
-        import review_engine
         review_engine.init_logging(self.script_dir)
         _tlog("=" * 50)
         _tlog("VoiceAssistantTray starting")
@@ -79,6 +79,33 @@ class VoiceAssistantTray:
         elif result == "expired":
             _tlog("Stale review session expired on startup")
 
+        # Voice wake-word listener (opt-in via voice_control: true in review_config.json)
+        # Initialized after check_startup_state so self.review_config is already set.
+        self._wake_listener = None
+        self._init_wake_listener()
+
+    def _get_active_config(self):
+        """Return the current review config — live session config if active, else reload from disk."""
+        return self.review_config or review_engine.load_review_config(self.script_dir)
+
+    def _init_wake_listener(self):
+        cfg = self._get_active_config()
+        if not cfg.get("voice_control", False):
+            return
+        try:
+            from voice_control import WakeWordListener
+            self._wake_listener = WakeWordListener()
+            self._wake_listener.start(
+                cfg.get("voice_control_threshold", 500),
+                review_engine.is_narrating,
+                review_engine.stop_narration,
+                lambda: review_engine.replay_narration(self._get_active_config()))
+            _tlog("voice_control: wake word listener started")
+        except ImportError:
+            _tlog("voice_control: voice_control module not found — skipping")
+        except Exception as exc:
+            _tlog(f"voice_control: init failed — {exc}")
+
     # ── Menu ──────────────────────────────────────────────────────────────────
 
     def _build_static_menu(self):
@@ -88,7 +115,6 @@ class VoiceAssistantTray:
         def _step_label(item):
             if not self.is_in_review or not self.review_state or not self.review_config:
                 return "Review in progress"
-            import review_engine
             total = review_engine.get_step_count(self.review_config)
             step = review_engine.get_current_step(self.review_state, self.review_config)
             idx = self.review_state.get("current_step_index", 0)
@@ -155,8 +181,8 @@ class VoiceAssistantTray:
             elif key.char == "s":
                 threading.Thread(target=review_engine.stop_narration, daemon=True).start()
             elif key.char == "r":
-                cfg = self.review_config or review_engine.load_review_config(self.script_dir)
-                threading.Thread(target=review_engine.replay_narration, args=(cfg,), daemon=True).start()
+                threading.Thread(target=review_engine.replay_narration,
+                                 args=(self._get_active_config(),), daemon=True).start()
 
     def on_release(self, key):
         self.pressed_keys.discard(key)
@@ -197,7 +223,6 @@ class VoiceAssistantTray:
 
     def run_full_process(self):
         """Record → Transcribe → route to review accumulation or normal clipboard."""
-        import review_engine
         try:
             self.is_recording = True
             self.update_icon("recording")
@@ -244,7 +269,6 @@ class VoiceAssistantTray:
 
     def _handle_review_step(self, raw_text):
         """Accumulate raw transcription into state. No LLM call here — deferred to Next Step."""
-        import review_engine
         _tlog("_handle_review_step: accumulating raw text")
 
         # Always reload state from disk (may have changed via menu actions)
@@ -333,7 +357,6 @@ class VoiceAssistantTray:
             return None
 
     def start_review(self, icon=None, item=None):
-        import review_engine
         _tlog("start_review called")
 
         date_str = self._ask_review_date()
@@ -374,7 +397,6 @@ class VoiceAssistantTray:
 
     def next_step_review(self, icon=None, item=None):
         """Trigger structuring + advance in a background thread so the menu stays responsive."""
-        import review_engine
         _tlog("next_step_review called")
         if not self.review_config:
             _tlog("next_step_review: no review_config, ignoring")
@@ -398,7 +420,6 @@ class VoiceAssistantTray:
 
     def _structure_and_advance(self, state):
         """Background: run LLM structuring prompt, write to note, then advance step."""
-        import review_engine
         _tlog("_structure_and_advance: started")
         # Capture a local snapshot of review_config so that a concurrent
         # cancel_review() calling _review_finished() (which sets self.review_config = None)
@@ -484,7 +505,6 @@ class VoiceAssistantTray:
             self._refresh_menu()
 
     def skip_review_step(self, icon=None, item=None):
-        import review_engine
         _tlog("skip_review_step called")
         if not self.review_config:
             return
@@ -504,7 +524,6 @@ class VoiceAssistantTray:
             self._review_finished()
 
     def redo_review_step(self, icon=None, item=None):
-        import review_engine
         _tlog("redo_review_step called")
         if not self.review_config:
             return
@@ -522,7 +541,6 @@ class VoiceAssistantTray:
         self._refresh_menu()
 
     def cancel_review(self, icon=None, item=None):
-        import review_engine
         import traceback
         _tlog(f"cancel_review called from tray. Stack:\n{''.join(traceback.format_stack())}")
         review_engine.cancel_review(self.script_dir)
@@ -541,14 +559,13 @@ class VoiceAssistantTray:
 
     def replay_morning_brief(self, icon=None, item=None):
         import morning_brief as _mb
-        import review_engine
         state = _mb.load_brief_state()
         if not state:
             return
         text = state.get("text", "")
         if not text:
             return
-        cfg = review_engine.load_review_config(self.script_dir)
+        cfg = self._get_active_config()
         lang = cfg.get("context_brief_language", "en")
         if lang == "hi":
             intro = f"गुड मॉर्निंग! कल की प्राथमिकताएं:\n{text}"
@@ -585,6 +602,8 @@ class VoiceAssistantTray:
     def exit_app(self, icon=None, item=None):
         _tlog("exit_app called")
         self.running = False
+        if self._wake_listener:
+            self._wake_listener.stop()
         if self.listener:
             self.listener.stop()
         if self.icon:

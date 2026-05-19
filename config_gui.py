@@ -400,6 +400,23 @@ class ConfigApp:
                      placeholder_text="08:00").grid(row=11, column=1, sticky="w", padx=20, pady=4)
         _note(f, "After changing the time, re-run install_morning_brief.sh to update the systemd timer.", 12)
 
+        _section(f, "🎙  Voice Wake-Word Control", 13)
+        _note(f, "Say 'stop' / 'रुको' to stop narration. Say 'again' / 'फिर से' to replay. "
+                 "Active only while TTS is speaking — idle at all other times.", 14)
+
+        _label(f, "Enable Voice Control:", 15)
+        self.voice_ctrl_var = tk.BooleanVar(value=self.review_raw.get("voice_control", False))
+        ctk.CTkCheckBox(f, text="", variable=self.voice_ctrl_var).grid(
+            row=15, column=1, sticky="w", padx=20, pady=4)
+
+        _label(f, "Energy Threshold:", 16)
+        self.voice_threshold_var = ctk.StringVar(
+            value=str(self.review_raw.get("voice_control_threshold", 500)))
+        ctk.CTkEntry(f, textvariable=self.voice_threshold_var, width=100).grid(
+            row=16, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "RMS energy gate (0–32768). Raise if speaker bleed triggers false positives. "
+                 "Restart the tray after changing. Uses Whisper tiny — no extra models needed.", 17)
+
     def _test_telegram(self):
         self.root.after(0, lambda: (
             self.tg_test_btn.configure(state="disabled", text="Testing…"),
@@ -524,6 +541,11 @@ class ConfigApp:
             existing["telegram_bot_token"]     = self.tg_token_var.get().strip()
             existing["telegram_chat_id"]       = self.tg_chat_var.get().strip()
             existing["morning_briefing_enabled"] = self.morning_enabled_var.get()
+            existing["voice_control"]           = self.voice_ctrl_var.get()
+            try:
+                existing["voice_control_threshold"] = int(self.voice_threshold_var.get())
+            except ValueError:
+                errors.append("Voice control threshold must be a whole number (e.g. 500)")
             raw_time = self.morning_time_var.get().strip()
             try:
                 datetime.datetime.strptime(raw_time, "%H:%M")

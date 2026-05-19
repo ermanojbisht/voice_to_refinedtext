@@ -30,12 +30,15 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Last-N-days context brief** — at review start, reads the last N daily notes, synthesises them with an AI, narrates the brief aloud, and shows it in the dashboard context panel; helps you see patterns and decide what to focus on today
 - **Per-step context** (optional) — shows step-relevant history from past notes in the context panel as each step becomes active
 - **Streak tracker** — counts consecutive days of completed reviews; shown in the dashboard header (🔥 N); milestone narrations at 7 / 14 / 30 / 100 days; persisted in `streak.json`
-- **Focus word trend** — records each day's focus word to `focus_words.jsonl`; on Sundays narrates the most-repeated word from the past 7 entries ("इस हफ्ते आपका सबसे ज़्यादा ध्यान … पर रहा।")
+- **Focus word trend** — records each day's focus word to `focus_words.jsonl`; on Sundays narrates the most-repeated word from the past 7 entries ("इस हफ्ते आपका सबसे ज़्यादा ध्यान … पर रहा।"); dashboard shows a horizontal bar chart of the last 7 days' focus words
+- **Carry-forward tasks** — at a configurable step, reads unchecked `- [ ]` tasks from the previous day's vault note and narrates them; interactive checkboxes in the dashboard let you mark tasks done (writes `- [x]` back to the vault in real time); opt-in via `carryforward_tasks: true`
+- **Voice wake-word control** — say "stop" / "रुको" to halt narration or "again" / "फिर से" to replay it; uses `faster-whisper tiny` (no extra models needed, supports Hindi + English); active only while TTS is speaking; opt-in via `voice_control: true` in Settings → Notifications (restart tray to take effect)
+- **Narration hotkeys** — `Ctrl+Alt+S` stops the current narration; `Ctrl+Alt+R` replays the last narration; always registered, no-op outside review
 - **Telegram mobile notifications** — sends review-complete summary (with streak) and morning brief to your phone via a Telegram bot; configured in Settings → Notifications; powered by self-contained `telegram_service.py`
 - **Morning priority briefing** — a systemd user timer runs `morning_brief.py` at a configured time; reads yesterday's Tomorrow's Priorities, sends a desktop notification + Telegram message, and narrates the list aloud; tray shows **Replay Morning Brief** while the state is fresh
 - **Customisable daily note template** — edit `templates/daily_note.md` with `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; no code changes needed
 - **Skip defaults** — skipping a step with a configured default (e.g. Movement → `only office`) writes that default to the note automatically
-- **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, streak label, and control buttons
+- **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, streak label, and control buttons; context panel has **⏹ Stop**, **🔁 Replay**, **↺ Regenerate** buttons and an **EN · HI** language toggle for the context brief
 - **AI end-of-review summary** — appends a 2-3 sentence AI-generated summary to the daily note on completion
 - **After-midnight safe** — sessions started before midnight write to the correct date
 - **Past-date reviews** — start a review for any past date via the date prompt on launch
@@ -135,7 +138,18 @@ bash install_morning_brief.sh
 
 Installs a systemd user timer that runs `morning_brief.py` at the time set in **Settings → Notifications → Brief Time**. Reads yesterday's Tomorrow's Priorities and narrates them aloud + sends Telegram. Re-run after changing the time.
 
-### 6. Start the tray
+### 6. Voice Wake-Word Control (Optional)
+
+Enable hands-free narration control during Evening Review:
+
+1. Open **Settings → Notifications → Voice Wake-Word Control**
+2. Check **Enable Voice Control**, set threshold (default 500 is fine to start)
+3. Click **Save** then **restart the tray**
+
+While TTS is speaking, say **"stop" / "रुको"** to halt or **"again" / "फिर से"** to replay.  
+Alternatively use keyboard hotkeys at any time: `Ctrl+Alt+S` (stop) · `Ctrl+Alt+R` (replay).
+
+### 7. Start the tray
 
 ```bash
 python3 tray_app.py
@@ -144,7 +158,7 @@ python3 tray_app.py
 
 A dot appears in your system tray. Right-click for the full menu.
 
-### 7. Record
+### 8. Record
 
 - **X11**: Press `Ctrl+Alt+V` anywhere
 - **Wayland**: Configure a GNOME Custom Shortcut (see [Wayland Setup](#wayland-setup))
@@ -152,7 +166,7 @@ A dot appears in your system tray. Right-click for the full menu.
 
 Speak. Pause. The refined text appears in your clipboard.
 
-### 8. Evening Review
+### 9. Evening Review
 
 Right-click tray → **Start Evening Review**. The dashboard opens and guides you through each step with voice narration.
 
@@ -248,11 +262,17 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `per_step_context` | `false` | Show step-relevant history from past notes in the dashboard panel as each step starts |
 | `structure_model` | `null` | Ollama model for per-step LLM structuring; `null` uses the English model |
 | `context_brief_language` | `"en"` | Language for the context brief narration and dashboard panel (`"en"` or `"hi"`) |
-| `brief_model` | `null` | Ollama model for the context brief; `null` uses the English model |
+| `brief_model` | `null` | Ollama model for the context brief (single-model mode); `null` uses the structure model |
+| `brief_model_en` | `null` | English model for context brief (two-model mode); set both `brief_model_en` and `brief_model_hi` to enable parallel generation |
+| `brief_model_hi` | `null` | Hindi model for context brief (two-model mode) |
 | `show_streak` | `true` | Show 🔥 streak counter in dashboard header and narrate milestone completions |
 | `focus_word_trend` | `true` | Record each day's focus word; narrate weekly trend on Sundays |
+| `carryforward_tasks` | `false` | At the carry-forward step, read unchecked tasks from yesterday's note and show them as interactive checkboxes |
+| `carryforward_step_id` | `3` | Step number (1-based) at which carry-forward tasks are narrated and shown |
 | `morning_briefing_enabled` | `false` | Enable the systemd morning briefing timer |
 | `morning_briefing_time` | `"08:00"` | Time the morning brief fires (HH:MM); re-run `install_morning_brief.sh` after changing |
+| `voice_control` | `false` | Opt-in: listen for spoken commands during narration (`stop`/`रुको` and `again`/`फिर से`) |
+| `voice_control_threshold` | `500` | RMS energy gate (0–32768 int16 scale); raise if TTS speaker bleed triggers false positives |
 | `telegram_enabled` | `false` | Send notifications to Telegram |
 | `telegram_bot_token` | `""` | Bot token from @BotFather |
 | `telegram_chat_id` | `""` | Your personal Telegram chat ID |
@@ -363,6 +383,7 @@ voice_to_refinedtext/
 ├── config_gui.py         Settings GUI — three tabs (Voice Refiner, Evening Review, Notifications)
 ├── telegram_service.py   Pluggable Telegram notification module (drop-in, no project imports)
 ├── morning_brief.py      Morning priority briefing — reads yesterday's priorities, narrates + notifies
+├── voice_control.py      Wake-word listener — detects stop/replay commands during TTS narration
 ├── utils.py              Shared helpers: config loading, Ollama calls, lang detection
 ├── main_gui.py           Standalone interactive GUI (record → refine → view)
 ├── voice_to_ai_clipboard.py  Legacy single-shot script (hotkey without tray)

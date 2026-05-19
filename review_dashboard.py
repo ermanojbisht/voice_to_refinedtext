@@ -67,10 +67,10 @@ class ReviewDashboard:
         review_engine._rlog("[dashboard] calling _build_ui")
         self._build_ui()
         review_engine._rlog("[dashboard] _build_ui done, scheduling first poll")
-        # Schedule via after() so _poll_state runs INSIDE mainloop, not before.
-        # Calling it synchronously here causes CTkButton.configure() to run
-        # before Tcl/Tk is ready, silently crashing the process.
+        # Schedule via after() so callbacks run INSIDE mainloop, not before.
+        # Calling synchronously here causes CTkButton.configure() to crash Tcl/Tk.
         self.root.after(200, self._poll_state)
+        self.root.after(250, self._build_focus_chart)
         review_engine._rlog("[dashboard] __init__ complete")
 
     # ── Engine (lazy, for LLM structuring only) ────────────────────────────────
@@ -155,6 +155,7 @@ class ReviewDashboard:
         content_pane.pack(fill=ctk.BOTH, expand=True)
         content_pane.grid_rowconfigure(0, weight=1)   # ctx_text — expands
         content_pane.grid_rowconfigure(1, weight=0)   # tasks panel — fixed
+        content_pane.grid_rowconfigure(2, weight=0)   # focus word chart — fixed
         content_pane.grid_columnconfigure(0, weight=1)
 
         review_engine._rlog("[dashboard] _build_ui: ctx_text")
@@ -180,6 +181,17 @@ class ReviewDashboard:
         # Pre-register grid options while hidden; grid_remove() remembers them for grid()
         self.tasks_outer.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 8))
         self.tasks_outer.grid_remove()
+
+        # Focus word chart — bottom of right panel, hidden until data available
+        self.focus_frame = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
+        ctk.CTkLabel(self.focus_frame, text="🎯 Focus Trend (7 days)",
+                     text_color=ACCENT, font=("Inter", 10, "bold")).pack(
+                     fill=ctk.X, padx=8, pady=(6, 2))
+        self.focus_canvas = tk.Canvas(self.focus_frame, bg=OVERLAY, highlightthickness=0,
+                                      height=4, width=260)
+        self.focus_canvas.pack(fill=ctk.X, padx=8, pady=(0, 6))
+        self.focus_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 8))
+        self.focus_frame.grid_remove()
 
         # ── Left column ───────────────────────────────────────────────────────
         review_engine._rlog("[dashboard] _build_ui: left column")
@@ -562,6 +574,35 @@ class ReviewDashboard:
                 ))
         threading.Thread(target=_do_mark, daemon=True).start()
 
+    def _build_focus_chart(self):
+        """Draw a horizontal bar chart of the last 7 focus words. No-op if disabled or no data."""
+        if not self.config.get("focus_word_trend", True):
+            return
+        counts = review_engine._get_focus_word_counts(script_dir, n=7)
+        if not counts:
+            return
+        max_count = counts[0][1]
+        bar_max_w  = 160   # pixels for the longest bar
+        bar_x      = 72    # x where all bars start
+        bar_gap    = 4     # px between label/bar and bar/count
+        row_h      = 18
+        canvas_h   = len(counts) * row_h + 4
+        self.focus_canvas.configure(height=canvas_h)
+        self.focus_canvas.delete("all")
+        for i, (word, count) in enumerate(counts):
+            y = i * row_h + row_h // 2
+            self.focus_canvas.create_text(
+                bar_x - bar_gap, y, anchor="e", text=word[:12],
+                fill=TEXT, font=("Inter", 9))
+            bar_w = max(4, int(bar_max_w * count / max_count))
+            self.focus_canvas.create_rectangle(
+                bar_x, y - 5, bar_x + bar_w, y + 5,
+                fill=ACCENT, outline="")
+            self.focus_canvas.create_text(
+                bar_x + bar_w + bar_gap, y, anchor="w", text=str(count),
+                fill=SUBTLE, font=("Inter", 9))
+        self.focus_frame.grid()
+
     def _set_ctx_text(self, text, color):
         self.ctx_text.configure(state="normal")
         self.ctx_text.delete("1.0", "end")
@@ -570,6 +611,7 @@ class ReviewDashboard:
 
     def _show_complete(self):
         self._review_done = True
+        self._build_focus_chart()
         self.subtitle_var.set("✅ Evening Review complete!")
         for i in range(len(self.steps)):
             self.icon_labels[i].configure(text="✅", text_color=GREEN)
