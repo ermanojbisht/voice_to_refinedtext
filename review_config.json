@@ -13,6 +13,9 @@
   "focus_word_trend": true,
   "morning_briefing_enabled": false,
   "morning_briefing_time": "08:00",
+  "telegram_enabled": true,
+  "telegram_bot_token": "xxx",
+  "telegram_chat_id": "yyy",
   "review_steps": [
     {
       "step_id": 1,
@@ -133,7 +136,8 @@
   "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-ryan-high.onnx",
   "piper_model_hi": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
   "per_step_context": true,
-  "structure_model": "qwen2.5:3b",
-  "context_brief_language": "en",
-  "brief_model": "qwen2.5:3b"
+  "structure_model": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
+  "context_brief_language": "hi",
+  "brief_model_en": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
+  "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
 }

@@ -13,6 +13,11 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 def init_logging(script_dir):
     global _LOG_FILE
     _LOG_FILE = os.path.join(script_dir, "review_debug.log")
+    try:
+        import telegram_service
+        telegram_service.set_logger(_rlog)
+    except ImportError:
+        pass
 
 def _rlog(msg):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,6 +53,9 @@ def load_review_config(script_dir):
         "focus_word_trend": True,      # append focus word to focus_words.jsonl; narrate weekly trend on Sundays
         "morning_briefing_enabled": False,  # narrate Tomorrow's Priorities each morning
         "morning_briefing_time": "08:00",   # HH:MM — used by install_morning_brief.sh to set the systemd timer
+        "telegram_enabled": False,          # send key events to Telegram on mobile
+        "telegram_bot_token": "",           # from @BotFather
+        "telegram_chat_id": "",             # your personal chat ID
         "review_steps": [
             {
                 "step_id": 1,
@@ -868,8 +876,7 @@ def initialize_review(script_dir, date_str=None):
     _rlog(f"Review initialized for {date_str}. Steps: {len(config.get('review_steps', []))}. context_n={n}")
 
     if n and n > 0:
-        import threading as _t
-        _t.Thread(target=_run_context_brief, args=(script_dir, config, dict(state)), daemon=True).start()
+        threading.Thread(target=_run_context_brief, args=(script_dir, config, dict(state)), daemon=True).start()
     else:
         send_step_notification(state, config)
 
@@ -1059,7 +1066,6 @@ def _generate_and_append_summary(script_dir, daily_note_path, date_str):
 
 
 def complete_review(script_dir, engine_instance, state, config):
-    import threading
     date_str = state.get("date", datetime.date.today().isoformat())
     daily_note_path = _get_daily_note_path(script_dir, config, date_str)
 
@@ -1099,6 +1105,12 @@ def complete_review(script_dir, engine_instance, state, config):
         narrate(milestone_text, config)
 
     send_notification("Evening Review Complete", "All steps done! Generating summary in background...")
+    streak_n = state.get("streak_current", 0)
+    streak_str = f"🔥 Streak: {streak_n} day{'s' if streak_n != 1 else ''}\n" if streak_n > 0 else ""
+    send_telegram(
+        f"✅ Evening Review done for {date_str}\n{streak_str}Great work!",
+        config
+    )
 
     t = threading.Thread(
         target=_generate_and_append_summary,
@@ -1338,6 +1350,17 @@ def narrate(text, config, blocking=False):
         pass  # espeak-ng not installed — silently skip
     except Exception as e:
         _rlog(f"narrate: error: {e}")
+
+
+def send_telegram(text, config):
+    """Send a Telegram message in the background. Delegates to telegram_service for all logic."""
+    def _send():
+        try:
+            import telegram_service
+            telegram_service.send(text, config)
+        except ImportError:
+            _rlog("telegram: telegram_service module not found — skipping")
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def send_notification(title, message, icon="dialog-information"):

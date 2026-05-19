@@ -29,9 +29,13 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Voice narration** — speaks each step prompt aloud; supports **piper** (neural, natural-sounding, offline) or **espeak-ng** (built-in fallback); switchable in Settings
 - **Last-N-days context brief** — at review start, reads the last N daily notes, synthesises them with an AI, narrates the brief aloud, and shows it in the dashboard context panel; helps you see patterns and decide what to focus on today
 - **Per-step context** (optional) — shows step-relevant history from past notes in the context panel as each step becomes active
+- **Streak tracker** — counts consecutive days of completed reviews; shown in the dashboard header (🔥 N); milestone narrations at 7 / 14 / 30 / 100 days; persisted in `streak.json`
+- **Focus word trend** — records each day's focus word to `focus_words.jsonl`; on Sundays narrates the most-repeated word from the past 7 entries ("इस हफ्ते आपका सबसे ज़्यादा ध्यान … पर रहा।")
+- **Telegram mobile notifications** — sends review-complete summary (with streak) and morning brief to your phone via a Telegram bot; configured in Settings → Notifications; powered by self-contained `telegram_service.py`
+- **Morning priority briefing** — a systemd user timer runs `morning_brief.py` at a configured time; reads yesterday's Tomorrow's Priorities, sends a desktop notification + Telegram message, and narrates the list aloud; tray shows **Replay Morning Brief** while the state is fresh
 - **Customisable daily note template** — edit `templates/daily_note.md` with `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; no code changes needed
 - **Skip defaults** — skipping a step with a configured default (e.g. Movement → `only office`) writes that default to the note automatically
-- **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, and control buttons
+- **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, streak label, and control buttons
 - **AI end-of-review summary** — appends a 2-3 sentence AI-generated summary to the daily note on completion
 - **After-midnight safe** — sessions started before midnight write to the correct date
 - **Past-date reviews** — start a review for any past date via the date prompt on launch
@@ -50,14 +54,25 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 ┌───────────────────────▼─────────────────────────────┐
 │                   tray_app.py                        │
 │   State machine · Menu · Icon · SIGUSR1 handler      │
+│   Replay Morning Brief                               │
 └────────┬──────────────┬───────────────┬─────────────┘
          │              │               │
 ┌────────▼───┐  ┌───────▼──────┐  ┌────▼────────────┐
 │ engine.py  │  │review_engine │  │review_dashboard │
 │ Record     │  │ State file   │  │ Live polling    │
 │ Transcribe │  │ Note writing │  │ Step UI         │
-│ Refine     │  │ Narration    │  │ Controls        │
-└────────────┘  └──────────────┘  └─────────────────┘
+│ Refine     │  │ Narration    │  │ Streak label    │
+└────────────┘  │ Streak       │  └─────────────────┘
+                │ Focus trend  │
+                │ Telegram     │
+                └──────┬───────┘
+         ┌─────────────┤
+┌────────▼───┐  ┌──────▼──────────┐
+│ telegram   │  │ morning_brief   │
+│ _service   │  │ Reads priorities│
+│ .py        │  │ Notifies + TTS  │
+│ Pluggable  │  │ systemd timer   │
+└────────────┘  └─────────────────┘
          │
 ┌────────▼───────────────────────────────────────────┐
 │                   utils.py                          │
@@ -104,7 +119,23 @@ wget -P models "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en
 
 Then switch **TTS Engine** to `piper` in **Settings → Evening Review**.
 
-### 4. Start the tray
+### 4. Telegram Notifications (Optional)
+
+1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → copy the **bot token**
+2. Message [@userinfobot](https://t.me/userinfobot) → copy your **chat ID**
+3. Open **Settings → Notifications** in the tray app, paste token + chat ID, click **Send Test Message**
+
+Once configured, review completion and morning briefs are sent to your phone automatically.
+
+### 5. Morning Priority Briefing (Optional)
+
+```bash
+bash install_morning_brief.sh
+```
+
+Installs a systemd user timer that runs `morning_brief.py` at the time set in **Settings → Notifications → Brief Time**. Reads yesterday's Tomorrow's Priorities and narrates them aloud + sends Telegram. Re-run after changing the time.
+
+### 6. Start the tray
 
 ```bash
 python3 tray_app.py
@@ -113,7 +144,7 @@ python3 tray_app.py
 
 A dot appears in your system tray. Right-click for the full menu.
 
-### 4. Record
+### 7. Record
 
 - **X11**: Press `Ctrl+Alt+V` anywhere
 - **Wayland**: Configure a GNOME Custom Shortcut (see [Wayland Setup](#wayland-setup))
@@ -121,7 +152,7 @@ A dot appears in your system tray. Right-click for the full menu.
 
 Speak. Pause. The refined text appears in your clipboard.
 
-### 5. Evening Review
+### 8. Evening Review
 
 Right-click tray → **Start Evening Review**. The dashboard opens and guides you through each step with voice narration.
 
@@ -186,10 +217,20 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
     "review_expiry_hours": 1,
     "voice_narration": true,
     "tts_engine": "piper",
-    "piper_model": "~/voice_to_refinedtext/models/en_US-lessac-medium.onnx",
+    "piper_model": "~/voice_to_refinedtext/models/en_US-ryan-high.onnx",
+    "piper_model_hi": "~/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
     "last_n_days_context": 3,
-    "per_step_context": false,
-    "structure_model": null,
+    "per_step_context": true,
+    "structure_model": "qwen2.5:3b",
+    "context_brief_language": "en",
+    "brief_model": "qwen2.5:3b",
+    "show_streak": true,
+    "focus_word_trend": true,
+    "morning_briefing_enabled": false,
+    "morning_briefing_time": "08:00",
+    "telegram_enabled": false,
+    "telegram_bot_token": "",
+    "telegram_chat_id": "",
     "review_steps": [ ... ]
 }
 ```
@@ -201,10 +242,20 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `review_expiry_hours` | `1` | Hours before an in-progress session is considered stale |
 | `voice_narration` | `true` | Enable/disable step narration |
 | `tts_engine` | `"espeak"` | `"espeak"` (built-in) or `"piper"` (neural, natural; needs model file) |
-| `piper_model` | `""` | Full path to the piper `.onnx` model file (used when `tts_engine` is `"piper"`) |
+| `piper_model` | `""` | Full path to the English piper `.onnx` model file |
+| `piper_model_hi` | `""` | Full path to the Hindi piper `.onnx` model file |
 | `last_n_days_context` | `3` | Days of past notes read at review start for the context brief; set `0` to disable |
 | `per_step_context` | `false` | Show step-relevant history from past notes in the dashboard panel as each step starts |
 | `structure_model` | `null` | Ollama model for per-step LLM structuring; `null` uses the English model |
+| `context_brief_language` | `"en"` | Language for the context brief narration and dashboard panel (`"en"` or `"hi"`) |
+| `brief_model` | `null` | Ollama model for the context brief; `null` uses the English model |
+| `show_streak` | `true` | Show 🔥 streak counter in dashboard header and narrate milestone completions |
+| `focus_word_trend` | `true` | Record each day's focus word; narrate weekly trend on Sundays |
+| `morning_briefing_enabled` | `false` | Enable the systemd morning briefing timer |
+| `morning_briefing_time` | `"08:00"` | Time the morning brief fires (HH:MM); re-run `install_morning_brief.sh` after changing |
+| `telegram_enabled` | `false` | Send notifications to Telegram |
+| `telegram_bot_token` | `""` | Bot token from @BotFather |
+| `telegram_chat_id` | `""` | Your personal Telegram chat ID |
 | `review_steps[].structure_prompt` | (varies) | LLM prompt per step; use `{raw_text}` as the placeholder |
 | `review_steps[].section_fill` | `false` | `true` = fill existing `### Header` in the note; `false` = append under `## Evening Review` |
 | `review_steps[].isolate_file` | `false` | `true` = write to wellness note instead of daily note |
@@ -281,10 +332,21 @@ advance_step() ──────────── moves to next step, narrates
         │                    (per_step_context: context panel updates)
         ▼  (repeat for each step)
         │
-complete_review() ───────── deletes state file
+complete_review() ───────── update_streak() → write streak_current to state
+        │                    delete state file
+        │                    milestone narration (7/14/30/100 days)
+        │                    send_telegram() in background thread
         │                    generates AI summary in background
         ▼
-Dashboard shows ✅ complete
+Dashboard shows ✅ complete  (streak label shows new 🔥 count)
+
+─── Morning Brief (separate systemd timer) ───────────────────────
+morning_brief.py ───────── reads yesterday's Tomorrow's Priorities
+        │                   saves /tmp/morning_brief_state.json
+        │                   desktop notification + Telegram
+        │                   narrates priorities aloud
+        ▼
+Tray shows "Replay Morning Brief" while state is fresh
 ```
 
 ---
@@ -296,9 +358,11 @@ voice_to_refinedtext/
 │
 ├── tray_app.py           Main entry point — system tray, menus, hotkey, state routing
 ├── engine.py             Recording, Whisper transcription, Ollama refinement, logging
-├── review_engine.py      Evening Review state machine, note writing, narration
-├── review_dashboard.py   Evening Review live dashboard (tkinter)
-├── config_gui.py         Settings GUI — two tabs (Voice Refiner + Evening Review)
+├── review_engine.py      Evening Review state machine, note writing, narration, streak, focus trend
+├── review_dashboard.py   Evening Review live dashboard (customtkinter)
+├── config_gui.py         Settings GUI — three tabs (Voice Refiner, Evening Review, Notifications)
+├── telegram_service.py   Pluggable Telegram notification module (drop-in, no project imports)
+├── morning_brief.py      Morning priority briefing — reads yesterday's priorities, narrates + notifies
 ├── utils.py              Shared helpers: config loading, Ollama calls, lang detection
 ├── main_gui.py           Standalone interactive GUI (record → refine → view)
 ├── voice_to_ai_clipboard.py  Legacy single-shot script (hotkey without tray)
@@ -306,12 +370,15 @@ voice_to_refinedtext/
 │
 ├── config.json           Voice Refiner settings (auto-created on first run)
 ├── review_config.json    Evening Review settings (auto-created on first run)
+├── streak.json           Streak tracking state — current/best/last_date (auto-created)
+├── focus_words.jsonl     Append-only focus word history for weekly trend (auto-created)
 ├── log.json              Transcription history with timestamps
 ├── review_debug.log      Evening Review detailed trace log
 │
 ├── requirements.txt      Python dependencies
 ├── install.sh            One-click system installer for Ubuntu
 ├── install_desktop.sh    GNOME app drawer launcher installer (run once after install.sh)
+├── install_morning_brief.sh  Installs systemd user timer for morning briefing
 │
 ├── sounds/
 │   ├── start.oga         Recording start chime

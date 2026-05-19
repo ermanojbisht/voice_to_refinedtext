@@ -5,7 +5,9 @@
 """
 import os
 import json
+import datetime
 import subprocess
+import threading
 import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
@@ -53,6 +55,7 @@ ACCENT  = "#89b4fa"
 TEXT    = "#cdd6f4"
 SUBTLE  = "#6c7086"
 GREEN   = "#a6e3a1"
+ERROR   = "#f38ba8"
 
 # ── Section header helper ──────────────────────────────────────────────────────
 
@@ -89,6 +92,7 @@ class ConfigApp:
 
         self.tab1 = self.tabview.add("🎙 Voice Refiner")
         self.tab2 = self.tabview.add("🌙 Evening Review")
+        self.tab3 = self.tabview.add("📱 Notifications")
 
         # Scrollable frames for tabs
         self.scroll1 = ctk.CTkScrollableFrame(self.tab1, fg_color="transparent")
@@ -98,6 +102,10 @@ class ConfigApp:
         self.scroll2 = ctk.CTkScrollableFrame(self.tab2, fg_color="transparent")
         self.scroll2.pack(fill="both", expand=True)
         self._build_review_tab(self.scroll2)
+
+        self.scroll3 = ctk.CTkScrollableFrame(self.tab3, fg_color="transparent")
+        self.scroll3.pack(fill="both", expand=True)
+        self._build_notifications_tab(self.scroll3)
 
         # Save / Cancel bar
         bar = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -223,91 +231,102 @@ class ConfigApp:
         ctk.CTkCheckBox(f, text="", variable=self.per_step_ctx_var).grid(row=12, column=1, sticky="w", padx=20, pady=4)
         _note(f, "Show step-relevant history in the context panel as each step starts.", 13)
 
-        _section(f, "🔊  Text-to-Speech (Step Narration)", 14)
-        _note(f, "Engine used to narrate step prompts. Piper sounds natural; espeak is the fallback.", 15)
+        _label(f, "Carry-forward Tasks:", 14)
+        self.carryforward_var = tk.BooleanVar(value=self.review_raw.get("carryforward_tasks", True))
+        ctk.CTkCheckBox(f, text="", variable=self.carryforward_var).grid(row=14, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Read unchecked tasks from yesterday's Priorities and show them at the carry-forward step.", 15)
 
-        _label(f, "TTS Engine:", 16)
+        _label(f, "Carry-forward Step:", 16)
+        self.carryforward_step_var = ctk.StringVar(value=str(self.review_raw.get("carryforward_step_id", 3)))
+        ctk.CTkComboBox(f, variable=self.carryforward_step_var,
+                        values=["1", "2", "3", "4", "5", "6"], width=100).grid(row=16, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Which step shows the carry-forward task checklist (default: 3 = Tomorrow's Priorities).", 17)
+
+        _section(f, "🔊  Text-to-Speech (Step Narration)", 18)
+        _note(f, "Engine used to narrate step prompts. Piper sounds natural; espeak is the fallback.", 19)
+
+        _label(f, "TTS Engine:", 20)
         self.tts_engine_var = ctk.StringVar(value=self.review_raw.get("tts_engine", "espeak"))
         tts_cb = ctk.CTkComboBox(f, variable=self.tts_engine_var,
                                   values=["espeak", "piper"], width=150,
                                   command=self._on_tts_engine_change)
-        tts_cb.grid(row=16, column=1, sticky="w", padx=20, pady=4)
-        _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 17)
+        tts_cb.grid(row=20, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "espeak: built-in, no setup needed.  piper: neural voice, needs model file.", 21)
 
-        _label(f, "Piper Model (EN):", 18)
+        _label(f, "Piper Model (EN):", 22)
         self.piper_model_var = ctk.StringVar(value=self.review_raw.get("piper_model", ""))
         self.piper_model_entry = ctk.CTkEntry(f, textvariable=self.piper_model_var, width=300,
                                                placeholder_text="e.g. ~/models/en_US-ryan-high.onnx")
-        self.piper_model_entry.grid(row=18, column=1, sticky="we", padx=20, pady=4)
+        self.piper_model_entry.grid(row=22, column=1, sticky="we", padx=20, pady=4)
         self._piper_note = ctk.CTkLabel(f,
             text="English .onnx model. The matching .onnx.json must be in the same folder.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
-        self._piper_note.grid(row=19, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+        self._piper_note.grid(row=23, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
-        _label(f, "Piper Model (HI):", 20)
+        _label(f, "Piper Model (HI):", 24)
         self.piper_model_hi_var = ctk.StringVar(value=self.review_raw.get("piper_model_hi", ""))
         self.piper_model_hi_entry = ctk.CTkEntry(f, textvariable=self.piper_model_hi_var, width=300,
                                                   placeholder_text="e.g. ~/models/hi_IN-dhvani-medium.onnx")
-        self.piper_model_hi_entry.grid(row=20, column=1, sticky="we", padx=20, pady=4)
+        self.piper_model_hi_entry.grid(row=24, column=1, sticky="we", padx=20, pady=4)
         self._piper_hi_note = ctk.CTkLabel(f,
             text="Hindi .onnx model. Used when narration text contains Devanagari. Falls back to EN model if blank.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
-        self._piper_hi_note.grid(row=21, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+        self._piper_hi_note.grid(row=25, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
         self._on_tts_engine_change(self.tts_engine_var.get())  # set initial visibility
 
-        _section(f, "🤖  Step Structuring Model", 22)
-        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 23)
-        _label(f, "Structuring Model:", 24)
+        _section(f, "🤖  Step Structuring Model", 26)
+        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 27)
+        _label(f, "Structuring Model:", 28)
         self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
         self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
-        self.struct_cb.grid(row=24, column=1, sticky="we", padx=20, pady=4)
-        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 25)
+        self.struct_cb.grid(row=28, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 29)
 
-        _section(f, "🌐  Context Brief", 26)
-        _note(f, "Language and model(s) used to generate the nightly context synthesis.", 27)
+        _section(f, "🌐  Context Brief", 30)
+        _note(f, "Language and model(s) used to generate the nightly context synthesis.", 31)
 
-        _label(f, "Brief Language:", 28)
+        _label(f, "Brief Language:", 32)
         self.brief_lang_var = ctk.StringVar(value=self.review_raw.get("context_brief_language", "en"))
         ctk.CTkComboBox(f, variable=self.brief_lang_var,
-                        values=["en", "hi"], width=100).grid(row=28, column=1, sticky="w", padx=20, pady=4)
+                        values=["en", "hi"], width=100).grid(row=32, column=1, sticky="w", padx=20, pady=4)
 
-        _label(f, "Brief Mode:", 29)
+        _label(f, "Brief Mode:", 33)
         _has_two = bool(self.review_raw.get("brief_model_en") or self.review_raw.get("brief_model_hi"))
         self.brief_mode_var = ctk.StringVar(value="Two Models" if _has_two else "Single Model")
         ctk.CTkComboBox(f, variable=self.brief_mode_var,
                         values=["Single Model", "Two Models"], width=150,
-                        command=self._on_brief_mode_change).grid(row=29, column=1, sticky="w", padx=20, pady=4)
+                        command=self._on_brief_mode_change).grid(row=33, column=1, sticky="w", padx=20, pady=4)
         self._brief_mode_note = ctk.CTkLabel(f,
             text="Single Model: one call returns both languages.  Two Models: parallel calls, one per language.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
-        self._brief_mode_note.grid(row=30, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+        self._brief_mode_note.grid(row=34, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
-        _label(f, "Brief Model:", 31)
+        _label(f, "Brief Model:", 35)
         self.brief_model_var = ctk.StringVar(value=self.review_raw.get("brief_model", ""))
         self.brief_model_entry = ctk.CTkEntry(f, textvariable=self.brief_model_var, width=300,
                                                placeholder_text="e.g. qwen2.5:7b  (blank = structure model)")
-        self.brief_model_entry.grid(row=31, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_entry.grid(row=35, column=1, sticky="we", padx=20, pady=4)
 
-        _label(f, "Brief Model (EN):", 32)
+        _label(f, "Brief Model (EN):", 36)
         self.brief_model_en_var = ctk.StringVar(value=self.review_raw.get("brief_model_en", ""))
         self.brief_model_en_entry = ctk.CTkEntry(f, textvariable=self.brief_model_en_var, width=300,
                                                   placeholder_text="e.g. qwen2.5:7b")
-        self.brief_model_en_entry.grid(row=32, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_en_entry.grid(row=36, column=1, sticky="we", padx=20, pady=4)
 
-        _label(f, "Brief Model (HI):", 33)
+        _label(f, "Brief Model (HI):", 37)
         self.brief_model_hi_var = ctk.StringVar(value=self.review_raw.get("brief_model_hi", ""))
         self.brief_model_hi_entry = ctk.CTkEntry(f, textvariable=self.brief_model_hi_var, width=300,
                                                   placeholder_text="e.g. aya-expanse:8b")
-        self.brief_model_hi_entry.grid(row=33, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_hi_entry.grid(row=37, column=1, sticky="we", padx=20, pady=4)
 
         self._on_brief_mode_change(self.brief_mode_var.get())  # set initial visibility
 
-        _section(f, "📋  Step Configuration", 34)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 35)
+        _section(f, "📋  Step Configuration", 38)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 39)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=36, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=40, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -318,7 +337,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=37 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=41 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -332,6 +351,76 @@ class ConfigApp:
             self.step_skippable_vars.append(skip_var)
             self.step_refine_vars.append(refine_var)
             self._step_ids.append(step["step_id"])
+
+    def _build_notifications_tab(self, f):
+        f.columnconfigure(1, weight=1)
+
+        _section(f, "📲  Telegram", 0)
+        _note(f, "Send key events (morning brief, review complete) to your phone via Telegram.", 1)
+
+        _label(f, "Enable Telegram:", 2)
+        self.tg_enabled_var = tk.BooleanVar(value=self.review_raw.get("telegram_enabled", False))
+        ctk.CTkCheckBox(f, text="", variable=self.tg_enabled_var).grid(row=2, column=1, sticky="w", padx=20, pady=4)
+
+        _label(f, "Bot Token:", 3)
+        self.tg_token_var = ctk.StringVar(value=self.review_raw.get("telegram_bot_token", ""))
+        ctk.CTkEntry(f, textvariable=self.tg_token_var, width=340,
+                     placeholder_text="From @BotFather — keep private, do not share").grid(
+                     row=3, column=1, sticky="we", padx=20, pady=4)
+
+        _label(f, "Chat ID:", 4)
+        self.tg_chat_var = ctk.StringVar(value=self.review_raw.get("telegram_chat_id", ""))
+        ctk.CTkEntry(f, textvariable=self.tg_chat_var, width=200,
+                     placeholder_text="e.g. 59509781").grid(
+                     row=4, column=1, sticky="w", padx=20, pady=4)
+
+        _note(f, "To find your chat ID: message your bot once, then open\n"
+                 "https://api.telegram.org/bot<TOKEN>/getUpdates in a browser.", 5)
+
+        self.tg_test_btn = ctk.CTkButton(
+            f, text="Send Test Message", width=180, height=32,
+            fg_color=ACCENT, text_color=BG, hover_color="#b4befe",
+            font=("Inter", 12, "bold"), corner_radius=6,
+            command=lambda: threading.Thread(target=self._test_telegram, daemon=True).start())
+        self.tg_test_btn.grid(row=6, column=1, sticky="w", padx=20, pady=(10, 4))
+
+        self.tg_status_lbl = ctk.CTkLabel(f, text="", text_color=SUBTLE, font=("Inter", 11))
+        self.tg_status_lbl.grid(row=7, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+
+        _section(f, "🌅  Morning Brief Notifications", 8)
+        _note(f, "Sends your Tomorrow's Priorities to Telegram each morning (requires Telegram enabled).", 9)
+
+        _label(f, "Enable Morning Brief:", 10)
+        self.morning_enabled_var = tk.BooleanVar(value=self.review_raw.get("morning_briefing_enabled", False))
+        ctk.CTkCheckBox(f, text="", variable=self.morning_enabled_var).grid(row=10, column=1, sticky="w", padx=20, pady=4)
+
+        _label(f, "Brief Time (HH:MM):", 11)
+        self.morning_time_var = ctk.StringVar(value=self.review_raw.get("morning_briefing_time", "08:00"))
+        ctk.CTkEntry(f, textvariable=self.morning_time_var, width=100,
+                     placeholder_text="08:00").grid(row=11, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "After changing the time, re-run install_morning_brief.sh to update the systemd timer.", 12)
+
+    def _test_telegram(self):
+        self.root.after(0, lambda: (
+            self.tg_test_btn.configure(state="disabled", text="Testing…"),
+            self.tg_status_lbl.configure(text="Connecting…", text_color=SUBTLE),
+        ))
+        try:
+            import telegram_service
+            config = {
+                "telegram_enabled": True,
+                "telegram_bot_token": self.tg_token_var.get().strip(),
+                "telegram_chat_id":   self.tg_chat_var.get().strip(),
+            }
+            ok, msg = telegram_service.test_connection(config)
+            color = GREEN if ok else ERROR
+            self.root.after(0, lambda: self.tg_status_lbl.configure(text=msg, text_color=color))
+        except Exception as e:
+            self.root.after(0, lambda: self.tg_status_lbl.configure(
+                text=f"Error: {e}", text_color=ERROR))
+        finally:
+            self.root.after(0, lambda: self.tg_test_btn.configure(
+                state="normal", text="Send Test Message"))
 
     def _on_brief_mode_change(self, value):
         """Show single-model field or two-model fields based on selected mode."""
@@ -355,7 +444,6 @@ class ConfigApp:
             host   = getattr(self, "host_var", None)
             models = get_ollama_models(host.get() if host else "http://localhost:11434")
             self.root.after(0, lambda: self._populate_model_dropdowns(models))
-        import threading
         threading.Thread(target=_fetch, daemon=True).start()
 
     def _populate_model_dropdowns(self, models):
@@ -399,6 +487,8 @@ class ConfigApp:
             existing["voice_narration"]     = self.narration_var.get()
             existing["last_n_days_context"] = int(self.context_days_var.get())
             existing["per_step_context"]    = self.per_step_ctx_var.get()
+            existing["carryforward_tasks"]  = self.carryforward_var.get()
+            existing["carryforward_step_id"] = int(self.carryforward_step_var.get())
             existing["tts_engine"]          = self.tts_engine_var.get()
             existing["piper_model"]         = self.piper_model_var.get().strip()
             existing["piper_model_hi"]      = self.piper_model_hi_var.get().strip()
@@ -428,6 +518,19 @@ class ConfigApp:
                 merged_steps.append(step)
             if merged_steps:
                 existing["review_steps"] = merged_steps
+
+            # Notifications tab
+            existing["telegram_enabled"]       = self.tg_enabled_var.get()
+            existing["telegram_bot_token"]     = self.tg_token_var.get().strip()
+            existing["telegram_chat_id"]       = self.tg_chat_var.get().strip()
+            existing["morning_briefing_enabled"] = self.morning_enabled_var.get()
+            raw_time = self.morning_time_var.get().strip()
+            try:
+                datetime.datetime.strptime(raw_time, "%H:%M")
+                existing["morning_briefing_time"] = raw_time
+            except ValueError:
+                errors.append("Morning brief time must be in HH:MM format (e.g. 08:00)")
+                existing["morning_briefing_time"] = "08:00"
 
             with open(review_config_path, "w", encoding="utf-8") as fh:
                 json.dump(existing, fh, indent=2, ensure_ascii=False)

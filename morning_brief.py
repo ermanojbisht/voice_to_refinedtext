@@ -102,6 +102,7 @@ def run_morning_brief(script_dir):
         intro = f"Good morning! Here are your priorities for today:\n{priorities}"
 
     review_engine.send_notification("🌅 Morning Brief", priorities[:240])
+    review_engine.send_telegram(f"🌅 Morning Brief — {date_str}\n\n{priorities}", config)
     review_engine.narrate(intro, config, blocking=True)
     review_engine._rlog("morning_brief: done")
 

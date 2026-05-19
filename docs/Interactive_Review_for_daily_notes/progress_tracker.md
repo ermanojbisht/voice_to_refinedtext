@@ -174,7 +174,7 @@
 | Narrate pending tasks at carry-forward step before step prompt | ✅ | *"कल के ये काम अभी बाकी हैं..."* blocking narration |
 | Config toggle `"carryforward_tasks": true` + `"carryforward_step_id": 3` | ✅ | Configurable which step shows tasks |
 | Dashboard right panel: interactive checkboxes at carry-forward step | ✅ | Clicking marks `- [x]` in vault; fails gracefully with warning |
-| Settings GUI toggle for carry-forward | 📅 | Can be toggled via review_config.json for now |
+| Settings GUI toggle for carry-forward | ✅ | Settings → Evening Review → Review Behaviour: enable checkbox + step selector |
 
 ---
 
@@ -188,7 +188,7 @@
 | Config: `morning_briefing_enabled`, `morning_briefing_time` | ✅ | Both in `review_config.json` + engine defaults |
 | Brief state saved to `/tmp/morning_brief_state.json` | ✅ | Includes `text`, `date`, `generated_at`; expires when date ≠ yesterday |
 | "🌅 Replay Morning Brief" tray menu item | ✅ | Visible when valid state exists; narrates via `replay_morning_brief()` |
-| Settings GUI fields for enable toggle + time picker | 📅 | Can be toggled via review_config.json for now |
+| Settings GUI fields for enable toggle + time picker | ✅ | Settings → Notifications tab: enable checkbox + HH:MM time field |
 
 ---
 
@@ -226,6 +226,20 @@
 | VAD energy threshold to reject TTS bleed into mic | 📅 | |
 | Config flag `"voice_control": false` — opt-in | 📅 | |
 | Wire to same `stop_narration()` / `replay_narration()` as hotkeys | 📅 | No new engine code needed — just a new trigger |
+
+---
+
+## Notifications — Telegram Service ✅ Complete
+
+| Task | Status | Note |
+| :--- | :--- | :--- |
+| `telegram_service.py` — standalone pluggable module | ✅ | `send(text, config)`, `test_connection(config)`, `is_configured(config)` — no project-specific imports |
+| `send_telegram()` in `review_engine.py` — thin wrapper | ✅ | Delegates to `telegram_service`; silently skips if module absent |
+| Wire Telegram into `complete_review()` | ✅ | Sends `✅ Evening Review done + streak` on completion |
+| Wire Telegram into `morning_brief.py` | ✅ | Sends priorities text to phone each morning |
+| Config keys: `telegram_enabled`, `telegram_bot_token`, `telegram_chat_id` | ✅ | In `review_config.json` + engine defaults; credentials stored locally only |
+| "📱 Notifications" tab in Settings GUI | ✅ | Enable toggle, token + chat ID fields, "Send Test Message" button with live status |
+| Morning Brief settings in Notifications tab | ✅ | Enable toggle + time picker (HH:MM); note to re-run install script after time change |
 
 ---
 
