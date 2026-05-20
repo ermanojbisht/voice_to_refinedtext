@@ -506,6 +506,8 @@ class VoiceAssistantTray:
                 else:
                     structured_text = raw_combined
 
+                self.engine.log(raw_combined, structured_text,
+                                mode=f"review:{step_name}", model="review_engine")
                 _tlog(f"_structure_and_advance: structured preview='{structured_text[:80]}'")
 
                 state["accumulated_raw"] = []

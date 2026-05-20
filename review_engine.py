@@ -1118,21 +1118,6 @@ def complete_review(script_dir, engine_instance, state, config):
         except Exception as e:
             _rlog(f"complete_review: ERROR creating daily note: {e}")
 
-    # Write per-step timing line to the note
-    step_times = state.get("step_times", [])
-    if step_times:
-        steps_cfg = config.get("review_steps", [])
-        parts = []
-        for i, t in enumerate(step_times):
-            name = steps_cfg[i].get("section_name", f"Step {i+1}") if i < len(steps_cfg) else f"Step {i+1}"
-            parts.append(f"{name}: {_fmt_duration(t)}")
-        timing_line = f"\n> ⏱ Total: {_fmt_duration(sum(step_times))} | {' · '.join(parts)}\n"
-        try:
-            with open(daily_note_path, "a", encoding="utf-8") as fh:
-                fh.write(timing_line)
-        except Exception as e:
-            _rlog(f"complete_review: timing write error: {e}")
-
     # Update streak before deleting state so the dashboard's final poll tick
     # can display the newly-incremented value before _show_complete() fires.
     if config.get("show_streak", True):
@@ -1219,9 +1204,11 @@ def check_startup_state(script_dir):
 _espeak_voice_cache = None
 
 # Universal narration control — updated by every narrate() call
-_active_narration_proc = None   # currently playing subprocess (paplay or espeak)
-_last_narration_text   = None   # last text spoken, used by replay_narration()
-_narration_lock        = threading.Lock()
+_active_narration_proc    = None   # currently playing subprocess (paplay or espeak)
+_last_narration_text      = None   # last text spoken, used by replay_narration()
+_narration_lock           = threading.Lock()
+_narration_stop_requested = False  # set by stop_narration() to suppress piper→espeak fallback
+_NARRATION_PID_FILE       = "/tmp/review_narration.pid"  # cross-process kill target
 
 
 def is_narrating():
@@ -1232,8 +1219,9 @@ def is_narrating():
 
 
 def stop_narration():
-    """Kill the currently playing narration, if any."""
-    global _active_narration_proc
+    """Kill the currently playing narration, if any (works cross-process via PID file)."""
+    global _active_narration_proc, _narration_stop_requested
+    _narration_stop_requested = True
     with _narration_lock:
         proc = _active_narration_proc
         if proc is not None:
@@ -1242,7 +1230,19 @@ def stop_narration():
             except Exception:
                 pass
             _active_narration_proc = None
-            _rlog("narrate: stopped by request")
+    # Cross-process kill: dashboard can stop tray's narration via the PID file
+    try:
+        with open(_NARRATION_PID_FILE) as f:
+            pid = int(f.read().strip())
+        os.kill(pid, 9)
+        _rlog(f"narrate: cross-process stop (pid={pid})")
+    except Exception:
+        pass
+    try:
+        os.unlink(_NARRATION_PID_FILE)
+    except Exception:
+        pass
+    _rlog("narrate: stopped by request")
 
 
 def replay_narration(config):
@@ -1292,6 +1292,11 @@ def _narrate_espeak(text, blocking):
     with _narration_lock:
         global _active_narration_proc
         _active_narration_proc = proc
+    try:
+        with open(_NARRATION_PID_FILE, "w") as f:
+            f.write(str(proc.pid))
+    except Exception:
+        pass
     if blocking:
         proc.wait()
 
@@ -1346,8 +1351,16 @@ def _narrate_piper(text, config, blocking):
         with _narration_lock:
             global _active_narration_proc
             _active_narration_proc = synth
+        try:
+            with open(_NARRATION_PID_FILE, "w") as f:
+                f.write(str(synth.pid))
+        except Exception:
+            pass
         synth.communicate(input=text.encode(), timeout=15)
         if synth.returncode != 0 or not os.path.exists(tmp_path):
+            if _narration_stop_requested:
+                _rlog("narrate/piper: synthesis killed by stop request — not falling back")
+                return
             _rlog("narrate/piper: piper failed — falling back to espeak")
             _narrate_espeak(text, blocking)
             return
@@ -1355,6 +1368,11 @@ def _narrate_piper(text, config, blocking):
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         with _narration_lock:
             _active_narration_proc = play
+        try:
+            with open(_NARRATION_PID_FILE, "w") as f:
+                f.write(str(play.pid))
+        except Exception:
+            pass
         if blocking:
             play.wait()
         # Clean up the temp wav after playback (in background if non-blocking)
@@ -1396,10 +1414,11 @@ def narrate(text, config, blocking=False):
                      audio is not captured as user speech.
     blocking=False — fire-and-forget (default).
     """
-    global _last_narration_text
+    global _last_narration_text, _narration_stop_requested
     if not config.get("voice_narration", True):
         return
     stop_narration()  # stop any currently playing narration before starting new one
+    _narration_stop_requested = False  # reset flag so new narration plays normally
     _last_narration_text = text
     engine = config.get("tts_engine", "espeak")
     try:

@@ -37,6 +37,34 @@ RED     = "#f38ba8"
 YELLOW  = "#f9e2af"
 
 
+class _Tooltip:
+    """Simple hover tooltip for any tkinter/CTk widget."""
+
+    def __init__(self, widget, text):
+        self._widget = widget
+        self._text   = text
+        self._tip    = None
+        widget.bind("<Enter>", self._show, add="+")
+        widget.bind("<Leave>", self._hide, add="+")
+
+    def _show(self, _event=None):
+        x = self._widget.winfo_rootx() + self._widget.winfo_width() // 2
+        y = self._widget.winfo_rooty() + self._widget.winfo_height() + 4
+        self._tip = tk.Toplevel(self._widget)
+        self._tip.wm_overrideredirect(True)
+        self._tip.wm_geometry(f"+{x}+{y}")
+        tk.Label(
+            self._tip, text=self._text,
+            background="#313244", foreground="#cdd6f4",
+            relief="flat", padx=6, pady=3, font=("Inter", 10),
+        ).pack()
+
+    def _hide(self, _event=None):
+        if self._tip:
+            self._tip.destroy()
+            self._tip = None
+
+
 class ReviewDashboard:
     def __init__(self, root):
         review_engine._rlog("[dashboard] __init__ start")
@@ -103,11 +131,10 @@ class ReviewDashboard:
         body = ctk.CTkFrame(self.root, fg_color="transparent")
         body.pack(fill=ctk.BOTH, expand=True, padx=8, pady=8)
 
-        # ── Right panel (context sidebar) ─── pack first so left gets remainder
+        # ── Right panel (context sidebar) ─── pack first, expands into available space
         review_engine._rlog("[dashboard] _build_ui: right panel")
-        right_panel = ctk.CTkFrame(body, fg_color=SURFACE, corner_radius=8, width=300)
-        right_panel.pack(side=ctk.RIGHT, fill=ctk.Y, padx=(8, 4), pady=4)
-        right_panel.pack_propagate(False)
+        right_panel = ctk.CTkFrame(body, fg_color=SURFACE, corner_radius=8)
+        right_panel.pack(side=ctk.RIGHT, fill=ctk.BOTH, expand=True, padx=(8, 4), pady=4)
 
         # Right panel: title row
         ctx_hdr = ctk.CTkFrame(right_panel, fg_color="transparent")
@@ -117,20 +144,23 @@ class ReviewDashboard:
 
         # Narration controls — right side of title row
         self.regen_btn = ctk.CTkButton(
-            ctx_hdr, text="↺", width=28, height=22, font=("Inter", 13),
+            ctx_hdr, text="↺", width=42, height=28, font=("Inter", 16),
             fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
             command=self._regen_brief)
-        self.regen_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+        self.regen_btn.pack(side=ctk.RIGHT, padx=(3, 0))
+        _Tooltip(self.regen_btn, "Regenerate context brief")
         self.replay_btn = ctk.CTkButton(
-            ctx_hdr, text="🔁", width=28, height=22, font=("Inter", 13),
-            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            ctx_hdr, text="↻", width=42, height=28, font=("Inter", 16),
+            fg_color=SURFACE, text_color=ACCENT, hover_color=OVERLAY,
             command=self._replay_brief)
-        self.replay_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+        self.replay_btn.pack(side=ctk.RIGHT, padx=(3, 0))
+        _Tooltip(self.replay_btn, "Replay narration")
         self.stop_btn = ctk.CTkButton(
-            ctx_hdr, text="⏹", width=28, height=22, font=("Inter", 13),
+            ctx_hdr, text="⏹", width=42, height=28, font=("Inter", 16),
             fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
             command=review_engine.stop_narration)
-        self.stop_btn.pack(side=ctk.RIGHT, padx=(2, 0))
+        self.stop_btn.pack(side=ctk.RIGHT, padx=(3, 0))
+        _Tooltip(self.stop_btn, "Stop narration")
 
         # Right panel: EN/HI language toggle + stats label
         lang_row = ctk.CTkFrame(right_panel, fg_color="transparent")
@@ -196,8 +226,9 @@ class ReviewDashboard:
 
         # ── Left column ───────────────────────────────────────────────────────
         review_engine._rlog("[dashboard] _build_ui: left column")
-        left_col = ctk.CTkFrame(body, fg_color="transparent")
-        left_col.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
+        left_col = ctk.CTkFrame(body, fg_color="transparent", width=650)
+        left_col.pack(side=ctk.LEFT, fill=ctk.Y)
+        left_col.pack_propagate(False)
 
         # Subtitle (current step description)
         self.subtitle_var = ctk.StringVar(value="Initialising…")
@@ -378,6 +409,17 @@ class ReviewDashboard:
         remote_processing = state.get("processing", False)
         busy = self.is_processing or remote_processing
 
+        # Live elapsed time for the current step
+        _step_elapsed = ""
+        try:
+            started = state.get("step_started_at")
+            if started:
+                secs = int((datetime.datetime.now() -
+                            datetime.datetime.fromisoformat(started)).total_seconds())
+                _step_elapsed = f" · ⏱ {review_engine._fmt_duration(secs)}"
+        except Exception:
+            pass
+
         # Subtitle
         if idx < total:
             sname = self.steps[idx]["section_name"]
@@ -409,10 +451,12 @@ class ReviewDashboard:
                     st_lbl.configure(text="Processing…", text_color=YELLOW)
                 elif awaiting:
                     icon_lbl.configure(text="✓", text_color=ACCENT)
-                    st_lbl.configure(text=f"{clips} clip{'s' if clips != 1 else ''} · ready", text_color=ACCENT)
+                    st_lbl.configure(
+                        text=f"{clips} clip{'s' if clips != 1 else ''} · ready{_step_elapsed}",
+                        text_color=ACCENT)
                 else:
                     icon_lbl.configure(text="🎤", text_color=RED)
-                    st_lbl.configure(text="Speak now", text_color=RED)
+                    st_lbl.configure(text=f"Speak now{_step_elapsed}", text_color=RED)
             else:
                 icon_lbl.configure(text="○", text_color=SUBTLE)
                 name_lbl.configure(text_color=SUBTLE)
@@ -507,9 +551,14 @@ class ReviewDashboard:
             self._hide_tasks_panel()
 
         if per_step and notes_data and idx < len(self.steps):
-            # Per-step: show section-relevant history from past notes
+            # Per-step: show section-relevant history from past notes.
+            # Skip isolated steps (e.g. Wellness) — their data is in separate files,
+            # not in the daily note's Evening Review section, so the context brief
+            # is more useful than an empty "no entries found" message.
+            current_step = self.steps[idx] if idx < len(self.steps) else None
+            is_isolated  = current_step and current_step.get("isolate_file", False)
             section_name = self.steps[idx]["section_name"]
-            if idx != self._last_context_step:
+            if idx != self._last_context_step and not is_isolated:
                 self._last_context_step = idx
                 self._showing_brief = False
                 lines = []
@@ -520,11 +569,9 @@ class ReviewDashboard:
                 if lines:
                     text  = "\n".join(lines)
                     label = f"{section_name} · last {len(notes_data)} day(s)"
-                else:
-                    text  = f"No {section_name} entries found in last {len(notes_data)} day(s)."
-                    label = f"last {len(notes_data)} day(s)"
-                self.ctx_days_lbl.configure(text=label)
-                self._set_ctx_text(text, TEXT)
+                    self.ctx_days_lbl.configure(text=label)
+                    self._set_ctx_text(text, TEXT)
+                # If no entries found, keep showing the existing AI brief — don't replace with error text
         # else: brief already shown and no step change — nothing to update
 
     # ── Carry-forward task panel ───────────────────────────────────────────────
@@ -698,6 +745,9 @@ class ReviewDashboard:
                 else:
                     structured = raw_combined
 
+                step_name = step.get("section_name", "review")
+                self.engine.log(raw_combined, structured,
+                                mode=f"review:{step_name}", model="review_engine")
                 state["accumulated_raw"] = []
                 state["awaiting_more"]   = False
                 review_engine.write_step_to_note(
