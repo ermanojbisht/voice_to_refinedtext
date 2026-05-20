@@ -141,5 +141,7 @@
   "brief_model_en": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "voice_control": true,
-  "voice_control_threshold": 500
+  "voice_control_threshold": 500,
+  "evening_reminder_enabled": true,
+  "evening_reminder_time": "21:00"
 }

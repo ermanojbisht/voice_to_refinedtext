@@ -59,6 +59,7 @@ class ReviewDashboard:
         self._last_context_step = -1
         self._engine          = None
         self._last_streak_n   = None          # change-detection guard for streak label
+        self._last_step_times = []            # cached from state; used in _show_complete
         # Language currently shown in the right panel brief ("en" or "hi")
         self._ctx_lang        = self.config.get("context_brief_language", "en")
         # True when the right panel is showing the AI brief; False for per-step history
@@ -368,6 +369,8 @@ class ReviewDashboard:
         self.root.after(500, self._poll_state)
 
     def _update_ui(self, state):
+        if state.get("step_times"):
+            self._last_step_times = state["step_times"]
         idx      = state.get("current_step_index", 0)
         total    = len(self.steps)
         awaiting = state.get("awaiting_more", False)
@@ -616,7 +619,11 @@ class ReviewDashboard:
         for i in range(len(self.steps)):
             self.icon_labels[i].configure(text="✅", text_color=GREEN)
             self.name_labels[i].configure(text_color=SUBTLE)
-            self.status_labels[i].configure(text="Done", text_color=GREEN)
+            if i < len(self._last_step_times):
+                time_str = f" · {review_engine._fmt_duration(self._last_step_times[i])}"
+            else:
+                time_str = ""
+            self.status_labels[i].configure(text=f"Done{time_str}", text_color=GREEN)
             self.row_frames[i].configure(fg_color=SURFACE)
         self.prog_canvas.set(1.0)
         for btn in (self.record_btn, self.next_btn, self.skip_btn, self.redo_btn):

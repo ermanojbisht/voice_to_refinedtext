@@ -13,6 +13,8 @@ import review_engine
 import sys
 import signal
 
+_AUDIO_QUALITY_RATIO = 0.5   # WAV RMS must be >= SILENCE_THRESHOLD * this ratio
+
 _LOG_FILE = None
 
 def _tlog(msg):
@@ -97,9 +99,12 @@ class VoiceAssistantTray:
             self._wake_listener = WakeWordListener()
             self._wake_listener.start(
                 cfg.get("voice_control_threshold", 500),
-                review_engine.is_narrating,
+                lambda: review_engine.is_narrating() or self.is_in_review,
                 review_engine.stop_narration,
-                lambda: review_engine.replay_narration(self._get_active_config()))
+                lambda: review_engine.replay_narration(self._get_active_config()),
+                next_fn=lambda: self.next_step_review() if self.is_in_review else None,
+                skip_fn=lambda: self.skip_review_step() if self.is_in_review else None,
+            )
             _tlog("voice_control: wake word listener started")
         except ImportError:
             _tlog("voice_control: voice_control module not found — skipping")
@@ -231,6 +236,12 @@ class VoiceAssistantTray:
             wav_path = self.engine.record()
 
             self.is_recording = False
+
+            # Audio quality gate — reject recordings that are too quiet to transcribe
+            if not self._check_audio_quality(wav_path):
+                self.update_icon("review" if self.is_in_review else "idle")
+                return
+
             self.is_processing = True
             self.update_icon("processing")
 
@@ -266,6 +277,28 @@ class VoiceAssistantTray:
             self.is_recording = False
             self.is_processing = False
             self.update_icon("review" if self.is_in_review else "idle")
+
+    def _check_audio_quality(self, wav_path):
+        """Return False (and warn) if the WAV RMS is below half the silence threshold."""
+        import wave
+        import numpy as np
+        try:
+            with wave.open(wav_path, "rb") as wf:
+                raw = wf.readframes(wf.getnframes())
+            samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+            if len(samples) == 0:
+                return True
+            rms = float(np.sqrt(np.mean(samples ** 2)))
+            threshold = self.engine.config.get("SILENCE_THRESHOLD", 300) * _AUDIO_QUALITY_RATIO
+            if rms < threshold:
+                _tlog(f"Audio quality low: rms={rms:.1f} threshold={threshold:.1f}")
+                cfg = self._get_active_config() if self.is_in_review else {}
+                review_engine.narrate("Recording seems too quiet, please try again.", cfg)
+                self._notify("Voice Refiner", "Recording too quiet — please try again.")
+                return False
+        except Exception as e:
+            _tlog(f"Audio quality check error: {e}")
+        return True
 
     def _handle_review_step(self, raw_text):
         """Accumulate raw transcription into state. No LLM call here — deferred to Next Step."""

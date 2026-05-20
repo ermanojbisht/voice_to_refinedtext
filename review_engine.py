@@ -56,6 +56,8 @@ def load_review_config(script_dir):
         "morning_briefing_time": "08:00",   # HH:MM — used by install_morning_brief.sh to set the systemd timer
         "voice_control": False,             # opt-in: listen for "stop"/"again" keywords during narration
         "voice_control_threshold": 500,     # energy gate in int16-scale RMS; raise if TTS bleed triggers false positives
+        "evening_reminder_enabled": False,  # send reminder if review not done by reminder time
+        "evening_reminder_time": "21:00",   # HH:MM — used by install_evening_reminder.sh
         "telegram_enabled": False,          # send key events to Telegram on mobile
         "telegram_bot_token": "",           # from @BotFather
         "telegram_chat_id": "",             # your personal chat ID
@@ -857,7 +859,9 @@ def initialize_review(script_dir, date_str=None):
         "started_at": now.isoformat(),  # always now — used for expiry/staleness checks
         "last_written": None,
         "awaiting_more": False,
-        "accumulated_raw": []
+        "accumulated_raw": [],
+        "step_started_at": now.isoformat(),  # timer for per-step duration tracking
+        "step_times": [],                    # seconds per step, appended at each advance/skip/complete
     }
     n = config.get("last_n_days_context", 3)
     if n and n > 0:
@@ -962,9 +966,29 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
         _append_focus_word(script_dir, date_str, structured_text.strip())
 
 
+def _fmt_duration(t):
+    """Format integer seconds as '2m 05s' or '47s'."""
+    m, s = divmod(t, 60)
+    return f"{m}m {s:02d}s" if m else f"{s}s"
+
+
+def _record_step_time(state):
+    """Append elapsed seconds for the current step to step_times and reset the timer."""
+    now = datetime.datetime.now()
+    started = state.get("step_started_at")
+    if started:
+        try:
+            elapsed = int((now - datetime.datetime.fromisoformat(started)).total_seconds())
+            state.setdefault("step_times", []).append(elapsed)
+        except ValueError as e:
+            _rlog(f"_record_step_time: could not parse step_started_at: {e}")
+    state["step_started_at"] = now.isoformat()
+
+
 def advance_step(script_dir, state, config):
     steps = config.get("review_steps", [])
     prev = state.get("current_step_index", 0)
+    _record_step_time(state)
     state["current_step_index"] = prev + 1
     state["last_written"] = None
     state["awaiting_more"] = False
@@ -990,6 +1014,7 @@ def skip_step(script_dir, state, config):
         _rlog(f"skip_step: writing skip_default '{skip_default}' for step '{current_step.get('section_name')}'")
         write_step_to_note(script_dir, config, current_step, skip_default, state)
 
+    _record_step_time(state)
     state["current_step_index"] = prev + 1
     state["last_written"] = None
     state["awaiting_more"] = False
@@ -1093,13 +1118,28 @@ def complete_review(script_dir, engine_instance, state, config):
         except Exception as e:
             _rlog(f"complete_review: ERROR creating daily note: {e}")
 
+    # Write per-step timing line to the note
+    step_times = state.get("step_times", [])
+    if step_times:
+        steps_cfg = config.get("review_steps", [])
+        parts = []
+        for i, t in enumerate(step_times):
+            name = steps_cfg[i].get("section_name", f"Step {i+1}") if i < len(steps_cfg) else f"Step {i+1}"
+            parts.append(f"{name}: {_fmt_duration(t)}")
+        timing_line = f"\n> ⏱ Total: {_fmt_duration(sum(step_times))} | {' · '.join(parts)}\n"
+        try:
+            with open(daily_note_path, "a", encoding="utf-8") as fh:
+                fh.write(timing_line)
+        except Exception as e:
+            _rlog(f"complete_review: timing write error: {e}")
+
     # Update streak before deleting state so the dashboard's final poll tick
     # can display the newly-incremented value before _show_complete() fires.
     if config.get("show_streak", True):
         updated = update_streak(script_dir, date_str)
         new_n = updated.get("current", 0)
         state["streak_current"] = new_n
-        _save_state(state)   # brief write so dashboard picks up new value
+        _save_state(state)   # brief write so dashboard picks up step_times + streak
     else:
         new_n = 0
 

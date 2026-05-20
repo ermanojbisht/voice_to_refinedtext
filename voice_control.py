@@ -24,6 +24,8 @@ _CHUNK_SAMPLES = _CHUNK_SECONDS * _SAMPLE_RATE
 # Keyword sets — substrings matched in lowercased transcript
 _STOP_KEYWORDS   = {"stop", "रुको", "ruko", "रुक"}
 _REPLAY_KEYWORDS = {"again", "replay", "फिर से", "phir se", "दोबारा", "dobara"}
+_NEXT_KEYWORDS   = {"next", "आगे", "aage", "age", "अगला", "agla", "aglo"}
+_SKIP_KEYWORDS   = {"skip", "छोड़ो", "chodo", "cholo", "छोड़", "chhod", "chhodo", "स्किप"}
 
 
 class WakeWordListener:
@@ -36,7 +38,8 @@ class WakeWordListener:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def start(self, threshold, is_narrating_fn, stop_fn, replay_fn):
+    def start(self, threshold, is_narrating_fn, stop_fn, replay_fn,
+              next_fn=None, skip_fn=None):
         """Start the background listener.
 
         Args:
@@ -44,13 +47,15 @@ class WakeWordListener:
             is_narrating_fn: Callable returning True while TTS is active.
             stop_fn:         Called when a stop keyword is detected.
             replay_fn:       Called when a replay keyword is detected.
+            next_fn:         Called when a next-step keyword is detected (optional).
+            skip_fn:         Called when a skip-step keyword is detected (optional).
         """
         if self._thread and self._thread.is_alive():
             return
         self._stop_evt.clear()
         self._thread = threading.Thread(
             target=self._run,
-            args=(threshold, is_narrating_fn, stop_fn, replay_fn),
+            args=(threshold, is_narrating_fn, stop_fn, replay_fn, next_fn, skip_fn),
             daemon=True,
             name="wake-word-listener")
         self._thread.start()
@@ -66,7 +71,7 @@ class WakeWordListener:
             from faster_whisper import WhisperModel
             self._model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
-    def _run(self, threshold, is_narrating_fn, stop_fn, replay_fn):
+    def _run(self, threshold, is_narrating_fn, stop_fn, replay_fn, next_fn, skip_fn):
         try:
             import sounddevice as sd
         except ImportError as exc:
@@ -84,7 +89,6 @@ class WakeWordListener:
             f"(threshold={threshold}, chunk={_CHUNK_SECONDS}s)")
 
         while not self._stop_evt.is_set():
-            # Idle when nothing is being narrated — zero CPU cost
             if not is_narrating_fn():
                 time.sleep(0.2)
                 continue
@@ -128,5 +132,11 @@ class WakeWordListener:
             elif any(kw in text for kw in _REPLAY_KEYWORDS):
                 review_engine._rlog("voice_control: REPLAY triggered")
                 replay_fn()
+            elif next_fn and any(kw in text for kw in _NEXT_KEYWORDS):
+                review_engine._rlog("voice_control: NEXT triggered")
+                next_fn()
+            elif skip_fn and any(kw in text for kw in _SKIP_KEYWORDS):
+                review_engine._rlog("voice_control: SKIP triggered")
+                skip_fn()
 
         review_engine._rlog("voice_control: listener stopped")

@@ -417,6 +417,22 @@ class ConfigApp:
         _note(f, "RMS energy gate (0–32768). Raise if speaker bleed triggers false positives. "
                  "Restart the tray after changing. Uses Whisper tiny — no extra models needed.", 17)
 
+        _section(f, "🌙  Evening Review Reminder", 18)
+        _note(f, "Sends a desktop notification (and Telegram if enabled) if no review is done by the set time.", 19)
+
+        _label(f, "Enable Reminder:", 20)
+        self.evening_reminder_var = tk.BooleanVar(
+            value=self.review_raw.get("evening_reminder_enabled", False))
+        ctk.CTkCheckBox(f, text="", variable=self.evening_reminder_var).grid(
+            row=20, column=1, sticky="w", padx=20, pady=4)
+
+        _label(f, "Reminder Time (HH:MM):", 21)
+        self.evening_reminder_time_var = ctk.StringVar(
+            value=self.review_raw.get("evening_reminder_time", "21:00"))
+        ctk.CTkEntry(f, textvariable=self.evening_reminder_time_var, width=100,
+                     placeholder_text="21:00").grid(row=21, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "After changing the time, re-run install_evening_reminder.sh to update the systemd timer.", 22)
+
     def _test_telegram(self):
         self.root.after(0, lambda: (
             self.tg_test_btn.configure(state="disabled", text="Testing…"),
@@ -546,13 +562,20 @@ class ConfigApp:
                 existing["voice_control_threshold"] = int(self.voice_threshold_var.get())
             except ValueError:
                 errors.append("Voice control threshold must be a whole number (e.g. 500)")
-            raw_time = self.morning_time_var.get().strip()
-            try:
-                datetime.datetime.strptime(raw_time, "%H:%M")
-                existing["morning_briefing_time"] = raw_time
-            except ValueError:
-                errors.append("Morning brief time must be in HH:MM format (e.g. 08:00)")
-                existing["morning_briefing_time"] = "08:00"
+
+            def _save_hhmm(raw, key, default, label):
+                try:
+                    datetime.datetime.strptime(raw, "%H:%M")
+                    existing[key] = raw
+                except ValueError:
+                    errors.append(f"{label} must be in HH:MM format (e.g. {default})")
+                    existing[key] = default
+
+            _save_hhmm(self.morning_time_var.get().strip(),
+                       "morning_briefing_time", "08:00", "Morning brief time")
+            existing["evening_reminder_enabled"] = self.evening_reminder_var.get()
+            _save_hhmm(self.evening_reminder_time_var.get().strip(),
+                       "evening_reminder_time", "21:00", "Evening reminder time")
 
             with open(review_config_path, "w", encoding="utf-8") as fh:
                 json.dump(existing, fh, indent=2, ensure_ascii=False)

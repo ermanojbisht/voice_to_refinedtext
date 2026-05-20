@@ -32,7 +32,10 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Streak tracker** — counts consecutive days of completed reviews; shown in the dashboard header (🔥 N); milestone narrations at 7 / 14 / 30 / 100 days; persisted in `streak.json`
 - **Focus word trend** — records each day's focus word to `focus_words.jsonl`; on Sundays narrates the most-repeated word from the past 7 entries ("इस हफ्ते आपका सबसे ज़्यादा ध्यान … पर रहा।"); dashboard shows a horizontal bar chart of the last 7 days' focus words
 - **Carry-forward tasks** — at a configurable step, reads unchecked `- [ ]` tasks from the previous day's vault note and narrates them; interactive checkboxes in the dashboard let you mark tasks done (writes `- [x]` back to the vault in real time); opt-in via `carryforward_tasks: true`
-- **Voice wake-word control** — say "stop" / "रुको" to halt narration or "again" / "फिर से" to replay it; uses `faster-whisper tiny` (no extra models needed, supports Hindi + English); active only while TTS is speaking; opt-in via `voice_control: true` in Settings → Notifications (restart tray to take effect)
+- **Voice wake-word control** — say "stop" / "रुको" to halt narration, "again" / "फिर से" to replay, "आगे" / "aage" to advance to the next step, or "छोड़ो" / "chodo" to skip the current step; uses `faster-whisper tiny` (no extra models needed, supports Hindi + English); active only while TTS is speaking; opt-in via `voice_control: true` in Settings → Notifications (restart tray to take effect)
+- **Evening review reminder** — a systemd user timer fires `evening_reminder.py` at a configured time; sends a desktop notification + Telegram message if no review has been completed that day and no review is currently in progress; opt-in via `evening_reminder_enabled: true`; time set in Settings → Notifications
+- **Review time tracking** — automatically records how many seconds were spent on each step; on completion writes a timing summary line to the daily note (`⏱ Total: 4m 12s | Focus Word: 45s · Achievements: 1m 30s · …`) and shows per-step durations in the dashboard (`Done · 1m 30s`)
+- **Audio quality gate** — immediately after recording, computes RMS energy of the WAV file; if the recording is below half the silence threshold, shows a notification and plays a TTS warning ("Recording seems too quiet, please try again.") and aborts before transcription; avoids wasting LLM time on silent clips
 - **Narration hotkeys** — `Ctrl+Alt+S` stops the current narration; `Ctrl+Alt+R` replays the last narration; always registered, no-op outside review
 - **Telegram mobile notifications** — sends review-complete summary (with streak) and morning brief to your phone via a Telegram bot; configured in Settings → Notifications; powered by self-contained `telegram_service.py`
 - **Morning priority briefing** — a systemd user timer runs `morning_brief.py` at a configured time; reads yesterday's Tomorrow's Priorities, sends a desktop notification + Telegram message, and narrates the list aloud; tray shows **Replay Morning Brief** while the state is fresh
@@ -146,10 +149,23 @@ Enable hands-free narration control during Evening Review:
 2. Check **Enable Voice Control**, set threshold (default 500 is fine to start)
 3. Click **Save** then **restart the tray**
 
-While TTS is speaking, say **"stop" / "रुको"** to halt or **"again" / "फिर से"** to replay.  
+While TTS is speaking:
+- **"stop" / "रुको"** — halt narration
+- **"again" / "फिर से"** — replay narration
+- **"आगे" / "aage" / "अगला"** — advance to the next step
+- **"छोड़ो" / "chodo"** — skip the current step
+
 Alternatively use keyboard hotkeys at any time: `Ctrl+Alt+S` (stop) · `Ctrl+Alt+R` (replay).
 
-### 7. Start the tray
+### 7. Evening Review Reminder (Optional)
+
+```bash
+bash install_evening_reminder.sh
+```
+
+Installs a systemd user timer that fires at the time set in **Settings → Notifications → Evening Review Reminder**. If no review was completed that day, sends a desktop notification and (if configured) a Telegram message. Re-run after changing the reminder time.
+
+### 8. Start the tray
 
 ```bash
 python3 tray_app.py
@@ -158,7 +174,7 @@ python3 tray_app.py
 
 A dot appears in your system tray. Right-click for the full menu.
 
-### 8. Record
+### 9. Record
 
 - **X11**: Press `Ctrl+Alt+V` anywhere
 - **Wayland**: Configure a GNOME Custom Shortcut (see [Wayland Setup](#wayland-setup))
@@ -166,7 +182,7 @@ A dot appears in your system tray. Right-click for the full menu.
 
 Speak. Pause. The refined text appears in your clipboard.
 
-### 9. Evening Review
+### 10. Evening Review
 
 Right-click tray → **Start Evening Review**. The dashboard opens and guides you through each step with voice narration.
 
@@ -271,8 +287,10 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `carryforward_step_id` | `3` | Step number (1-based) at which carry-forward tasks are narrated and shown |
 | `morning_briefing_enabled` | `false` | Enable the systemd morning briefing timer |
 | `morning_briefing_time` | `"08:00"` | Time the morning brief fires (HH:MM); re-run `install_morning_brief.sh` after changing |
-| `voice_control` | `false` | Opt-in: listen for spoken commands during narration (`stop`/`रुको` and `again`/`फिर से`) |
+| `voice_control` | `false` | Opt-in: listen for spoken commands during narration (`stop`/`रुको`, `again`/`फिर से`, `आगे`/`aage` for next step, `छोड़ो`/`chodo` to skip) |
 | `voice_control_threshold` | `500` | RMS energy gate (0–32768 int16 scale); raise if TTS speaker bleed triggers false positives |
+| `evening_reminder_enabled` | `false` | Send a reminder if the review is not done by the reminder time |
+| `evening_reminder_time` | `"21:00"` | Time the reminder fires (HH:MM); re-run `install_evening_reminder.sh` after changing |
 | `telegram_enabled` | `false` | Send notifications to Telegram |
 | `telegram_bot_token` | `""` | Bot token from @BotFather |
 | `telegram_chat_id` | `""` | Your personal Telegram chat ID |
@@ -400,6 +418,8 @@ voice_to_refinedtext/
 ├── install.sh            One-click system installer for Ubuntu
 ├── install_desktop.sh    GNOME app drawer launcher installer (run once after install.sh)
 ├── install_morning_brief.sh  Installs systemd user timer for morning briefing
+├── evening_reminder.py       Evening reminder — fires if no review done; notifies desktop + Telegram
+├── install_evening_reminder.sh  Installs systemd user timer for evening reminder
 │
 ├── sounds/
 │   ├── start.oga         Recording start chime
