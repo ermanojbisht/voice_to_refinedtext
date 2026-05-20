@@ -191,8 +191,9 @@ class ReviewDashboard:
 
         review_engine._rlog("[dashboard] _build_ui: ctx_text")
         self.ctx_text = ctk.CTkTextbox(content_pane, fg_color="transparent",
-                                        text_color=SUBTLE, font=("Inter", 11),
-                                        wrap="word", activate_scrollbars=True)
+                                        text_color=SUBTLE, font=("Inter", 15),
+                                        wrap="word", activate_scrollbars=True,
+                                        spacing1=4, spacing2=2, spacing3=6)
         self.ctx_text.grid(row=0, column=0, sticky="nsew", padx=10, pady=(6, 4))
         self.ctx_text.insert("end", "Analysing last days…")
         self.ctx_text.configure(state="disabled")
@@ -550,27 +551,36 @@ class ReviewDashboard:
         else:
             self._hide_tasks_panel()
 
-        if per_step and notes_data and idx < len(self.steps):
-            # Per-step: show section-relevant history from past notes.
-            # Skip isolated steps (e.g. Wellness) — their data is in separate files,
-            # not in the daily note's Evening Review section, so the context brief
-            # is more useful than an empty "no entries found" message.
-            current_step = self.steps[idx] if idx < len(self.steps) else None
-            is_isolated  = current_step and current_step.get("isolate_file", False)
-            section_name = self.steps[idx]["section_name"]
-            if idx != self._last_context_step and not is_isolated:
-                self._last_context_step = idx
-                self._showing_brief = False
+        if per_step and idx < len(self.steps) and idx != self._last_context_step:
+            # Per-step: show section-relevant history when the step changes.
+            current_step = self.steps[idx]
+            is_isolated  = current_step.get("isolate_file", False)
+            section_name = current_step["section_name"]
+            self._last_context_step = idx
+            self._showing_brief = False
+
+            if is_isolated:
+                # Isolated steps (e.g. Wellness) live in separate files — read those directly
+                n = self.config.get("last_n_days_context", 3)
+                date_str = state.get("date") or datetime.date.today().isoformat()
+                iso_notes = review_engine._read_last_n_isolated_notes(
+                    script_dir, self.config, n, date_str)
+                if iso_notes:
+                    lines = [f"{note['date']}:\n{note['content']}" for note in reversed(iso_notes)]
+                    self.ctx_days_lbl.configure(text=f"{section_name} · last {len(iso_notes)} day(s)")
+                    self._set_ctx_text("\n\n".join(lines), TEXT)
+                else:
+                    self.ctx_days_lbl.configure(text=section_name)
+                    self._set_ctx_text(f"No {section_name} notes found.", SUBTLE)
+            elif notes_data:
                 lines = []
                 for note in reversed(notes_data):
                     snippet = review_engine._extract_step_section(section_name, note["content"])
                     if snippet:
                         lines.append(f"{note['date']}: {snippet}")
                 if lines:
-                    text  = "\n".join(lines)
-                    label = f"{section_name} · last {len(notes_data)} day(s)"
-                    self.ctx_days_lbl.configure(text=label)
-                    self._set_ctx_text(text, TEXT)
+                    self.ctx_days_lbl.configure(text=f"{section_name} · last {len(notes_data)} day(s)")
+                    self._set_ctx_text("\n".join(lines), TEXT)
                 # If no entries found, keep showing the existing AI brief — don't replace with error text
         # else: brief already shown and no step change — nothing to update
 
