@@ -381,6 +381,46 @@ def _extract_step_section(section_name, evening_review_content):
     return ""
 
 
+def _read_isolated_note_content(file_path):
+    """Read an isolated note file and return its body text (strips YAML frontmatter and title heading)."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except Exception:
+        return ""
+    lines = raw.splitlines()
+    i = 0
+    # Skip YAML frontmatter (--- ... ---)
+    if lines and lines[0].strip() == "---":
+        i = 1
+        while i < len(lines) and lines[i].strip() != "---":
+            i += 1
+        i += 1  # skip closing ---
+    # Skip blank lines and the top-level title heading (# Wellness — date)
+    while i < len(lines) and (not lines[i].strip() or lines[i].startswith("# ")):
+        i += 1
+    return "\n".join(lines[i:]).strip()
+
+
+def _read_last_n_isolated_notes(script_dir, config, n, before_date_str):
+    """Return [{date, content}] for the last n days of an isolated (e.g. Wellness) note file."""
+    results = []
+    try:
+        base_dt = datetime.date.fromisoformat(before_date_str)
+    except Exception:
+        return results
+    for i in range(1, n + 1):
+        day = base_dt - datetime.timedelta(days=i)
+        day_str = day.isoformat()
+        note_path = _get_wellness_note_path(script_dir, config, day_str)
+        if not os.path.exists(note_path):
+            continue
+        content = _read_isolated_note_content(note_path)
+        if content:
+            results.append({"date": day_str, "content": content})
+    return results
+
+
 def _read_last_n_notes(script_dir, config, n, before_date_str):
     """Return [{date, content}] for last n days before before_date_str that have ## Evening Review content."""
     results = []
