@@ -7,28 +7,29 @@ import subprocess
 import threading
 import collections
 
-STATE_PATH = "/tmp/review_state.json"
-_LOG_FILE = None  # set by init_logging()
+import utils as _utils
+
+STATE_PATH             = "/tmp/review_state.json"
+_PROCESSING_LOCK_PATH  = "/tmp/review_processing.lock"
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Module-level logger — file handler added by init_logging() at startup
+_logger = _utils.get_logger("review_engine")
+
+
+def _rlog(msg):
+    """Compatibility shim — internal and external callers still use _rlog()."""
+    _logger.info(msg)
+
+
 def init_logging(script_dir):
-    global _LOG_FILE
-    _LOG_FILE = os.path.join(script_dir, "review_debug.log")
+    """Configure file logging. Called once at startup by tray_app and review_dashboard."""
+    log_path = os.path.join(script_dir, "review_debug.log")
+    _utils.get_logger("review_engine", log_path)
     try:
         import telegram_service
         telegram_service.set_logger(_rlog)
     except ImportError:
-        pass
-
-def _rlog(msg):
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] [review_engine] {msg}"
-    print(line)
-    log_path = _LOG_FILE or "/tmp/review_debug.log"
-    try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(line + "\n")
-    except Exception:
         pass
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -58,6 +59,9 @@ def load_review_config(script_dir):
         "voice_control_threshold": 500,     # energy gate in int16-scale RMS; raise if TTS bleed triggers false positives
         "evening_reminder_enabled": False,  # send reminder if review not done by reminder time
         "evening_reminder_time": "21:00",   # HH:MM — used by install_evening_reminder.sh
+        "pending_task_lookback_days": 7,    # how many past daily notes to scan for recurring unchecked tasks (0 = off)
+        "pending_task_warn_threshold": 3,   # days pending before ⚠️ label in morning brief story
+        "pending_task_critical_threshold": 5,  # days pending before 🚨 label
         "telegram_enabled": False,          # send key events to Telegram on mobile
         "telegram_bot_token": "",           # from @BotFather
         "telegram_chat_id": "",             # your personal chat ID
@@ -163,40 +167,93 @@ def load_review_config(script_dir):
 
 # ── State I/O ─────────────────────────────────────────────────────────────────
 
-def _save_state(state):
+import fcntl as _fcntl
+
+
+def _acquire_processing_lock():
+    """Try to acquire the exclusive processing lock with LOCK_NB (non-blocking).
+
+    Returns an open file descriptor on success.
+    Returns None immediately if another process already holds the lock.
+
+    The caller MUST pass the returned fd to _release_processing_lock() in a finally block.
+    On Linux, flock() locks are released automatically if the process exits or crashes,
+    so there is no risk of a stale lock blocking future operations.
+    """
+    fd = None
     try:
-        with open(STATE_PATH, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
+        fd = open(_PROCESSING_LOCK_PATH, "w")
+        _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+        return fd
+    except (BlockingIOError, OSError):
+        # Another process holds the lock — bail immediately, do not block.
+        if fd is not None:
+            try:
+                fd.close()
+            except Exception:
+                pass
+        return None
+
+
+def _release_processing_lock(fd):
+    """Release the exclusive lock and close the fd returned by _acquire_processing_lock()."""
+    if fd is None:
+        return
+    try:
+        _fcntl.flock(fd, _fcntl.LOCK_UN)
+    except Exception:
+        pass
+    try:
+        fd.close()
+    except Exception:
+        pass
+
+
+def _save_state(state):
+    # Write to a temp file then atomically rename so readers never see a partial file.
+    # flock on the temp file ensures only one writer serialises at a time.
+    tmp = STATE_PATH + ".tmp"
+    try:
+        payload = json.dumps(state, indent=2)
+        with open(tmp, "w", encoding="utf-8") as f:
+            _fcntl.flock(f, _fcntl.LOCK_EX)
+            try:
+                f.write(payload)
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                _fcntl.flock(f, _fcntl.LOCK_UN)
+        os.replace(tmp, STATE_PATH)  # atomic on POSIX
         _rlog(f"State saved: step={state.get('current_step_index')}, awaiting={state.get('awaiting_more')}")
     except Exception as e:
         _rlog(f"ERROR saving state: {e}")
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
 
 
-def _load_state():
+def load_state():
     if not os.path.exists(STATE_PATH):
         # Absence of state file is a normal condition — no log here to avoid
         # flooding the log every 500 ms when the dashboard polls after completion.
         return None
-    # Retry up to 3 times to handle transient write-in-progress (race condition
-    # between tray background thread saving state and dashboard polling it).
-    for attempt in range(3):
-        try:
-            with open(STATE_PATH, "r", encoding="utf-8") as f:
+    try:
+        with open(STATE_PATH, "r", encoding="utf-8") as f:
+            _fcntl.flock(f, _fcntl.LOCK_SH)
+            try:
                 return json.load(f)
-        except json.JSONDecodeError:
-            if attempt < 2:
-                import time as _time
-                _time.sleep(0.05)  # wait 50 ms and retry
-            else:
-                _rlog("ERROR loading state: JSONDecodeError after 3 attempts (file mid-write?)")
-        except Exception as e:
-            _rlog(f"ERROR loading state: {e}")
-            break
+            finally:
+                _fcntl.flock(f, _fcntl.LOCK_UN)
+    except json.JSONDecodeError:
+        _rlog("ERROR loading state: JSONDecodeError — file may be mid-write")
+    except Exception as e:
+        _rlog(f"ERROR loading state: {e}")
     return None
 
 
 def is_review_active(script_dir):
-    state = _load_state()
+    state = load_state()
     if state is None:
         _rlog("is_review_active → False (no state file)")
         return False, None
@@ -231,7 +288,7 @@ def is_review_active(script_dir):
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
 
-def _get_daily_note_path(script_dir, config, date_str=None):
+def get_daily_note_path(script_dir, config, date_str=None):
     """Returns YYYY/MonthName/YYYY-MM-DD.md path under daily_notes base."""
     if date_str is None:
         date_str = datetime.date.today().isoformat()
@@ -356,7 +413,7 @@ def _ensure_evening_review_section(file_path):
 
 # ── Last-N-days context ────────────────────────────────────────────────────────
 
-def _extract_evening_review_section(note_path):
+def extract_evening_review_section(note_path):
     """Extract text under ## Evening Review from a daily note. Returns '' if not found."""
     try:
         with open(note_path, "r", encoding="utf-8") as f:
@@ -370,7 +427,7 @@ def _extract_evening_review_section(note_path):
     return ""
 
 
-def _extract_step_section(section_name, evening_review_content):
+def extract_step_section(section_name, evening_review_content):
     """Extract text under ### SectionName from an evening review content string."""
     m = re.search(
         r'^### ' + re.escape(section_name) + r'\s*\n(.*?)(?=^### |\Z)',
@@ -381,6 +438,231 @@ def _extract_step_section(section_name, evening_review_content):
     return ""
 
 
+# ── Pending task story helpers ────────────────────────────────────────────────
+
+def _parse_priority_tasks(text):
+    """Parse markdown checkbox lines from a Tomorrow's Priorities section.
+
+    Returns a list of {"text": str, "done": bool} dicts, one per task line.
+    Non-task lines (blank, headings, prose) are silently skipped.
+    """
+    tasks = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("- [x] ") or line.startswith("- [X] "):
+            tasks.append({"text": line[6:].strip(), "done": True})
+        elif line.startswith("- [ ] "):
+            tasks.append({"text": line[6:].strip(), "done": False})
+    return tasks
+
+
+def _normalize_task(text):
+    """Lowercase, strip punctuation, compress whitespace — for cross-day matching."""
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+
+def _tasks_match(norm_a, norm_b):
+    """Return True if two already-normalised task strings refer to the same task.
+
+    Exact match first; falls back to word-overlap ≥ 70 % to handle minor
+    LLM rephrasing between days (e.g. "Resolve errors with officers" vs
+    "Fix field officer data entry errors").
+    """
+    if norm_a == norm_b:
+        return True
+    words_a = set(norm_a.split())
+    words_b = set(norm_b.split())
+    if not words_a or not words_b:
+        return False
+    overlap = len(words_a & words_b) / max(len(words_a), len(words_b))
+    return overlap >= 0.60
+
+
+def get_pending_tasks(script_dir, config):
+    """Scan the last N daily notes and return tasks that are still unchecked.
+
+    For each unchecked task in *yesterday's* Tomorrow's Priorities, the function
+    walks backward through older notes to find the earliest consecutive day the
+    same task appeared.  Days with no note are skipped (no review done ≠ task
+    completed); days with a note that doesn't include the task break the chain.
+
+    Config keys used:
+      pending_task_lookback_days  — how many days to scan (default 7; 0 = off)
+
+    Returns a list of dicts sorted by days_pending descending:
+      {"text": str, "days_pending": int, "first_seen": ISO-date str}
+    Returns [] when the feature is disabled or no pending tasks exist.
+    """
+    lookback = config.get("pending_task_lookback_days", 7)
+    if not lookback:
+        return []
+
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+    yesterday_str = yesterday.isoformat()
+
+    # ── Step 1: yesterday's tasks ──────────────────────────────────────────────
+    yesterday_path = get_daily_note_path(script_dir, config, yesterday_str)
+    if not os.path.exists(yesterday_path):
+        _rlog("pending_tasks: no daily note for yesterday, skipping")
+        return []
+    yesterday_evening = extract_evening_review_section(yesterday_path)
+    yesterday_priorities = extract_step_section("Tomorrow's Priorities", yesterday_evening)
+    yesterday_tasks = _parse_priority_tasks(yesterday_priorities)
+    if not yesterday_tasks:
+        _rlog("pending_tasks: no tasks in yesterday's priorities")
+        return []
+
+    # ── Step 2: older days (day -2 … day -lookback) ───────────────────────────
+    older_days = []   # list of {"date": str, "tasks": list|None}
+    for i in range(2, lookback + 1):
+        day_str = (today - datetime.timedelta(days=i)).isoformat()
+        note_path = get_daily_note_path(script_dir, config, day_str)
+        if not os.path.exists(note_path):
+            older_days.append({"date": day_str, "tasks": None})   # no review that day
+            continue
+        evening = extract_evening_review_section(note_path)
+        priorities_text = extract_step_section("Tomorrow's Priorities", evening)
+        older_days.append({"date": day_str, "tasks": _parse_priority_tasks(priorities_text)})
+
+    # ── Step 3: build "done" set — task checked on ANY day means it's complete ─
+    done_norms = set()
+    for task in yesterday_tasks:
+        if task["done"]:
+            done_norms.add(_normalize_task(task["text"]))
+    for day_info in older_days:
+        if day_info["tasks"]:
+            for task in day_info["tasks"]:
+                if task["done"]:
+                    done_norms.add(_normalize_task(task["text"]))
+
+    # ── Step 4: find age of each unchecked yesterday task ─────────────────────
+    pending = []
+    for task in yesterday_tasks:
+        if task["done"]:
+            continue
+        norm = _normalize_task(task["text"])
+        # Skip if completed on any other day
+        if any(_tasks_match(norm, d) for d in done_norms):
+            continue
+
+        # Walk backward: extend first_seen while older days have the same task.
+        # A missing note (tasks=None) is skipped — we can't know.
+        # A present note that lacks the task breaks the chain.
+        first_seen_str = yesterday_str
+        for day_info in older_days:
+            if day_info["tasks"] is None:
+                continue   # no review that day — skip, don't break chain
+            matched = any(
+                not t["done"] and _tasks_match(norm, _normalize_task(t["text"]))
+                for t in day_info["tasks"]
+            )
+            if matched:
+                first_seen_str = day_info["date"]
+            else:
+                break      # note exists but task absent — chain starts here
+
+        first_dt = datetime.date.fromisoformat(first_seen_str)
+        days_pending = (yesterday - first_dt).days + 1
+        pending.append({
+            "text": task["text"],
+            "days_pending": days_pending,
+            "first_seen": first_seen_str,
+        })
+        _rlog(f"pending_tasks: '{task['text'][:40]}' — {days_pending} day(s)")
+
+    pending.sort(key=lambda x: x["days_pending"], reverse=True)
+    return pending
+
+
+def build_pending_story(pending_tasks, config):
+    """Build a narrative for pending tasks suitable for TTS and notifications.
+
+    Returns {"narration": str, "display": str}:
+      narration — emoji-free text for TTS (piper / espeak both struggle with emojis)
+      display   — emoji-labelled text for desktop notifications and Telegram
+
+    Label thresholds (from config):
+      >= critical_threshold  → 🚨  (default 5 days)
+      >= warn_threshold      → ⚠️   (default 3 days)
+      2 days                 → 📌
+      1 day                  → 🆕
+    """
+    if not pending_tasks:
+        return {"narration": "", "display": ""}
+
+    lang = config.get("context_brief_language", "en")
+    warn = config.get("pending_task_warn_threshold", 3)
+    crit = config.get("pending_task_critical_threshold", 5)
+    max_days = pending_tasks[0]["days_pending"]   # list is sorted desc
+    count = len(pending_tasks)
+
+    lines_display = []
+    lines_narrate = []
+
+    for t in pending_tasks:
+        n = t["days_pending"]
+        text = t["text"]
+        if lang == "hi":
+            if n >= crit:
+                label_d, label_n = f"🚨 {n} दिनों से लंबित", f"{n} दिनों से लंबित"
+            elif n >= warn:
+                label_d, label_n = f"⚠️ {n} दिनों से", f"{n} दिनों से"
+            elif n == 2:
+                label_d, label_n = "📌 2 दिनों से", "2 दिनों से"
+            else:
+                label_d, label_n = "🆕 आज नया", "नया"
+        else:
+            if n >= crit:
+                label_d, label_n = f"🚨 {n} days pending", f"{n} days pending"
+            elif n >= warn:
+                label_d, label_n = f"⚠️ {n} days", f"{n} days"
+            elif n == 2:
+                label_d, label_n = "📌 2 days", "2 days"
+            else:
+                label_d, label_n = "🆕 New today", "New"
+        lines_display.append(f"{label_d} — {text}")
+        lines_narrate.append(f"{label_n}: {text}")
+
+    if lang == "hi":
+        header_d = f"📋 {count} लंबित कार्य:"
+        header_n = f"आपके {count} लंबित कार्य हैं।"
+        footer = (f"सबसे पुराना कार्य {max_days} दिनों से है — इसे आज प्राथमिकता दें।"
+                  if max_days > 1 else "")
+    else:
+        header_d = f"📋 {count} pending task{'s' if count > 1 else ''}:"
+        header_n = f"You have {count} pending task{'s' if count > 1 else ''}."
+        footer = (f"Your oldest pending task is {max_days} days old — consider making it today's priority."
+                  if max_days > 1 else "")
+
+    display = header_d + "\n" + "\n".join(lines_display)
+    if footer:
+        display += "\n" + footer
+
+    narration = header_n + " " + ". ".join(lines_narrate)
+    if footer:
+        narration += ". " + footer
+
+    return {"narration": narration, "display": display}
+
+
+def _strip_frontmatter(lines):
+    """Return index of first content line after YAML frontmatter (--- ... ---) and any title heading."""
+    i = 0
+    if lines and lines[0].strip() == "---":
+        i = 1
+        while i < len(lines) and lines[i].strip() != "---":
+            i += 1
+        i += 1  # skip closing ---
+    # Skip blank lines and top-level title heading (# Title)
+    while i < len(lines) and (not lines[i].strip() or lines[i].startswith("# ")):
+        i += 1
+    return i
+
+
 def _read_isolated_note_content(file_path):
     """Read an isolated note file and return its body text (strips YAML frontmatter and title heading)."""
     try:
@@ -389,20 +671,10 @@ def _read_isolated_note_content(file_path):
     except Exception:
         return ""
     lines = raw.splitlines()
-    i = 0
-    # Skip YAML frontmatter (--- ... ---)
-    if lines and lines[0].strip() == "---":
-        i = 1
-        while i < len(lines) and lines[i].strip() != "---":
-            i += 1
-        i += 1  # skip closing ---
-    # Skip blank lines and the top-level title heading (# Wellness — date)
-    while i < len(lines) and (not lines[i].strip() or lines[i].startswith("# ")):
-        i += 1
-    return "\n".join(lines[i:]).strip()
+    return "\n".join(lines[_strip_frontmatter(lines):]).strip()
 
 
-def _read_last_n_isolated_notes(script_dir, config, n, before_date_str):
+def get_isolated_notes(script_dir, config, n, before_date_str):
     """Return [{date, content}] for the last n days of an isolated (e.g. Wellness) note file."""
     results = []
     try:
@@ -431,11 +703,11 @@ def _read_last_n_notes(script_dir, config, n, before_date_str):
     for i in range(1, n + 1):
         day = base_dt - datetime.timedelta(days=i)
         day_str = day.isoformat()
-        note_path = _get_daily_note_path(script_dir, config, day_str)
+        note_path = get_daily_note_path(script_dir, config, day_str)
         if not os.path.exists(note_path):
             _rlog(f"context: no note for {day_str}")
             continue
-        section = _extract_evening_review_section(note_path)
+        section = extract_evening_review_section(note_path)
         if section:
             results.append({"date": day_str, "content": section})
             _rlog(f"context: loaded {day_str} ({len(section)} chars)")
@@ -457,6 +729,11 @@ def _load_brief_cache(script_dir, date_str):
             cache = json.load(f)
         entry = cache.get(date_str)
         if entry and entry.get("en") and entry.get("hi"):
+            # Reject stale fallback text written before the no-cache-on-failure fix.
+            # These entries look like "Notes loaded for N day(s). AI synthesis unavailable."
+            if entry["en"].startswith("Notes loaded for"):
+                _rlog(f"context_brief: stale fallback in cache for {date_str} — ignoring, will regenerate")
+                return None
             _rlog(f"context_brief: cache hit for {date_str}")
             return entry
     except FileNotFoundError:
@@ -493,6 +770,9 @@ def _save_brief_cache(script_dir, date_str, en, hi):
                 cache = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             cache = {}
+        existing = cache.get(date_str, {})
+        if existing.get("en") == en and existing.get("hi") == hi:
+            return  # already cached — no write needed
         cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
         cache = {k: v for k, v in cache.items() if k >= cutoff}
         cache[date_str] = {
@@ -612,12 +892,18 @@ def _run_context_brief(script_dir, config, state):
                     brief_en, brief_hi = _call_brief_parallel(notes_block, n, host, model_en, model_hi, temp)
                     _rlog(f"context_brief: parallel generation done (en={model_en}, hi={model_hi})")
 
+                # Only cache real synthesis — never cache fallback/error text.
+                # An empty response means the model was busy or returned nothing;
+                # next session should retry rather than serve a stale "unavailable" message.
+                if brief_en and brief_hi:
+                    _save_brief_cache(script_dir, date_str, brief_en, brief_hi)
+                else:
+                    _rlog("context_brief: model returned empty — not caching, will retry next session")
+
                 if not brief_en:
                     brief_en = f"Notes loaded for {len(notes_data)} day(s). AI synthesis unavailable."
                 if not brief_hi:
                     brief_hi = f"{len(notes_data)} दिनों के नोट्स लोड हुए। AI synthesis उपलब्ध नहीं।"
-
-                _save_brief_cache(script_dir, date_str, brief_en, brief_hi)
             except Exception as e:
                 _rlog(f"context_brief: exception: {e}")
                 brief_en = f"Notes loaded for {len(notes_data)} day(s). Could not generate synthesis."
@@ -628,7 +914,7 @@ def _run_context_brief(script_dir, config, state):
     brief = brief_hi if lang == "hi" else brief_en
 
     # Write back to live state file
-    live_state = _load_state()
+    live_state = load_state()
     if live_state:
         live_state["context_brief"]    = brief
         live_state["context_brief_en"] = brief_en
@@ -660,6 +946,32 @@ def _run_context_brief(script_dir, config, state):
         send_step_notification(live_state, config)
     else:
         _rlog("context_brief: state gone before brief was ready — skipping narration")
+
+
+def regenerate_brief(script_dir, config):
+    """Bust today's brief cache and regenerate asynchronously.
+
+    Clears the cached brief from state, saves state, then spawns a background
+    thread to regenerate and narrate the brief. Safe to call from any process.
+    `_save_state` and `_run_context_brief` stay private — callers use this wrapper.
+    """
+    state = load_state()
+    if state is None:
+        _rlog("regenerate_brief: no active state, nothing to regenerate")
+        return
+    date_str = state.get("date") or datetime.date.today().isoformat()
+    _bust_brief_cache(script_dir, date_str)
+    state.pop("context_brief", None)
+    state.pop("context_brief_en", None)
+    state.pop("context_brief_hi", None)
+    state["context_ready"] = False
+    _save_state(state)
+    _rlog(f"regenerate_brief: cache busted, spawning background thread for {date_str}")
+    threading.Thread(
+        target=_run_context_brief,
+        args=(script_dir, config, dict(state)),
+        daemon=True
+    ).start()
 
 
 def _fill_section(file_path, section_name, text):
@@ -715,7 +1027,7 @@ def _streak_path(script_dir):
     return os.path.join(script_dir, "streak.json")
 
 
-def _load_streak(script_dir):
+def load_streak(script_dir):
     try:
         with open(_streak_path(script_dir), "r", encoding="utf-8") as f:
             return json.load(f)
@@ -734,7 +1046,7 @@ def _save_streak(script_dir, streak):
 
 def update_streak(script_dir, date_str):
     """Increment streak for date_str (called at review completion). Returns updated dict."""
-    streak = _load_streak(script_dir)
+    streak = load_streak(script_dir)
     last_date = streak.get("last_date", "")
     current   = streak.get("current", 0)
     best      = streak.get("best", 0)
@@ -797,13 +1109,13 @@ def _get_weekly_focus_trend(script_dir):
     Returns (None, 0) if the file is missing or has fewer than 2 entries."""
     if len(_read_focus_words(script_dir, 7)) < 2:
         return None, 0
-    ranked = _get_focus_word_counts(script_dir, n=7)
+    ranked = get_focus_word_counts(script_dir, n=7)
     if not ranked:
         return None, 0
     return ranked[0]
 
 
-def _get_focus_word_counts(script_dir, n=7):
+def get_focus_word_counts(script_dir, n=7):
     """Return sorted [(word, count)] from the last n focus_words.jsonl entries.
     Returns empty list if the file is missing or has no valid entries."""
     entries = _read_focus_words(script_dir, n)
@@ -816,7 +1128,7 @@ def _get_focus_word_counts(script_dir, n=7):
 def _read_unchecked_tasks(script_dir, config, date_str):
     """Return list of unchecked task strings from the day-before date_str's daily note."""
     prev_date = (datetime.date.fromisoformat(date_str) - datetime.timedelta(days=1)).isoformat()
-    note_path = _get_daily_note_path(script_dir, config, prev_date)
+    note_path = get_daily_note_path(script_dir, config, prev_date)
     tasks = []
     try:
         with open(note_path, "r", encoding="utf-8") as f:
@@ -834,10 +1146,10 @@ def _read_unchecked_tasks(script_dir, config, date_str):
     return tasks
 
 
-def _mark_task_done(script_dir, config, task_text, note_date_str):
+def mark_task_done(script_dir, config, task_text, note_date_str):
     """Replace '- [ ] task_text' with '- [x] task_text' in note_date_str's daily note.
     Returns True on success, False if the line was not found or an error occurred."""
-    note_path = _get_daily_note_path(script_dir, config, note_date_str)
+    note_path = get_daily_note_path(script_dir, config, note_date_str)
     old_line = f"- [ ] {task_text}"
     new_line = f"- [x] {task_text}"
     try:
@@ -866,6 +1178,15 @@ def initialize_review(script_dir, date_str=None):
     init_logging(script_dir)
     _rlog("=" * 50)
     _rlog("initialize_review called")
+
+    # Defensive guard: refuse to overwrite a live session.
+    # start_review() in tray_app already has a re-entry guard, but this protects
+    # against any future caller that bypasses it.
+    active, _ = is_review_active(script_dir)
+    if active:
+        _rlog("initialize_review: review already active — aborting to prevent state overwrite")
+        return
+
     config = load_review_config(script_dir)
 
     # Resolve the note date (may differ from today for past-date reviews)
@@ -925,7 +1246,7 @@ def initialize_review(script_dir, date_str=None):
 
     # Streak: load current count so dashboard can display it from the start
     if config.get("show_streak", True):
-        streak = _load_streak(script_dir)
+        streak = load_streak(script_dir)
         state["streak_current"] = streak.get("current", 0)
     else:
         state["streak_current"] = 0
@@ -965,10 +1286,11 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
     if is_isolated:
         file_path = _get_wellness_note_path(script_dir, config, date_str)
     else:
-        file_path = _get_daily_note_path(script_dir, config, date_str)
+        file_path = get_daily_note_path(script_dir, config, date_str)
 
     _rlog(f"write_step_to_note: step='{section_name}' file='{file_path}'")
 
+    write_offset = None  # byte position before our write — used by redo_step to truncate
     try:
         # Create file with the correct template if it doesn't exist
         if not os.path.exists(file_path):
@@ -981,14 +1303,17 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
             # Isolated files (e.g. Wellness): just append raw text, no section scaffolding
             block = f"### {section_name}\n{structured_text}\n"
             with open(file_path, "a", encoding="utf-8") as f:
+                write_offset = f.seek(0, 2)  # atomic: offset captured inside the open
                 f.write(block)
             _rlog(f"write_step_to_note: appended {len(block)} chars to isolated file")
         elif step.get("section_fill", False):
+            # In-place fill — offset tracking not supported; redo will notify user manually
             _fill_section(file_path, section_name, structured_text)
         else:
             _ensure_evening_review_section(file_path)
             block = f"### {section_name}\n{structured_text}\n"
             with open(file_path, "a", encoding="utf-8") as f:
+                write_offset = f.seek(0, 2)  # atomic: offset captured inside the open
                 f.write(block)
             _rlog(f"write_step_to_note: appended {len(block)} chars under Evening Review")
 
@@ -996,7 +1321,7 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
         _rlog(f"ERROR in write_step_to_note: {e}")
         return
 
-    state["last_written"] = {"file": file_path, "section": section_name}
+    state["last_written"] = {"file": file_path, "section": section_name, "offset": write_offset}
     _save_state(state)
 
     # Track focus word for weekly trend (step 1 only, non-isolated)
@@ -1006,7 +1331,7 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
         _append_focus_word(script_dir, date_str, structured_text.strip())
 
 
-def _fmt_duration(t):
+def fmt_duration(t):
     """Format integer seconds as '2m 05s' or '47s'."""
     m, s = divmod(t, 60)
     return f"{m}m {s:02d}s" if m else f"{s}s"
@@ -1025,14 +1350,19 @@ def _record_step_time(state):
     state["step_started_at"] = now.isoformat()
 
 
+def _clear_step_accumulation(state):
+    """Reset per-step accumulation fields after a step is written, skipped, or redone."""
+    state["last_written"]    = None
+    state["awaiting_more"]   = False
+    state["accumulated_raw"] = []
+
+
 def advance_step(script_dir, state, config):
     steps = config.get("review_steps", [])
     prev = state.get("current_step_index", 0)
     _record_step_time(state)
     state["current_step_index"] = prev + 1
-    state["last_written"] = None
-    state["awaiting_more"] = False
-    state["accumulated_raw"] = []
+    _clear_step_accumulation(state)
     _rlog(f"advance_step: {prev} → {state['current_step_index']} (total={len(steps)})")
 
     if state["current_step_index"] >= len(steps):
@@ -1056,9 +1386,7 @@ def skip_step(script_dir, state, config):
 
     _record_step_time(state)
     state["current_step_index"] = prev + 1
-    state["last_written"] = None
-    state["awaiting_more"] = False
-    state["accumulated_raw"] = []
+    _clear_step_accumulation(state)
     _rlog(f"skip_step: {prev} → {state['current_step_index']} (total={len(steps)})")
 
     if state["current_step_index"] >= len(steps):
@@ -1071,27 +1399,140 @@ def skip_step(script_dir, state, config):
 
 
 def redo_step(script_dir, state, config):
-    """Reset the current step for re-recording.
-
-    NOTE: Previously written content for this step remains in the note file.
-    The user is notified and must remove it manually.
-    """
+    """Reset the current step for re-recording, removing previously written content from the note."""
     last_written = state.get("last_written")
     if last_written:
         section_name = last_written.get("section", "this step")
-        file_path = last_written.get("file", "the note file")
-        _rlog(f"redo_step: last_written section='{section_name}' file='{file_path}' — notifying user to clean up manually")
-        send_notification(
-            "Evening Review — Redo",
-            f"'{section_name}' text still exists in the note — remove it manually before saving. Re-recording now."
-        )
+        file_path    = last_written.get("file", "")
+        offset       = last_written.get("offset")  # None for section_fill steps
 
-    state["last_written"] = None
-    state["awaiting_more"] = False
-    state["accumulated_raw"] = []
+        if file_path and offset is not None:
+            # Truncate the file back to the pre-write position — fully reversible
+            try:
+                with open(file_path, "r+b") as f:
+                    f.truncate(offset)
+                _rlog(f"redo_step: truncated '{file_path}' back to offset {offset} (removed '{section_name}')")
+            except Exception as e:
+                _rlog(f"redo_step: truncate failed for '{file_path}': {e}")
+                send_notification(
+                    "Evening Review — Redo",
+                    f"Could not auto-remove '{section_name}' from note — please remove it manually."
+                )
+        elif file_path:
+            # section_fill step — in-place edit, cannot be simply truncated
+            _rlog(f"redo_step: section_fill step '{section_name}' — notifying user to clean up manually")
+            send_notification(
+                "Evening Review — Redo",
+                f"'{section_name}' was filled in-place — remove its content from the note manually. Re-recording now."
+            )
+
+    _clear_step_accumulation(state)
     _save_state(state)
     _rlog("redo_step: state cleared, re-prompting step")
     send_step_notification(state, config)
+
+
+def accumulate_clip(state, raw_text):
+    """Append a raw transcription clip to the current step's accumulation buffer.
+
+    Saves state to disk and returns the updated state dict.
+    Called by tray_app after each successful recording during a review step.
+    """
+    state.setdefault("accumulated_raw", []).append(raw_text)
+    state["awaiting_more"] = True
+    _save_state(state)
+    _rlog(f"accumulate_clip: clip {len(state['accumulated_raw'])} appended ({len(raw_text)} chars)")
+    return state
+
+
+def structure_and_advance(script_dir, engine_instance, config):
+    """Acquire exclusive processing lock, LLM-structure accumulated clips, write to note, advance step.
+
+    Returns ``(success, error, still_active)`` where:
+    - success      – False if the lock is held by another process or state is gone; True otherwise
+    - error        – exception message string if something failed mid-run, else None
+    - still_active – True if the review session is still running after this call
+
+    Locking strategy
+    ----------------
+    An exclusive file lock on ``_PROCESSING_LOCK_PATH`` (non-blocking) is the atomic gate.
+    If another process holds the lock, this function returns immediately without blocking.
+    ``state["processing"]`` is kept only as a display signal for the dashboard spinner;
+    it no longer does any locking itself.
+
+    ``skip_step`` is called internally when no raw text is accumulated.  It must NOT try to
+    acquire the same lock — flock(LOCK_EX) from the same process via a second open() would
+    deadlock.  ``skip_step`` relies on the callers' state.get("processing") pre-checks instead.
+    """
+    import traceback as _tb
+    _lock_fd      = None
+    _processing_set = False   # True once state["processing"]=True has been saved (for finally cleanup)
+    try:
+        # ── Step 1: Acquire exclusive lock (atomic, non-blocking) ────────────────
+        _lock_fd = _acquire_processing_lock()
+        if _lock_fd is None:
+            _rlog("structure_and_advance: processing lock held by another process — bailing")
+            return False, None, True  # still_active unknown; don't kill review
+
+        # ── Step 2: Load state and set display flag ──────────────────────────────
+        fresh_state = load_state()
+        if fresh_state is None:
+            _rlog("structure_and_advance: state file gone before processing started")
+            return False, None, False
+
+        fresh_state["processing"] = True
+        _save_state(fresh_state)
+        _processing_set = True
+        state = fresh_state
+
+        # ── Step 3: Structure and advance ────────────────────────────────────────
+        step = get_current_step(state, config)
+        if step is None:
+            _rlog("structure_and_advance: no step found")
+            return True, None, False
+
+        step_name    = step.get("section_name", "this step")
+        raw_list     = state.get("accumulated_raw", [])
+        raw_combined = "\n".join(raw_list).strip()
+
+        if not raw_combined:
+            _rlog("structure_and_advance: no accumulated raw, treating as skip")
+            skip_step(script_dir, state, config)
+        else:
+            _rlog(f"structure_and_advance: structuring '{step_name}' ({len(raw_list)} clips)")
+            if step.get("refine", True):
+                tmpl            = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
+                full_prompt     = tmpl.replace("{raw_text}", raw_combined)
+                struct_model    = config.get("structure_model") or None
+                structured_text = engine_instance.refine_with_prompt(full_prompt, structure_model=struct_model)
+            else:
+                structured_text = raw_combined
+
+            engine_instance.log(raw_combined, structured_text,
+                                 mode=f"review:{step_name}", model="review_engine")
+            _rlog(f"structure_and_advance: structured preview='{structured_text[:80]}'")
+
+            state["accumulated_raw"] = []
+            state["awaiting_more"]   = False
+            write_step_to_note(script_dir, config, step, structured_text, state)
+            advance_step(script_dir, state, config)
+
+        still_active, _ = is_review_active(script_dir)
+        return True, None, still_active
+
+    except Exception as e:
+        _rlog(f"EXCEPTION in structure_and_advance:\n{_tb.format_exc()}")
+        # success=False signals the caller that processing failed.
+        # still_active=True keeps the review alive so the user can retry.
+        return False, str(e), True
+    finally:
+        # Clear the display flag from state (if we set it), then release the file lock.
+        if _processing_set:
+            final_state = load_state()
+            if final_state is not None:
+                final_state.pop("processing", None)
+                _save_state(final_state)
+        _release_processing_lock(_lock_fd)
 
 
 def cancel_review(script_dir):
@@ -1146,7 +1587,7 @@ def _generate_and_append_summary(script_dir, daily_note_path, date_str):
 
 def complete_review(script_dir, engine_instance, state, config):
     date_str = state.get("date", datetime.date.today().isoformat())
-    daily_note_path = _get_daily_note_path(script_dir, config, date_str)
+    daily_note_path = get_daily_note_path(script_dir, config, date_str)
 
     _rlog(f"complete_review: date={date_str} daily_note={daily_note_path}")
 
@@ -1202,7 +1643,7 @@ def complete_review(script_dir, engine_instance, state, config):
 
 def check_startup_state(script_dir):
     config = load_review_config(script_dir)
-    state = _load_state()
+    state = load_state()
 
     if state is None:
         return "none", None, None
@@ -1245,10 +1686,11 @@ _espeak_voice_cache = None
 
 # Universal narration control — updated by every narrate() call
 _active_narration_proc    = None   # currently playing subprocess (paplay or espeak)
-_last_narration_text      = None   # last text spoken, used by replay_narration()
+_last_narration_text      = None   # in-process fallback for replay
 _narration_lock           = threading.Lock()
 _narration_stop_requested = False  # set by stop_narration() to suppress piper→espeak fallback
-_NARRATION_PID_FILE       = "/tmp/review_narration.pid"  # cross-process kill target
+_NARRATION_PID_FILE       = "/tmp/review_narration.pid"   # cross-process kill target
+_NARRATION_TEXT_FILE      = "/tmp/review_narration_last.txt"  # cross-process replay text
 
 
 def is_narrating():
@@ -1258,15 +1700,26 @@ def is_narrating():
                 and _active_narration_proc.poll() is None)
 
 
+def _write_narration_pid(proc):
+    """Write subprocess PID to the cross-process narration kill file."""
+    try:
+        with open(_NARRATION_PID_FILE, "w") as f:
+            f.write(str(proc.pid))
+    except Exception:
+        pass
+
+
 def stop_narration():
     """Kill the currently playing narration, if any (works cross-process via PID file)."""
     global _active_narration_proc, _narration_stop_requested
     _narration_stop_requested = True
+    stopped = False
     with _narration_lock:
         proc = _active_narration_proc
         if proc is not None:
             try:
                 proc.kill()
+                stopped = True
             except Exception:
                 pass
             _active_narration_proc = None
@@ -1276,20 +1729,36 @@ def stop_narration():
             pid = int(f.read().strip())
         os.kill(pid, 9)
         _rlog(f"narrate: cross-process stop (pid={pid})")
+        stopped = True
+    except FileNotFoundError:
+        pass  # no cross-process narration active — normal case
     except Exception:
         pass
-    try:
-        os.unlink(_NARRATION_PID_FILE)
-    except Exception:
-        pass
-    _rlog("narrate: stopped by request")
+    finally:
+        try:
+            os.unlink(_NARRATION_PID_FILE)
+        except Exception:
+            pass
+    if stopped:
+        _rlog("narrate: stopped by request")
 
 
 def replay_narration(config):
-    """Re-narrate the last spoken text."""
-    if _last_narration_text:
-        _rlog(f"narrate: replaying ({len(_last_narration_text)} chars)")
-        narrate(_last_narration_text, config, blocking=False)
+    """Re-narrate the last spoken text (works cross-process via text file)."""
+    # Prefer the shared file so dashboard can replay text narrated by the tray process.
+    text = None
+    try:
+        with open(_NARRATION_TEXT_FILE, "r", encoding="utf-8") as f:
+            text = f.read().strip() or None
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    if text is None:
+        text = _last_narration_text  # in-process fallback
+    if text:
+        _rlog(f"narrate: replaying ({len(text)} chars)")
+        narrate(text, config, blocking=False)
     else:
         _rlog("narrate: replay requested but nothing to replay")
 
@@ -1332,11 +1801,7 @@ def _narrate_espeak(text, blocking):
     with _narration_lock:
         global _active_narration_proc
         _active_narration_proc = proc
-    try:
-        with open(_NARRATION_PID_FILE, "w") as f:
-            f.write(str(proc.pid))
-    except Exception:
-        pass
+    _write_narration_pid(proc)
     if blocking:
         proc.wait()
 
@@ -1391,11 +1856,7 @@ def _narrate_piper(text, config, blocking):
         with _narration_lock:
             global _active_narration_proc
             _active_narration_proc = synth
-        try:
-            with open(_NARRATION_PID_FILE, "w") as f:
-                f.write(str(synth.pid))
-        except Exception:
-            pass
+        # Don't write synth PID — synthesis blocks briefly and can't be usefully killed mid-input
         synth.communicate(input=text.encode(), timeout=15)
         if synth.returncode != 0 or not os.path.exists(tmp_path):
             if _narration_stop_requested:
@@ -1408,11 +1869,7 @@ def _narrate_piper(text, config, blocking):
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         with _narration_lock:
             _active_narration_proc = play
-        try:
-            with open(_NARRATION_PID_FILE, "w") as f:
-                f.write(str(play.pid))
-        except Exception:
-            pass
+        _write_narration_pid(play)
         if blocking:
             play.wait()
         # Clean up the temp wav after playback (in background if non-blocking)
@@ -1460,6 +1917,14 @@ def narrate(text, config, blocking=False):
     stop_narration()  # stop any currently playing narration before starting new one
     _narration_stop_requested = False  # reset flag so new narration plays normally
     _last_narration_text = text
+    # Persist text for cross-process replay, but skip short transient messages
+    # ("Processing.", "Recording too quiet") that are never worth replaying.
+    if len(text) >= 60:
+        try:
+            with open(_NARRATION_TEXT_FILE, "w", encoding="utf-8") as _f:
+                _f.write(text)
+        except Exception:
+            pass
     engine = config.get("tts_engine", "espeak")
     try:
         if engine == "piper":

@@ -48,20 +48,28 @@ def get_ollama_models(host="http://localhost:11434"):
     except Exception:
         return ["qwen2.5:3b", "qwen3:0.6b", "gemma3:1b"]
 
-# ── Palette ────────────────────────────────────────────────────────────────────
-BG      = "#1e1e2e"
-SURFACE = "#313244"
-ACCENT  = "#89b4fa"
-TEXT    = "#cdd6f4"
-SUBTLE  = "#6c7086"
-GREEN   = "#a6e3a1"
-ERROR   = "#f38ba8"
+from theme import BG, SURFACE, OVERLAY, TEXT, SUBTLE, ACCENT, GREEN, RED, YELLOW
+ERROR = RED  # alias used in this file
 
 # ── Section header helper ──────────────────────────────────────────────────────
 
 def _section(frame, text, row):
     lbl = ctk.CTkLabel(frame, text=text, font=("Inter", 14, "bold"), text_color=ACCENT)
     lbl.grid(row=row, column=0, columnspan=2, sticky="w", padx=20, pady=(20, 6))
+
+_FEATURE_ROWS = [
+    ("start_end_sounds", "🔔  Start / End Sounds",
+     "Play audio cues when recording starts and stops."),
+    ("clipboard_output", "📋  Clipboard Output",
+     "Copy refined text to clipboard after processing."),
+    ("markdown_output",  "📝  Markdown Output",
+     "Also save refined text to the Markdown notes file."),
+    ("direct_typing",    "⌨   Direct Typing",
+     "Type refined text directly at the cursor position (pynput)."),
+    ("evening_review",   "🌙  Evening Review",
+     "Show 'Start Evening Review' in the tray menu. Disable to use Voice Refiner only."),
+]
+
 
 def _label(frame, text, row, col=0):
     ctk.CTkLabel(frame, text=text, text_color=TEXT, font=("Inter", 12)).grid(
@@ -93,6 +101,7 @@ class ConfigApp:
         self.tab1 = self.tabview.add("🎙 Voice Refiner")
         self.tab2 = self.tabview.add("🌙 Evening Review")
         self.tab3 = self.tabview.add("📱 Notifications")
+        self.tab4 = self.tabview.add("⚙ Features")
 
         # Scrollable frames for tabs
         self.scroll1 = ctk.CTkScrollableFrame(self.tab1, fg_color="transparent")
@@ -106,6 +115,10 @@ class ConfigApp:
         self.scroll3 = ctk.CTkScrollableFrame(self.tab3, fg_color="transparent")
         self.scroll3.pack(fill="both", expand=True)
         self._build_notifications_tab(self.scroll3)
+
+        self.scroll4 = ctk.CTkScrollableFrame(self.tab4, fg_color="transparent")
+        self.scroll4.pack(fill="both", expand=True)
+        self._build_features_tab(self.scroll4)
 
         # Save / Cancel bar
         bar = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -400,38 +413,59 @@ class ConfigApp:
                      placeholder_text="08:00").grid(row=11, column=1, sticky="w", padx=20, pady=4)
         _note(f, "After changing the time, re-run install_morning_brief.sh to update the systemd timer.", 12)
 
-        _section(f, "🎙  Voice Wake-Word Control", 13)
-        _note(f, "Say 'stop' / 'रुको' to stop narration. Say 'again' / 'फिर से' to replay. "
-                 "Active only while TTS is speaking — idle at all other times.", 14)
+        _label(f, "Pending Lookback Days:", 13)
+        self.pending_lookback_var = ctk.StringVar(
+            value=str(self.review_raw.get("pending_task_lookback_days", 7)))
+        ctk.CTkEntry(f, textvariable=self.pending_lookback_var, width=80).grid(
+            row=13, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Days to scan for recurring unchecked tasks in the morning story (0 = off, default 7).", 14)
 
-        _label(f, "Enable Voice Control:", 15)
+        _label(f, "Warn Threshold (days):", 15)
+        self.pending_warn_var = ctk.StringVar(
+            value=str(self.review_raw.get("pending_task_warn_threshold", 3)))
+        ctk.CTkEntry(f, textvariable=self.pending_warn_var, width=80).grid(
+            row=15, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Days pending before a task gets the ⚠️ warning label (default 3).", 16)
+
+        _label(f, "Critical Threshold (days):", 17)
+        self.pending_crit_var = ctk.StringVar(
+            value=str(self.review_raw.get("pending_task_critical_threshold", 5)))
+        ctk.CTkEntry(f, textvariable=self.pending_crit_var, width=80).grid(
+            row=17, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "Days pending before a task gets the 🚨 critical label (default 5).", 18)
+
+        _section(f, "🎙  Voice Wake-Word Control", 19)
+        _note(f, "Say 'stop' / 'रुको' to stop narration. Say 'again' / 'फिर से' to replay. "
+                 "Active only while TTS is speaking — idle at all other times.", 20)
+
+        _label(f, "Enable Voice Control:", 21)
         self.voice_ctrl_var = tk.BooleanVar(value=self.review_raw.get("voice_control", False))
         ctk.CTkCheckBox(f, text="", variable=self.voice_ctrl_var).grid(
-            row=15, column=1, sticky="w", padx=20, pady=4)
+            row=21, column=1, sticky="w", padx=20, pady=4)
 
-        _label(f, "Energy Threshold:", 16)
+        _label(f, "Energy Threshold:", 22)
         self.voice_threshold_var = ctk.StringVar(
             value=str(self.review_raw.get("voice_control_threshold", 500)))
         ctk.CTkEntry(f, textvariable=self.voice_threshold_var, width=100).grid(
-            row=16, column=1, sticky="w", padx=20, pady=4)
+            row=22, column=1, sticky="w", padx=20, pady=4)
         _note(f, "RMS energy gate (0–32768). Raise if speaker bleed triggers false positives. "
-                 "Restart the tray after changing. Uses Whisper tiny — no extra models needed.", 17)
+                 "Restart the tray after changing. Uses Whisper tiny — no extra models needed.", 23)
 
-        _section(f, "🌙  Evening Review Reminder", 18)
-        _note(f, "Sends a desktop notification (and Telegram if enabled) if no review is done by the set time.", 19)
+        _section(f, "🌙  Evening Review Reminder", 24)
+        _note(f, "Sends a desktop notification (and Telegram if enabled) if no review is done by the set time.", 25)
 
-        _label(f, "Enable Reminder:", 20)
+        _label(f, "Enable Reminder:", 26)
         self.evening_reminder_var = tk.BooleanVar(
             value=self.review_raw.get("evening_reminder_enabled", False))
         ctk.CTkCheckBox(f, text="", variable=self.evening_reminder_var).grid(
-            row=20, column=1, sticky="w", padx=20, pady=4)
+            row=26, column=1, sticky="w", padx=20, pady=4)
 
-        _label(f, "Reminder Time (HH:MM):", 21)
+        _label(f, "Reminder Time (HH:MM):", 27)
         self.evening_reminder_time_var = ctk.StringVar(
             value=self.review_raw.get("evening_reminder_time", "21:00"))
         ctk.CTkEntry(f, textvariable=self.evening_reminder_time_var, width=100,
-                     placeholder_text="21:00").grid(row=21, column=1, sticky="w", padx=20, pady=4)
-        _note(f, "After changing the time, re-run install_evening_reminder.sh to update the systemd timer.", 22)
+                     placeholder_text="21:00").grid(row=27, column=1, sticky="w", padx=20, pady=4)
+        _note(f, "After changing the time, re-run install_evening_reminder.sh to update the systemd timer.", 28)
 
     def _test_telegram(self):
         self.root.after(0, lambda: (
@@ -485,6 +519,35 @@ class ConfigApp:
         if hasattr(self, "struct_cb"):
             self.struct_cb.configure(values=[""] + models)
 
+    def _build_features_tab(self, f):
+        f.columnconfigure(1, weight=1)
+        features = self.main_cfg.get("FEATURES", {})
+
+        _section(f, "⚙  Feature Toggles", 0)
+        _note(f, "Turn individual features on or off without editing code.\n"
+                 "Changes take effect after restarting the tray application.", 1)
+
+        self._feature_vars = {}
+        for row_i, (key, label, note) in enumerate(_FEATURE_ROWS):
+            base_row = 2 + row_i * 2
+            row_frame = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
+            row_frame.grid(row=base_row, column=0, columnspan=2, sticky="we", padx=20, pady=(6, 0))
+            row_frame.columnconfigure(0, weight=1)
+
+            var = tk.BooleanVar(value=features.get(key, True))
+            self._feature_vars[key] = var
+
+            ctk.CTkLabel(row_frame, text=label, text_color=TEXT,
+                         font=("Inter", 13, "bold"), anchor="w").grid(
+                         row=0, column=0, sticky="w", padx=16, pady=(10, 2))
+            ctk.CTkSwitch(row_frame, text="", variable=var,
+                          onvalue=True, offvalue=False,
+                          button_color=ACCENT, progress_color=ACCENT).grid(
+                          row=0, column=1, sticky="e", padx=16, pady=(10, 2))
+            ctk.CTkLabel(row_frame, text=note, text_color=SUBTLE,
+                         font=("Inter", 11), anchor="w", wraplength=440).grid(
+                         row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 10))
+
     def _save_all(self):
         errors = []
         try:
@@ -501,9 +564,20 @@ class ConfigApp:
                 "SAVE_TO_MARKDOWN":         self.save_md_var.get(),
                 "MARKDOWN_PATH":            self.md_path_var.get(),
                 "DIRECT_TYPING":            self.direct_typing_var.get(),
+                "FEATURES": {k: v.get() for k, v in self._feature_vars.items()},
             }
             with open(config_path, "w", encoding="utf-8") as fh:
                 json.dump(new_main, fh, indent=4)
+
+            # Auto-create prompt folders for any newly configured models
+            for model_name in set([
+                new_main["OLLAMA_MODELS"].get("en", ""),
+                new_main["OLLAMA_MODELS"].get("hi", ""),
+                new_main["OLLAMA_TRANSLATE_MODELS"].get("to_en", ""),
+                new_main["OLLAMA_TRANSLATE_MODELS"].get("to_hi", ""),
+            ]):
+                if model_name:
+                    utils.ensure_model_prompts(script_dir, model_name, new_main)
         except Exception as e:
             errors.append(f"config.json: {e}")
 
@@ -557,6 +631,18 @@ class ConfigApp:
             existing["telegram_bot_token"]     = self.tg_token_var.get().strip()
             existing["telegram_chat_id"]       = self.tg_chat_var.get().strip()
             existing["morning_briefing_enabled"] = self.morning_enabled_var.get()
+            try:
+                existing["pending_task_lookback_days"] = int(self.pending_lookback_var.get())
+            except ValueError:
+                errors.append("Pending lookback days must be a whole number (e.g. 7, or 0 to disable)")
+            try:
+                existing["pending_task_warn_threshold"] = int(self.pending_warn_var.get())
+            except ValueError:
+                errors.append("Pending warn threshold must be a whole number (e.g. 3)")
+            try:
+                existing["pending_task_critical_threshold"] = int(self.pending_crit_var.get())
+            except ValueError:
+                errors.append("Pending critical threshold must be a whole number (e.g. 5)")
             existing["voice_control"]           = self.voice_ctrl_var.get()
             try:
                 existing["voice_control_threshold"] = int(self.voice_threshold_var.get())

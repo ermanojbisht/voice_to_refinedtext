@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Evening Review — Full Process Flowchart</title>
+  <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <link  href="https://unpkg.com/vis-network@9.1.9/dist/dist/vis-network.min.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #1e1e2e; color: #cdd6f4; height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Top bar ── */
+    #topbar {
+      display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+      background: #181825; border-bottom: 1px solid #313244; flex-shrink: 0; flex-wrap: wrap;
+    }
+    #topbar h1 { font-size: 15px; color: #cba6f7; white-space: nowrap; }
+    .btn {
+      padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer;
+      font-size: 12px; font-weight: 600; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .8; }
+    #physicsBtn  { background: #a6e3a1; color: #1e1e2e; }
+    #fitBtn      { background: #89b4fa; color: #1e1e2e; }
+    #resetBtn    { background: #f38ba8; color: #1e1e2e; }
+    #searchBox {
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #45475a;
+      background: #313244; color: #cdd6f4; font-size: 12px; width: 180px;
+    }
+    #searchBox::placeholder { color: #6c7086; }
+
+    /* ── Main layout ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Legend ── */
+    #legend {
+      width: 200px; flex-shrink: 0; background: #181825;
+      border-right: 1px solid #313244; padding: 10px; overflow-y: auto; font-size: 11px;
+    }
+    #legend h2 { font-size: 12px; color: #89b4fa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .leg-item { display: flex; align-items: center; gap: 7px; padding: 3px 0; cursor: pointer; border-radius: 4px; padding-left: 4px; }
+    .leg-item:hover { background: #313244; }
+    .leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .leg-label { color: #cdd6f4; line-height: 1.3; }
+
+    /* ── Canvas ── */
+    #network { flex: 1; }
+
+    /* ── Tooltip card ── */
+    #infocard {
+      position: fixed; bottom: 18px; right: 18px; width: 280px;
+      background: #313244; border: 1px solid #45475a; border-radius: 10px;
+      padding: 12px 14px; font-size: 12px; display: none; z-index: 99;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    }
+    #infocard h3 { font-size: 13px; color: #cba6f7; margin-bottom: 6px; }
+    #infocard p  { color: #a6adc8; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <h1>🌙 Evening Review — Full Process Flowchart</h1>
+  <button class="btn" id="physicsBtn">⏸ Freeze</button>
+  <button class="btn" id="fitBtn">⬜ Fit All</button>
+  <button class="btn" id="resetBtn">↺ Reset Layout</button>
+  <input id="searchBox" type="text" placeholder="Search node…" />
+  <span style="font-size:11px;color:#6c7086;">Drag nodes · Scroll to zoom · Click for info</span>
+</div>
+
+<!-- Main area -->
+<div id="main">
+  <div id="legend">
+    <h2>Subsystems</h2>
+    <!-- filled by JS -->
+  </div>
+  <div id="network"></div>
+</div>
+
+<!-- Info card -->
+<div id="infocard">
+  <h3 id="cardTitle"></h3>
+  <p  id="cardBody"></p>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// COLOUR PALETTE  (one per subsystem group)
+// ─────────────────────────────────────────────────────────────────────────────
+const GROUPS = {
+  entry:    { color:"#fab387", label:"① Entry / Startup" },
+  init:     { color:"#89b4fa", label:"② initialize_review" },
+  posit:    { color:"#74c7ec", label:"③ Post-init Tray" },
+  brief:    { color:"#cba6f7", label:"④ Context Brief Thread" },
+  rec:      { color:"#f38ba8", label:"⑤ Recording Pipeline" },
+  accum:    { color:"#f2cdcd", label:"⑥ Accumulation" },
+  next:     { color:"#b4befe", label:"⑦ structure_and_advance" },
+  write:    { color:"#a6e3a1", label:"⑧ write_step_to_note" },
+  adv:      { color:"#94e2d5", label:"⑨ advance_step" },
+  skip:     { color:"#f9e2af", label:"⑩ skip_step" },
+  redo:     { color:"#eba0ac", label:"⑪ redo_step" },
+  notify:   { color:"#89dceb", label:"⑫ send_step_notification" },
+  done:     { color:"#a6e3a1", label:"⑬ complete_review" },
+  cancel:   { color:"#f38ba8", label:"⑭ cancel_review" },
+  dash:     { color:"#cba6f7", label:"⑮ Dashboard" },
+  watch:    { color:"#7f849c", label:"⑯ Watcher Thread" },
+  vc:       { color:"#f5c2e7", label:"⑰ Voice Control" },
+  tts:      { color:"#89b4fa", label:"⑱ Narration / TTS" },
+  state:    { color:"#6c7086", label:"⑲ Shared State Files" },
+  guards:   { color:"#45475a", label:"⑳ Guards & Stoppages" },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODE DESCRIPTIONS  (shown in info card on click)
+// ─────────────────────────────────────────────────────────────────────────────
+const DESC = {
+  // Entry
+  TrayStart:      "Tray app starts. Loads VoiceEngine, sets up hotkey listener.",
+  CheckStartup:   "check_startup_state(): reads /tmp/review_state.json. Returns 'resume', 'expired', or 'none'.",
+  ExpiredState:   "Session started_at is from a previous day. State file deleted. Tray stays idle.",
+  ResumeSession:  "Session still valid. Restores is_in_review=True, re-sends step notification to remind user where they were.",
+  IdleTray:       "Normal idle mode. User can record voice for normal clipboard refining.",
+  StartReview:    "User triggers 'Start Evening Review' from tray menu.",
+  AlreadyInReview:"Re-entry guard: if is_in_review=True, silently return.",
+  DateDialog:     "_ask_review_date(): tkinter simpledialog, default=today. Returns YYYY-MM-DD or None if cancelled.",
+  LoadConfig:     "load_review_config(): merges review_config.json over built-in defaults. Handles per-step overrides by step_id.",
+
+  // Init
+  InitReview:     "initialize_review(): creates vault dirs, builds initial state dict, saves to /tmp/review_state.json.",
+  AlreadyActive:  "Defensive guard: refuses to overwrite a live session. Protects against any caller that bypasses start_review's re-entry guard.",
+  CreateDirs:     "os.makedirs for YYYY/MonthName under daily_notes and wellness_notes vault paths.",
+  BuildState:     "State dict: active=True, current_step_index=0, started_at=now, awaiting_more=False, accumulated_raw=[], step_times=[], step_started_at=now.",
+  SpawnBrief:     "Spawns _run_context_brief as daemon thread. State saved with context_ready=False so dashboard shows 'Analysing…'.",
+  DirectNotify:   "last_n_days_context=0: skip context brief. Set context_ready=True, send Step 1 notification immediately.",
+  CarryForward:   "_read_unchecked_tasks(): parses '- [ ]' lines from the day-before note. Stored in state['carryforward_tasks'].",
+  LoadStreak:     "load_streak(): reads streak.json {current, last_date, best}. Stored in state['streak_current'] for dashboard display.",
+
+  // Post-init
+  SetReviewFlag:  "is_in_review=True, icon turns green.",
+  KillDash:       "pkill -f review_dashboard.py: kills any stale dashboard windows left from a previous session.",
+  OpenDash:       "subprocess.Popen(review_dashboard.py): stderr/stdout redirected to review_debug.log.",
+  StartWatcher:   "Thread: _watch_review_completion. Polls every 2s. Detects when dashboard completes the review.",
+
+  // Context Brief
+  ReadNNotes:     "_read_last_n_notes(): iterates last N days, extracts ## Evening Review sections. Returns [{date, content}].",
+  CacheHit:       "_load_brief_cache(): reads brief_cache.json. Rejects stale 'Notes loaded for…' entries (pre-fix artifact).",
+  BriefSingle:    "_call_brief_single(): one Ollama call with EN:/HI: block format. Falls back to full response if model doesn't follow format.",
+  BriefParallel:  "_call_brief_parallel(): two daemon threads, one per language. Waits for both via Queue.",
+  SaveCache:      "_save_brief_cache(): writes EN+HI to brief_cache.json. Prunes entries older than 7 days. Never saves fallback/error text.",
+  UpdateState:    "Writes context_brief, context_brief_en, context_brief_hi, context_ready=True, context_notes to live state file.",
+  NarrateBrief:   "narrate(brief, config, blocking=True): speaks the AI synthesis before Step 1 prompt so mic doesn't capture it.",
+  NarrateStreak:  "If streak_current > 0: narrates '...X दिनों की streak है!' (Hindi). Blocking.",
+  NarrateWeekly:  "If today is Sunday + focus_word_trend: _get_weekly_focus_trend() → narrates most-used focus word of the week.",
+  SendStep1:      "send_step_notification() for Step 1. Sends desktop notify + narrates step prompt.",
+
+  // Recording
+  HotkeyRec:      "Ctrl+Alt+V, SIGUSR1, or Record button in dashboard (via SIGUSR1). Calls toggle_recording().",
+  CheckRec:       "is_recording flag: if already recording, calls engine.stop_recording() instead.",
+  EngineRecord:   "engine.record(): captures mic audio to WAV via sounddevice. Returns file path.",
+  AudioQuality:   "_check_audio_quality(): reads WAV, computes RMS. If RMS < SILENCE_THRESHOLD × 0.5 → reject.",
+  TooQuiet:       "narrate 'Recording seems too quiet'. Desktop notify. Icon resets. Recording discarded.",
+  Transcribe:     "engine.transcribe(wav_path): runs faster-whisper on the WAV. Returns raw text string.",
+  EmptySpeech:    "raw_text is blank/whitespace: notify 'No speech detected', icon resets, return.",
+  RouteMode:      "Routes to _handle_review_step (review mode) or _run_normal_mode (clipboard mode).",
+  NormalMode:     "_run_normal_mode(): refine with Ollama → xclip/xsel clipboard → paplay complete.oga → optional direct typing via xdotool.",
+
+  // Accumulation
+  HandleStep:     "_handle_review_step(): accumulates raw text. No LLM call here — deferred to Next Step.",
+  ConfigGone:     "review_config is None: cancel_review() fired between is_in_review check and this point. Ignore.",
+  ReloadState:    "is_review_active() reloads state from disk — picks up any changes made by menu actions during recording.",
+  StateGoneMid:   "State vanished while recording was in flight. Discard orphaned transcript. Call _review_finished() to reset tray.",
+  AccumulateClip: "accumulate_clip(): appends raw_text to state['accumulated_raw'], sets awaiting_more=True, calls _save_state.",
+  AwaitNotify:    "send_awaiting_notification(): desktop notify with clip count. narrate 'saved speak more'. Refresh tray menu.",
+
+  // structure_and_advance
+  NextStepTrig:   "User clicks 'Next Step' in tray menu or dashboard. Guard: if state.processing=True → ignore.",
+  AcquireLock:    "_acquire_processing_lock(): opens /tmp/review_processing.lock, tries LOCK_EX|LOCK_NB. Instant fail if held.",
+  LockHeld:       "Another process holds the lock. Return immediately (success=False, still_active=True). Review continues.",
+  LoadFreshState: "load_state() with LOCK_SH. Gets the freshest accumulated_raw list.",
+  SetProcessing:  "state['processing']=True saved to disk. Dashboard spinner activates within 500ms poll.",
+  GetStep:        "get_current_step(state, config): steps[current_step_index]. Returns None if index out of range.",
+  NoRaw:          "accumulated_raw is empty: treat as skip — calls skip_step(). No LLM call.",
+  BuildPrompt:    "Fills structure_prompt template: replaces {raw_text} with joined clips.",
+  OllamaRefine:   "engine.refine_with_prompt(): sends prompt to Ollama. Returns structured text.",
+  RawPassthrough: "step.refine=False (e.g. Wellness): structured_text = raw_combined. No LLM.",
+  LogEntry:       "engine.log(): writes raw + structured to history log file.",
+  FinallyBlock:   "finally: clear state['processing'], _release_processing_lock(). Always runs even on exception.",
+
+  // write_step_to_note
+  IsolatedFile:   "step.isolate_file=True (Wellness): writes to wellness_notes path. Creates wellness note from template if missing.",
+  SectionFill:    "_fill_section(): finds ### header by regex, inserts text inline. write_offset=None — redo cannot truncate.",
+  AppendMode:     "_ensure_evening_review_section() adds ## Evening Review if absent. Appends block. Captures byte offset for redo.",
+  RecordOffset:   "state['last_written'] = {file, section, offset}. Saved to disk for redo_step use.",
+  FocusWord:      "If step_id==1 + focus_word_trend: _append_focus_word() → appends {date, word} JSON line to focus_words.jsonl.",
+
+  // advance_step
+  RecordTime:     "_record_step_time(): computes (now - step_started_at) in seconds, appends to step_times[]. Resets timer.",
+  IncrIndex:      "current_step_index += 1. _clear_step_accumulation(): last_written=None, awaiting_more=False, accumulated_raw=[].",
+  LastStep:       "index >= len(steps): calls complete_review().",
+  NotLast:        "_save_state() then send_step_notification() for the new current step.",
+
+  // skip_step
+  SkipTrig:       "User clicks Skip in tray or dashboard. Guard: state.active=False → return.",
+  SkipDefault:    "step.skip_default set (e.g. Movement: 'only office', Priorities: '- [ ] (no priorities noted)'): write to note.",
+  NoSkipDefault:  "No skip_default: step is silently skipped, nothing written to note.",
+  SkipAdvance:    "_record_step_time, index++, _clear_step_accumulation. If last step → complete_review.",
+  SkipNotify:     "narrate 'Step skipped.' (or Hindi variant). _save_state. send_step_notification.",
+
+  // redo_step
+  RedoTrig:       "User clicks Redo in tray or dashboard. Guard: state.active=False or processing → return.",
+  HasOffset:      "last_written.offset is not None: open file in 'r+b', truncate to offset. Fully reversible.",
+  SectionFillRedo:"offset=None (section_fill step): cannot truncate. Desktop notify 'remove manually from Obsidian'.",
+  NothingWritten: "last_written=None: step not yet written, just clear accumulation buffer.",
+  ClearAccum:     "_clear_step_accumulation(). _save_state(). send_step_notification — re-prompts same step.",
+
+  // send_step_notification
+  DeskNotify:     "notify-send: 'Evening Review — Step N/Total' + prompt_notification text. 5s timeout.",
+  CarryCheck:     "If carryforward_tasks=True + step_id == carryforward_step_id: narrate unchecked task list (max 5), blocking.",
+  PickVariant:    "step.narration_variants: random.choice(). Falls back to 'Step N: name. Please speak now.'",
+  NarratePrompt:  "narrate(narration_text, config, blocking=blocking_narration). blocking=True when called before mic opens.",
+
+  // complete_review
+  EnsureNote:     "Ensures daily note file exists. Creates from template if missing.",
+  UpdateStreak:   "update_streak(): if last_date == yesterday → current+1, else reset to 1. Updates best. Saves streak.json.",
+  BriefWrite:     "state['streak_current'] = new_n. _save_state() brief write so dashboard picks up step_times + streak before deletion.",
+  DeleteState:    "os.remove(STATE_PATH). is_review_active() now returns False. Dashboard detects via poll. Watcher thread fires.",
+  NarrateComplete:"narrate(_ui_narration('review_complete', config)) — 'शाम की समीक्षा पूरी हो गई।'",
+  Milestone:      "If new_n in {7,14,30,100}: narrate Hindi milestone string 'एक हफ्ता / दो हफ्ते / एक महीना / सौ दिन!'",
+  SendTelegram:   "send_telegram(): background thread → telegram_service.send(). '✅ Evening Review done + 🔥 streak: N'.",
+  AISummary:      "_generate_and_append_summary(): reads full note, calls Ollama 2-3 sentence summary, appends '### 📋 Daily Summary'.",
+
+  // cancel
+  CancelTrig:     "Cancel button in tray or dashboard. Dashboard asks confirm dialog first.",
+  BusyCancel:     "state['processing']=True: cannot cancel right now. Show 'Busy' message.",
+  ConfirmCancel:  "Dashboard: messagebox.askyesno. 'All progress so far is saved.'",
+  DeleteStateCx:  "os.remove(STATE_PATH).",
+  NarrateCancel:  "narrate('Review cancelled.'). send_notification 'Review cancelled. Returning to normal mode.'",
+  ReviewFinished: "_review_finished(): is_in_review=False, review_state=None, review_config=None, icon=idle, refresh menu.",
+
+  // Dashboard
+  DashStart:      "subprocess.Popen'd by tray. Separate Python process. Logs to review_debug.log.",
+  PollLoop:       "_poll_state(): tkinter after(500ms) loop. Calls is_review_active() every tick.",
+  UpdateUI:       "_update_ui(state): updates subtitle, progress bar, step row colors, streak label, button states.",
+  ContextPanel:   "_update_context_panel(state): decides what to show in the right panel.",
+  Spinner:        "state['processing']=True: start spinner animation (braille frames, 120ms). Hide discard button.",
+  ShowTranscript: "awaiting_more=True + clips: show raw transcript in right panel. Show Discard button.",
+  ShowBrief:      "First load (_last_context_step==-1): render AI brief (EN or HI). Show days/model label.",
+  PerStepCtx:     "per_step_context=True + step changed: show section-relevant history from last N days notes.",
+  ShowComplete:   "_show_complete(): all rows green ✅, show time-per-step, disable buttons, Cancel→Close.",
+  DashRecord:     "_do_record(): pkill -USR1 -f tray_app.py. Signals tray to toggle recording.",
+  DashNext:       "_do_next(): calls review_engine.structure_and_advance() in background thread.",
+  DashSkip:       "_do_skip(): calls review_engine.skip_step() directly. Checks active+processing guards.",
+  DashRedo:       "_do_redo(): calls review_engine.redo_step() directly.",
+  DashCancel:     "_do_cancel(): confirm dialog → cancel_review() → root.destroy().",
+  FocusChart:     "_build_focus_chart(): reads focus_words.jsonl, draws horizontal bar chart via tkinter Canvas.",
+  TaskPanel:      "Carry-forward checkboxes at carryforward_step_id. Checking → mark_task_done() in vault.",
+  LangToggle:     "EN/HI buttons: switch _ctx_lang, re-render brief, narrate in selected language.",
+
+  // Watcher
+  WatchThread:    "Daemon thread. Started in start_review(). Runs while is_in_review=True.",
+  WatchPoll:      "sleep(2s) → is_review_active(). Detects when dashboard/engine completes the review.",
+  WatchFinish:    "_review_finished(): resets tray to idle. Prevents stale review menu items staying visible.",
+
+  // Voice Control
+  VCInit:         "WakeWordListener thread. Opt-in: voice_control=True in config. Energy gate: voice_control_threshold.",
+  VCStop:         "Keyword 'stop': stop_narration() — kills active proc + reads /tmp/review_narration.pid for cross-process kill.",
+  VCAgain:        "Keyword 'again': replay_narration() — reads /tmp/review_narration_last.txt, re-narrates last text.",
+  VCNext:         "Keyword 'next': calls next_step_review() if is_in_review.",
+  VCSkip:         "Keyword 'skip': calls skip_review_step() if is_in_review.",
+
+  // TTS
+  NarrateEntry:   "narrate(text, config, blocking). voice_narration=False → silent return.",
+  StopFirst:      "stop_narration(): kills any currently playing proc before starting new one.",
+  PersistText:    "len(text)>=60: write to /tmp/review_narration_last.txt for cross-process replay.",
+  PiperPath:      "Resolve piper exe: venv bin → PATH → ~/.local/bin. Falls back to espeak if not found or model missing.",
+  PiperHindi:     "Devanagari chars detected: use piper_model_hi (or fallback to piper_model).",
+  PiperSynth:     "Popen piper --model --output_file WAV. communicate(text, timeout=15).",
+  PiperFallback:  "piper returncode != 0 and not stop_requested: fall back to espeak.",
+  PaPlay:         "Popen paplay WAV. Write PID to /tmp/review_narration.pid. Cleanup WAV after play.",
+  EspeakHindi:    "espeak-ng -v hi -s 130 -a 90.",
+  EspeakMbrola:   "_best_espeak_voice(): checks /usr/share/mbrola/us2,us1,us3,en1. Uses mb-us2 if available.",
+  EspeakFallback: "espeak-ng -v en-us -s 135 -p 38 -g 3 -a 90.",
+
+  // State files
+  StateJSON:      "/tmp/review_state.json. fcntl LOCK_EX on write (via .tmp + atomic rename). LOCK_SH on read.",
+  ProcLock:       "/tmp/review_processing.lock. LOCK_EX|LOCK_NB. Auto-released on process exit/crash.",
+  NarrText:       "/tmp/review_narration_last.txt. Written by narrate() for len>=60. Read by replay_narration().",
+  NarrPID:        "/tmp/review_narration.pid. PID of currently playing proc. Read by stop_narration() cross-process.",
+  BriefCache:     "brief_cache.json. Per-date {en, hi, generated_at}. 7-day pruning. Never stores fallback/error text.",
+  FocusWords:     "focus_words.jsonl. Append-only. {date, word} per review. Read by get_focus_word_counts() for chart + Sunday trend.",
+  StreakJSON:      "streak.json. {current, last_date, best}. Updated at complete_review(). Milestone at 7/14/30/100.",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODES
+// ─────────────────────────────────────────────────────────────────────────────
+const rawNodes = [
+  // ① Entry
+  { id:"TrayStart",      label:"Tray\nStarts",               group:"entry" },
+  { id:"CheckStartup",   label:"check_startup_state",        group:"entry" },
+  { id:"ExpiredState",   label:"Delete state\n(expired)",    group:"entry" },
+  { id:"ResumeSession",  label:"Resume session\n(re-notify)", group:"entry" },
+  { id:"IdleTray",       label:"Idle Tray",                  group:"entry" },
+  { id:"StartReview",    label:"'Start Evening Review'\n(tray menu)", group:"entry" },
+  { id:"AlreadyInReview",label:"⛔ Already in\nreview → return", group:"guards" },
+  { id:"DateDialog",     label:"_ask_review_date\ndialog",   group:"entry" },
+  { id:"LoadConfig",     label:"load_review_config",         group:"entry" },
+
+  // ② Init
+  { id:"InitReview",     label:"initialize_review",          group:"init" },
+  { id:"AlreadyActive",  label:"⛔ Guard: already\nactive → abort", group:"guards" },
+  { id:"CreateDirs",     label:"Create vault dirs\nYYYY/Month", group:"init" },
+  { id:"BuildState",     label:"Build initial state\n{active, index=0,\nstarted_at, step_times}", group:"init" },
+  { id:"SpawnBrief",     label:"Spawn\nContext Brief Thread", group:"init" },
+  { id:"DirectNotify",   label:"context_n=0:\nStep 1 notify direct", group:"init" },
+  { id:"CarryForward",   label:"carryforward_tasks:\nread unchecked\n- [ ] from prev day", group:"init" },
+  { id:"LoadStreak",     label:"load_streak\n→ state.streak_current", group:"init" },
+
+  // ③ Post-init
+  { id:"SetReviewFlag",  label:"is_in_review=True\nicon = 🟢 green",   group:"posit" },
+  { id:"KillDash",       label:"pkill stale\ndashboard procs",          group:"posit" },
+  { id:"OpenDash",       label:"Popen\nreview_dashboard.py",            group:"posit" },
+  { id:"StartWatcher",   label:"Thread:\n_watch_review_completion",     group:"posit" },
+
+  // ④ Context Brief
+  { id:"ReadNNotes",     label:"_read_last_n_notes\n(Evening Review\nsections)", group:"brief" },
+  { id:"CacheHit",       label:"brief_cache.json\nhit?",                group:"brief" },
+  { id:"BriefSingle",    label:"_call_brief_single\n(1 Ollama call\nEN:/HI: blocks)", group:"brief" },
+  { id:"BriefParallel",  label:"_call_brief_parallel\n(2 threads)",     group:"brief" },
+  { id:"SaveCache",      label:"_save_brief_cache\n(7-day pruning)",    group:"brief" },
+  { id:"UpdateState",    label:"Update state:\ncontext_ready=True\ncontext_brief/_en/_hi", group:"brief" },
+  { id:"NarrateBrief",   label:"narrate brief\n(blocking)",             group:"brief" },
+  { id:"NarrateStreak",  label:"narrate streak\n(blocking)",            group:"brief" },
+  { id:"NarrateWeekly",  label:"narrate weekly\nfocus trend\n(Sunday only)", group:"brief" },
+  { id:"SendStep1",      label:"send_step_notification\nStep 1",        group:"brief" },
+
+  // ⑤ Recording
+  { id:"HotkeyRec",      label:"Ctrl+Alt+V\nor SIGUSR1\nor Rec button", group:"rec" },
+  { id:"CheckRec",       label:"is_recording?",                         group:"rec" },
+  { id:"EngineRecord",   label:"engine.record\n→ WAV file",             group:"rec" },
+  { id:"AudioQuality",   label:"_check_audio_quality\nRMS < thresh×0.5?", group:"rec" },
+  { id:"TooQuiet",       label:"⛔ Too quiet:\nnarrate + discard",       group:"guards" },
+  { id:"Transcribe",     label:"engine.transcribe\n(faster-whisper)\n→ raw_text", group:"rec" },
+  { id:"EmptySpeech",    label:"⛔ Empty speech\n→ notify + return",     group:"guards" },
+  { id:"RouteMode",      label:"Route:\nis_in_review?",                 group:"rec" },
+  { id:"NormalMode",     label:"_run_normal_mode\nOllama → clipboard\n→ xclip / direct type", group:"rec" },
+
+  // ⑥ Accumulation
+  { id:"HandleStep",     label:"_handle_review_step",                   group:"accum" },
+  { id:"ConfigGone",     label:"⛔ review_config=None\n(cancel race)",   group:"guards" },
+  { id:"ReloadState",    label:"is_review_active\n→ reload state",      group:"accum" },
+  { id:"StateGoneMid",   label:"⛔ State gone\nmid-flight:\ndiscard orphaned audio", group:"guards" },
+  { id:"AccumulateClip", label:"accumulate_clip\nappend raw_text\nawaiting_more=True\n_save_state", group:"accum" },
+  { id:"AwaitNotify",    label:"send_awaiting_notification\n(clip count + 'speak more')", group:"accum" },
+
+  // ⑦ structure_and_advance
+  { id:"NextStepTrig",   label:"User: Next Step\n(tray or dashboard)",  group:"next" },
+  { id:"AcquireLock",    label:"_acquire_processing_lock\nLOCK_EX|LOCK_NB",  group:"next" },
+  { id:"LockHeld",       label:"⛔ Lock held:\nbail immediately",        group:"guards" },
+  { id:"LoadFreshState", label:"load_state (fresh)",                    group:"next" },
+  { id:"SetProcessing",  label:"state.processing=True\n→ dashboard spinner", group:"next" },
+  { id:"GetStep",        label:"get_current_step",                      group:"next" },
+  { id:"NoRaw",          label:"⛔ accumulated_raw empty\n→ treat as skip", group:"guards" },
+  { id:"BuildPrompt",    label:"Build structure_prompt\n{raw_text} replaced", group:"next" },
+  { id:"OllamaRefine",   label:"engine.refine_with_prompt\n→ Ollama LLM",    group:"next" },
+  { id:"RawPassthrough", label:"refine=False:\nraw text passes through", group:"next" },
+  { id:"LogEntry",       label:"engine.log\nraw + structured",          group:"next" },
+  { id:"FinallyBlock",   label:"finally:\nclear processing\nrelease lock", group:"next" },
+
+  // ⑧ write_step_to_note
+  { id:"IsolatedFile",   label:"isolate_file=True\n(Wellness note)",    group:"write" },
+  { id:"SectionFill",    label:"section_fill=True\n_fill_section\n(Meeting/Movement)\nno redo offset", group:"write" },
+  { id:"AppendMode",     label:"Append under\n## Evening Review\ncapture byte offset", group:"write" },
+  { id:"RecordOffset",   label:"state.last_written\n{file, section, offset}", group:"write" },
+  { id:"FocusWord",      label:"step_id==1:\n_append_focus_word\nto focus_words.jsonl", group:"write" },
+
+  // ⑨ advance_step
+  { id:"RecordTime",     label:"_record_step_time\nappend to step_times\nreset timer",  group:"adv" },
+  { id:"IncrIndex",      label:"index += 1\n_clear_step_accumulation", group:"adv" },
+  { id:"LastStep",       label:"index >= total?",                       group:"adv" },
+
+  // ⑩ skip_step
+  { id:"SkipTrig",       label:"User: Skip",                            group:"skip" },
+  { id:"SkipDefault",    label:"skip_default set:\nwrite to note\n(e.g. '- [ ] no priorities noted')", group:"skip" },
+  { id:"NoSkipDefault",  label:"No skip_default:\nnothing written",     group:"skip" },
+  { id:"SkipAdvance",    label:"index++\n_record_step_time\n_clear_accum", group:"skip" },
+  { id:"SkipNotify",     label:"narrate 'Step skipped'\n_save_state\nsend_step_notification", group:"skip" },
+
+  // ⑪ redo_step
+  { id:"RedoTrig",       label:"User: Redo",                            group:"redo" },
+  { id:"HasOffset",      label:"offset != None:\ntruncate file to\nbyte offset\n(reversible)", group:"redo" },
+  { id:"SectionFillRedo",label:"⛔ section_fill:\noffset=None\nnotify: remove manually", group:"guards" },
+  { id:"ClearAccum",     label:"_clear_step_accumulation\n_save_state\nre-prompt step", group:"redo" },
+
+  // ⑫ send_step_notification
+  { id:"DeskNotify",     label:"notify-send\nStep N/Total + prompt",    group:"notify" },
+  { id:"CarryCheck",     label:"carryforward check:\nnarrate unchecked tasks\n(blocking)", group:"notify" },
+  { id:"PickVariant",    label:"narration_variants\nrandom.choice",     group:"notify" },
+  { id:"NarratePrompt",  label:"narrate step prompt\n(blocking option)", group:"notify" },
+
+  // ⑬ complete_review
+  { id:"EnsureNote",     label:"Ensure daily note\nexists / create",    group:"done" },
+  { id:"UpdateStreak",   label:"update_streak:\nincrement / reset\nsave streak.json", group:"done" },
+  { id:"BriefWrite",     label:"brief _save_state:\ndashboard sees\nstreak + step_times", group:"done" },
+  { id:"DeleteState",    label:"🗑 Delete state file\n→ review = inactive", group:"done" },
+  { id:"NarrateComplete",label:"narrate\n'review_complete'",            group:"done" },
+  { id:"Milestone",      label:"milestone narration\n7/14/30/100 days", group:"done" },
+  { id:"SendTelegram",   label:"send_telegram\n(background thread)\n'✅ Evening Review done'", group:"done" },
+  { id:"AISummary",      label:"Thread:\n_generate_and_append_summary\n(2-3 sentence Ollama)", group:"done" },
+
+  // ⑭ cancel
+  { id:"CancelTrig",     label:"User: Cancel",                          group:"cancel" },
+  { id:"BusyCancel",     label:"⛔ processing=True:\ncannot cancel",     group:"guards" },
+  { id:"ConfirmCancel",  label:"Confirm dialog\n(dashboard only)",      group:"cancel" },
+  { id:"DeleteStateCx",  label:"🗑 Delete state file",                   group:"cancel" },
+  { id:"NarrateCancel",  label:"narrate 'cancelled'\nnotify user",      group:"cancel" },
+  { id:"ReviewFinished", label:"_review_finished:\nis_in_review=False\nicon=idle",  group:"cancel" },
+
+  // ⑮ Dashboard
+  { id:"DashStart",      label:"Dashboard\nProcess starts",             group:"dash" },
+  { id:"PollLoop",       label:"_poll_state\nevery 500ms",              group:"dash" },
+  { id:"UpdateUI",       label:"_update_ui:\nrows / progress /\nstreak / buttons", group:"dash" },
+  { id:"ContextPanel",   label:"_update_context_panel",                 group:"dash" },
+  { id:"Spinner",        label:"processing=True:\nspinner animation",   group:"dash" },
+  { id:"ShowTranscript", label:"awaiting_more:\nshow raw transcript\n+ Discard btn", group:"dash" },
+  { id:"ShowBrief",      label:"First load:\nshow AI brief\n(EN or HI)", group:"dash" },
+  { id:"PerStepCtx",     label:"per_step_context:\nshow section history\non step change", group:"dash" },
+  { id:"ShowComplete",   label:"_show_complete:\nall ✅ green\nstep times\ndisable buttons", group:"dash" },
+  { id:"FocusChart",     label:"_build_focus_chart\n(7-day bar chart\ntk Canvas)",  group:"dash" },
+  { id:"TaskPanel",      label:"Carry-forward\ncheckboxes\n→ mark_task_done in vault", group:"dash" },
+  { id:"LangToggle",     label:"EN/HI toggle\n→ re-render + narrate",   group:"dash" },
+
+  // ⑯ Watcher
+  { id:"WatchThread",    label:"Watcher Thread\n(daemon, 2s poll)",     group:"watch" },
+  { id:"WatchPoll",      label:"is_review_active?",                     group:"watch" },
+  { id:"WatchFinish",    label:"→ _review_finished\n(tray reset to idle)", group:"watch" },
+
+  // ⑰ Voice Control
+  { id:"VCInit",         label:"WakeWordListener\n(energy-gated thread)", group:"vc" },
+  { id:"VCStop",         label:"'stop' → stop_narration\n(cross-process PID)", group:"vc" },
+  { id:"VCAgain",        label:"'again' → replay_narration\n(/tmp/narration_last.txt)", group:"vc" },
+  { id:"VCNext",         label:"'next' → next_step_review",             group:"vc" },
+  { id:"VCSkip",         label:"'skip' → skip_review_step",             group:"vc" },
+
+  // ⑱ TTS
+  { id:"NarrateEntry",   label:"narrate(text, config,\nblocking)",      group:"tts" },
+  { id:"StopFirst",      label:"stop_narration\n(kill current proc)",   group:"tts" },
+  { id:"PersistText",    label:"Write to\nnarration_last.txt\n(len≥60)", group:"tts" },
+  { id:"PiperPath",      label:"Resolve piper exe\nvenv→PATH→~/.local",  group:"tts" },
+  { id:"PiperHindi",     label:"Devanagari?\n→ piper_model_hi",         group:"tts" },
+  { id:"PiperSynth",     label:"Popen piper\n→ WAV (timeout 15s)",      group:"tts" },
+  { id:"PiperFallback",  label:"piper failed →\nfallback espeak",       group:"tts" },
+  { id:"PaPlay",         label:"paplay WAV\nwrite PID file",            group:"tts" },
+  { id:"EspeakHindi",    label:"espeak-ng -v hi\n-s 130",               group:"tts" },
+  { id:"EspeakMbrola",   label:"mbrola available?\nmb-us2 (cached)",    group:"tts" },
+  { id:"EspeakFallback", label:"espeak-ng -v en-us\n-s 135 -p 38",     group:"tts" },
+
+  // ⑲ State files
+  { id:"StateJSON",      label:"/tmp/review_state.json\nfcntl LOCK_EX/SH\natomic rename",  group:"state" },
+  { id:"ProcLock",       label:"/tmp/review_processing.lock\nLOCK_EX|LOCK_NB",             group:"state" },
+  { id:"NarrText",       label:"/tmp/review_narration_last.txt\ncross-process replay",      group:"state" },
+  { id:"NarrPID",        label:"/tmp/review_narration.pid\ncross-process stop",             group:"state" },
+  { id:"BriefCache",     label:"brief_cache.json\n{en,hi} per date\n7-day pruning",         group:"state" },
+  { id:"FocusWords",     label:"focus_words.jsonl\nappend-only",                            group:"state" },
+  { id:"StreakJSON",      label:"streak.json\n{current, last_date, best}",                  group:"state" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDGES
+// ─────────────────────────────────────────────────────────────────────────────
+const rawEdges = [
+  // Entry
+  ["TrayStart","CheckStartup",""],
+  ["CheckStartup","ExpiredState","expired"],
+  ["CheckStartup","ResumeSession","resume"],
+  ["CheckStartup","IdleTray","none"],
+  ["IdleTray","StartReview","user clicks"],
+  ["StartReview","AlreadyInReview","is_in_review=True"],
+  ["StartReview","DateDialog","not in review"],
+  ["DateDialog","LoadConfig","date confirmed"],
+  ["LoadConfig","InitReview",""],
+
+  // Init
+  ["InitReview","AlreadyActive","active guard"],
+  ["InitReview","CreateDirs","not active"],
+  ["CreateDirs","BuildState",""],
+  ["BuildState","SpawnBrief","context_n > 0"],
+  ["BuildState","DirectNotify","context_n = 0"],
+  ["BuildState","CarryForward","carryforward=True"],
+  ["BuildState","LoadStreak","show_streak=True"],
+
+  // Post-init
+  ["SpawnBrief","SetReviewFlag",""],
+  ["SetReviewFlag","KillDash",""],
+  ["KillDash","OpenDash",""],
+  ["OpenDash","StartWatcher",""],
+
+  // Context brief
+  ["SpawnBrief","ReadNNotes","thread starts"],
+  ["ReadNNotes","CacheHit","notes found"],
+  ["ReadNNotes","UpdateState","no notes → fallback"],
+  ["CacheHit","UpdateState","hit"],
+  ["CacheHit","BriefSingle","miss + same model"],
+  ["CacheHit","BriefParallel","miss + diff models"],
+  ["BriefSingle","SaveCache","both non-empty"],
+  ["BriefParallel","SaveCache","both non-empty"],
+  ["BriefSingle","UpdateState","error → fallback"],
+  ["SaveCache","UpdateState",""],
+  ["UpdateState","NarrateBrief","notes exist"],
+  ["NarrateBrief","NarrateStreak","show_streak=True"],
+  ["NarrateStreak","NarrateWeekly","Sunday + trend"],
+  ["NarrateWeekly","SendStep1",""],
+  ["NarrateStreak","SendStep1","not Sunday"],
+  ["NarrateBrief","SendStep1","no streak"],
+
+  // Recording
+  ["HotkeyRec","CheckRec",""],
+  ["CheckRec","EngineRecord","not recording"],
+  ["EngineRecord","AudioQuality","WAV ready"],
+  ["AudioQuality","TooQuiet","RMS too low"],
+  ["AudioQuality","Transcribe","OK"],
+  ["Transcribe","EmptySpeech","blank"],
+  ["Transcribe","RouteMode","has text"],
+  ["RouteMode","HandleStep","in review"],
+  ["RouteMode","NormalMode","not in review"],
+
+  // Accumulation
+  ["HandleStep","ConfigGone","config=None"],
+  ["HandleStep","ReloadState","config OK"],
+  ["ReloadState","StateGoneMid","state=None"],
+  ["ReloadState","AccumulateClip","state OK"],
+  ["AccumulateClip","AwaitNotify",""],
+  ["AwaitNotify","StateJSON","saves state"],
+
+  // structure_and_advance
+  ["SendStep1","NextStepTrig","user records + clicks Next"],
+  ["AwaitNotify","NextStepTrig","user clicks Next"],
+  ["NextStepTrig","AcquireLock","not processing"],
+  ["AcquireLock","LockHeld","locked"],
+  ["AcquireLock","LoadFreshState","acquired"],
+  ["LoadFreshState","SetProcessing","state OK"],
+  ["SetProcessing","GetStep",""],
+  ["GetStep","NoRaw","empty clips"],
+  ["GetStep","BuildPrompt","has clips + refine=True"],
+  ["GetStep","RawPassthrough","has clips + refine=False"],
+  ["BuildPrompt","OllamaRefine",""],
+  ["OllamaRefine","LogEntry",""],
+  ["RawPassthrough","LogEntry",""],
+  ["LogEntry","IsolatedFile","write to note"],
+  ["NoRaw","SkipTrig","internal skip"],
+  ["IsolatedFile","FinallyBlock","after write+advance"],
+  ["SectionFill","FinallyBlock",""],
+  ["AppendMode","FinallyBlock",""],
+
+  // write_step_to_note
+  ["IsolatedFile","RecordOffset","offset captured"],
+  ["SectionFill","RecordOffset","offset=None"],
+  ["AppendMode","RecordOffset","offset captured"],
+  ["RecordOffset","FocusWord","step_id==1"],
+  ["RecordOffset","RecordTime","step_id!=1"],
+  ["FocusWord","FocusWords","append JSONL"],
+  ["FocusWord","RecordTime",""],
+
+  // advance_step
+  ["RecordTime","IncrIndex",""],
+  ["IncrIndex","LastStep",""],
+  ["LastStep","EnsureNote","Yes → complete"],
+  ["LastStep","DeskNotify","No → notify next step"],
+
+  // skip_step
+  ["SkipTrig","SkipDefault","skip_default set"],
+  ["SkipTrig","NoSkipDefault","no skip_default"],
+  ["SkipDefault","SkipAdvance",""],
+  ["NoSkipDefault","SkipAdvance",""],
+  ["SkipAdvance","LastStep","check if last"],
+  ["SkipAdvance","SkipNotify","not last"],
+  ["SkipNotify","DeskNotify","→ send step notify"],
+
+  // redo_step
+  ["RedoTrig","HasOffset","last_written exists"],
+  ["RedoTrig","ClearAccum","nothing written"],
+  ["HasOffset","ClearAccum","truncated"],
+  ["HasOffset","SectionFillRedo","offset=None"],
+  ["SectionFillRedo","ClearAccum","notify user"],
+  ["ClearAccum","DeskNotify","re-prompt same step"],
+
+  // send_step_notification
+  ["DeskNotify","CarryCheck",""],
+  ["CarryCheck","PickVariant",""],
+  ["PickVariant","NarratePrompt",""],
+
+  // complete_review
+  ["EnsureNote","UpdateStreak",""],
+  ["UpdateStreak","BriefWrite",""],
+  ["BriefWrite","DeleteState",""],
+  ["DeleteState","NarrateComplete",""],
+  ["NarrateComplete","Milestone","milestone?"],
+  ["NarrateComplete","SendTelegram","no milestone"],
+  ["Milestone","SendTelegram",""],
+  ["SendTelegram","AISummary",""],
+  ["DeleteState","ShowComplete","dashboard detects"],
+  ["DeleteState","WatchFinish","watcher detects"],
+
+  // cancel
+  ["CancelTrig","BusyCancel","processing=True"],
+  ["CancelTrig","ConfirmCancel","not busy"],
+  ["ConfirmCancel","DeleteStateCx","confirmed"],
+  ["DeleteStateCx","NarrateCancel",""],
+  ["NarrateCancel","ReviewFinished",""],
+
+  // Dashboard
+  ["OpenDash","DashStart",""],
+  ["DashStart","PollLoop","every 500ms"],
+  ["PollLoop","UpdateUI","active"],
+  ["UpdateUI","ContextPanel",""],
+  ["ContextPanel","Spinner","processing=True"],
+  ["ContextPanel","ShowTranscript","awaiting + clips"],
+  ["ContextPanel","ShowBrief","first load"],
+  ["ContextPanel","PerStepCtx","per_step + step changed"],
+  ["ContextPanel","TaskPanel","at carryforward step"],
+  ["PollLoop","ShowComplete","state gone"],
+
+  // Watcher
+  ["StartWatcher","WatchThread",""],
+  ["WatchThread","WatchPoll","every 2s"],
+  ["WatchPoll","WatchFinish","not active"],
+  ["WatchPoll","WatchThread","still active"],
+
+  // Voice control
+  ["VCInit","VCStop","'stop'"],
+  ["VCInit","VCAgain","'again'"],
+  ["VCInit","VCNext","'next'"],
+  ["VCInit","VCSkip","'skip'"],
+
+  // TTS
+  ["NarrateEntry","StopFirst",""],
+  ["StopFirst","PersistText",""],
+  ["PersistText","PiperPath","piper engine"],
+  ["PiperPath","PiperHindi","model found"],
+  ["PiperHindi","PiperSynth",""],
+  ["PiperSynth","PiperFallback","failed"],
+  ["PiperSynth","PaPlay","success"],
+  ["PiperFallback","EspeakHindi","Devanagari"],
+  ["PiperFallback","EspeakMbrola","non-Hindi"],
+  ["PersistText","EspeakHindi","espeak engine + Hindi"],
+  ["PersistText","EspeakMbrola","espeak engine"],
+  ["EspeakMbrola","EspeakFallback","no mbrola"],
+
+  // State file cross-references
+  ["AccumulateClip","StateJSON","write"],
+  ["SetProcessing","StateJSON","write"],
+  ["RecordOffset","StateJSON","write"],
+  ["AcquireLock","ProcLock","acquire"],
+  ["FinallyBlock","ProcLock","release"],
+  ["PaPlay","NarrPID","write PID"],
+  ["PersistText","NarrText","write text"],
+  ["VCStop","NarrPID","read PID"],
+  ["VCAgain","NarrText","read text"],
+  ["BriefSingle","BriefCache","save"],
+  ["UpdateStreak","StreakJSON","save"],
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD VIS-NETWORK DATASETS
+// ─────────────────────────────────────────────────────────────────────────────
+function groupColor(g) { return (GROUPS[g] || {color:"#6c7086"}).color; }
+
+const nodes = new vis.DataSet(rawNodes.map(n => ({
+  id:    n.id,
+  label: n.label,
+  group: n.group,
+  color: {
+    background: groupColor(n.group),
+    border:     "#1e1e2e",
+    highlight:  { background:"#ffffff", border:"#cba6f7" },
+    hover:      { background:"#f5c2e7", border:"#cba6f7" },
+  },
+  font:  { color:"#1e1e2e", size:11, face:"Segoe UI", multi:false },
+  shape: "box",
+  borderWidth: 1,
+  borderWidthSelected: 3,
+  margin: 8,
+  shadow: true,
+  title: DESC[n.id] || n.label,
+})));
+
+const edges = new vis.DataSet(rawEdges.map(([from,to,label],i) => ({
+  id: i,
+  from, to,
+  label: label || undefined,
+  arrows: "to",
+  color:  { color:"#45475a", highlight:"#cba6f7", hover:"#89b4fa" },
+  font:   { color:"#a6adc8", size:9, strokeWidth:2, strokeColor:"#1e1e2e" },
+  smooth: { type:"cubicBezier", forceDirection:"horizontal", roundness:0.4 },
+  width: 1.5,
+  selectionWidth: 3,
+})));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE NETWORK
+// ─────────────────────────────────────────────────────────────────────────────
+const container = document.getElementById("network");
+const options = {
+  layout: {
+    hierarchical: {
+      enabled: true,
+      direction: "LR",
+      sortMethod: "directed",
+      levelSeparation: 220,
+      nodeSpacing: 90,
+      treeSpacing: 160,
+      blockShifting: true,
+      edgeMinimization: true,
+      parentCentralization: true,
+    }
+  },
+  physics: {
+    enabled: false,   // start frozen for readability; user can enable
+    hierarchicalRepulsion: {
+      nodeDistance: 110,
+    },
+  },
+  interaction: {
+    hover: true,
+    tooltipDelay: 200,
+    zoomView: true,
+    dragNodes: true,
+    dragView: true,
+    multiselect: true,
+    keyboard: true,
+  },
+  nodes: { widthConstraint: { maximum: 180 } },
+  edges: { font: { align:"middle" } },
+};
+
+const network = new vis.Network(container, { nodes, edges }, options);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INFO CARD
+// ─────────────────────────────────────────────────────────────────────────────
+const infocard = document.getElementById("infocard");
+const cardTitle = document.getElementById("cardTitle");
+const cardBody  = document.getElementById("cardBody");
+
+network.on("click", params => {
+  if (params.nodes.length === 0) { infocard.style.display = "none"; return; }
+  const id   = params.nodes[0];
+  const node = nodes.get(id);
+  const desc = DESC[id] || "No description.";
+  cardTitle.textContent = node.label.replace(/\n/g," ");
+  cardBody.textContent  = desc;
+  infocard.style.display = "block";
+});
+
+network.on("deselectNode", () => { infocard.style.display = "none"; });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+let physicsOn = false;
+document.getElementById("physicsBtn").addEventListener("click", () => {
+  physicsOn = !physicsOn;
+  network.setOptions({ physics: { enabled: physicsOn } });
+  document.getElementById("physicsBtn").textContent = physicsOn ? "⏸ Freeze" : "▶ Animate";
+});
+
+document.getElementById("fitBtn").addEventListener("click", () => network.fit({ animation: { duration:600, easingFunction:"easeInOutQuad" } }));
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  network.setOptions({ layout:{ hierarchical:{ enabled:true } } });
+  network.fit({ animation: true });
+});
+
+// Search / highlight
+let highlighted = [];
+document.getElementById("searchBox").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  // reset previous
+  highlighted.forEach(id => {
+    const n = nodes.get(id);
+    if (n) nodes.update({ id, color:{ background:groupColor(n.group), border:"#1e1e2e" }});
+  });
+  highlighted = [];
+  if (!q) return;
+  const matches = nodes.get({ filter: n => n.label.toLowerCase().includes(q) || (DESC[n.id]||"").toLowerCase().includes(q) });
+  if (!matches.length) return;
+  matches.forEach(n => {
+    nodes.update({ id:n.id, color:{ background:"#f9e2af", border:"#fab387" } });
+    highlighted.push(n.id);
+  });
+  network.fit({ nodes: matches.map(n=>n.id), animation:{ duration:500 } });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD LEGEND
+// ─────────────────────────────────────────────────────────────────────────────
+const legendEl = document.getElementById("legend");
+Object.entries(GROUPS).forEach(([key, {color, label}]) => {
+  const div = document.createElement("div");
+  div.className = "leg-item";
+  div.title = `Click to highlight all ${label} nodes`;
+  div.innerHTML = `<div class="leg-dot" style="background:${color}"></div><span class="leg-label">${label}</span>`;
+  div.addEventListener("click", () => {
+    // reset all
+    nodes.get().forEach(n => nodes.update({ id:n.id, color:{ background:groupColor(n.group), border:"#1e1e2e" } }));
+    highlighted = [];
+    // highlight group
+    const grpNodes = nodes.get({ filter:n => n.group === key });
+    grpNodes.forEach(n => { nodes.update({ id:n.id, color:{ background:"#f9e2af", border:"#fab387" } }); highlighted.push(n.id); });
+    network.fit({ nodes:grpNodes.map(n=>n.id), animation:{ duration:500 } });
+  });
+  legendEl.appendChild(div);
+});
+
+// Initial fit
+network.once("stabilized", () => network.fit({ animation:false }));
+</script>
+</body>
+</html>

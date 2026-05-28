@@ -1,20 +1,27 @@
 {
-  "SAMPLE_RATE": 16000,
-  "WHISPER_MODEL": "large-v3-turbo",
-  "OLLAMA_MODELS": {
-    "en": "qwen2.5:3b",
-    "hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
-  },
-  "OLLAMA_TRANSLATE_MODELS": {
-    "to_en": "qwen2.5:3b",
-    "to_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
-  },
-  "OLLAMA_HOST": "http://localhost:11434",
-  "SILENCE_THRESHOLD": 778,
-  "SILENCE_DURATION": 4.0,
-  "TEMPERATURE": 0.0,
-  "MODE": "refine",
-  "SAVE_TO_MARKDOWN": false,
-  "MARKDOWN_PATH": "~/Documents/VoiceNotes",
-  "DIRECT_TYPING": true
+    "SAMPLE_RATE": 16000,
+    "WHISPER_MODEL": "large-v3",
+    "OLLAMA_MODELS": {
+        "en": "qwen2.5:3b",
+        "hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "OLLAMA_TRANSLATE_MODELS": {
+        "to_en": "qwen2.5:3b",
+        "to_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "OLLAMA_HOST": "http://localhost:11434",
+    "SILENCE_THRESHOLD": 778,
+    "SILENCE_DURATION": 4.0,
+    "TEMPERATURE": 0.0,
+    "MODE": "refine",
+    "SAVE_TO_MARKDOWN": false,
+    "MARKDOWN_PATH": "~/Documents/VoiceNotes",
+    "DIRECT_TYPING": true,
+    "FEATURES": {
+        "start_end_sounds": true,
+        "clipboard_output": true,
+        "markdown_output": false,
+        "direct_typing": true,
+        "evening_review": true
+    }
 }

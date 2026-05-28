@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Evening Review — Simple Flowchart</title>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:#1e1e2e; font-family:'Segoe UI',sans-serif; color:#cdd6f4; min-height:100vh; }
+
+  /* ── Header ── */
+  header{
+    background:#181825; border-bottom:2px solid #313244;
+    padding:14px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  header h1{ font-size:17px; color:#cba6f7; }
+  header p { font-size:12px; color:#6c7086; }
+  .hint{ font-size:11px; color:#45475a; margin-left:auto; }
+
+  /* ── Lane legend ── */
+  #legend{
+    display:flex; gap:12px; padding:10px 24px; background:#181825;
+    border-bottom:1px solid #313244; flex-wrap:wrap;
+  }
+  .leg{ display:flex; align-items:center; gap:6px; font-size:12px; }
+  .leg-dot{ width:14px; height:14px; border-radius:4px; }
+
+  /* ── Scrollable canvas ── */
+  #canvas-wrap{
+    overflow:auto; padding:32px 24px 60px;
+  }
+
+  /* ── Swimlane grid ── */
+  #swim{
+    display:grid;
+    grid-template-columns: 160px 200px 200px 190px 190px;
+    grid-auto-rows: auto;
+    gap:0;
+    min-width:980px;
+  }
+
+  /* Lane header row */
+  .lane-hdr{
+    padding:10px 8px; text-align:center; font-size:12px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; border-radius:8px 8px 0 0;
+    position:sticky; top:0; z-index:10;
+  }
+  .lane-hdr.phase  { background:#313244; color:#a6adc8; }
+  .lane-hdr.you    { background:#fab38722; color:#fab387; border:1px solid #fab38755; }
+  .lane-hdr.system { background:#89b4fa22; color:#89b4fa; border:1px solid #89b4fa55; }
+  .lane-hdr.ai     { background:#cba6f722; color:#cba6f7; border:1px solid #cba6f755; }
+  .lane-hdr.notes  { background:#a6e3a122; color:#a6e3a1; border:1px solid #a6e3a155; }
+
+  /* Phase label cells */
+  .phase-cell{
+    padding:8px 6px; text-align:center; font-size:11px; font-weight:700;
+    color:#a6adc8; letter-spacing:.03em; writing-mode:horizontal-tb;
+    display:flex; align-items:center; justify-content:center;
+    border-right:2px dashed #313244;
+  }
+
+  /* Step cells */
+  .cell{
+    padding:10px 8px; border-bottom:1px solid #181825;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cell.you    { background:#fab38710; border-left:2px solid #fab38733; }
+  .cell.system { background:#89b4fa10; border-left:2px solid #89b4fa33; }
+  .cell.ai     { background:#cba6f710; border-left:2px solid #cba6f733; }
+  .cell.notes  { background:#a6e3a110; border-left:2px solid #a6e3a133; }
+
+  /* The box inside a cell */
+  .box{
+    border-radius:8px; padding:9px 12px; font-size:12px; line-height:1.45;
+    text-align:center; width:100%; cursor:default; transition:transform .15s, box-shadow .15s;
+    position:relative;
+  }
+  .box:hover{ transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.4); }
+
+  /* Box colours by lane */
+  .box.you    { background:#fab387; color:#1e1e2e; font-weight:600; }
+  .box.system { background:#89b4fa; color:#1e1e2e; }
+  .box.ai     { background:#cba6f7; color:#1e1e2e; }
+  .box.notes  { background:#a6e3a1; color:#1e1e2e; }
+  .box.branch { background:#f9e2af; color:#1e1e2e; font-style:italic; }
+  .box.warn   { background:#f38ba8; color:#1e1e2e; font-weight:600; }
+  .box.muted  { background:#313244; color:#a6adc8; font-size:11px; }
+
+  /* Arrow connector ↓ between rows */
+  .arrow-row{
+    grid-column:1/-1; display:flex; align-items:center;
+    justify-content:center; gap:0; height:22px;
+  }
+  .arrow-row span{
+    color:#585b70; font-size:18px; flex:1; text-align:center;
+  }
+  .arrow-row span.active{ color:#cba6f7; font-size:20px; }
+
+  /* Divider row (phase separator) */
+  .divider-row{
+    grid-column:1/-1; height:6px; background:#313244; margin:4px 0;
+    border-radius:3px;
+  }
+
+  /* Tooltip */
+  .box[data-tip]:hover::after{
+    content:attr(data-tip);
+    position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+    background:#313244; border:1px solid #45475a; border-radius:6px;
+    padding:6px 10px; font-size:11px; color:#cdd6f4; white-space:pre-wrap;
+    max-width:240px; text-align:left; z-index:100; line-height:1.4;
+    box-shadow:0 4px 16px rgba(0,0,0,.5); pointer-events:none;
+  }
+
+  /* Section label */
+  .section-label{
+    grid-column:1/-1; padding:6px 12px;
+    font-size:11px; font-weight:700; color:#89b4fa; text-transform:uppercase;
+    letter-spacing:.08em; border-left:3px solid #89b4fa; margin:2px 0;
+  }
+
+  /* Repeat badge */
+  .repeat-badge{
+    display:inline-block; background:#313244; color:#a6adc8;
+    font-size:10px; border-radius:10px; padding:2px 7px; margin-top:3px;
+  }
+
+  /* Morning brief section gets a top border */
+  #morning-section{ margin-top:20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🌙 Evening Review — How It Works</h1>
+    <p>Simple flow · hover any box for details · scroll right/down to see full chart</p>
+  </div>
+  <div class="hint">4 lanes → You · System · AI · Your Notes</div>
+</header>
+
+<!-- Legend -->
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:#fab387"></div>You (user actions)</div>
+  <div class="leg"><div class="leg-dot" style="background:#89b4fa"></div>System (automatic)</div>
+  <div class="leg"><div class="leg-dot" style="background:#cba6f7"></div>AI (Ollama / Piper TTS)</div>
+  <div class="leg"><div class="leg-dot" style="background:#a6e3a1"></div>Your Notes (Obsidian vault)</div>
+  <div class="leg"><div class="leg-dot" style="background:#f9e2af"></div>Choice / branch</div>
+  <div class="leg"><div class="leg-dot" style="background:#f38ba8"></div>Guard / stop</div>
+</div>
+
+<div id="canvas-wrap">
+<div id="swim">
+
+  <!-- ═══════════ COLUMN HEADERS ═══════════ -->
+  <div class="lane-hdr phase">Phase</div>
+  <div class="lane-hdr you">🧑 You</div>
+  <div class="lane-hdr system">⚙️ System</div>
+  <div class="lane-hdr ai">🤖 AI</div>
+  <div class="lane-hdr notes">📓 Your Notes</div>
+
+  <!-- ═══════════ PHASE 1 — START ═══════════ -->
+  <div class="divider-row"></div>
+  <div class="section-label">① Starting the Review</div>
+
+  <!-- Row: click start -->
+  <div class="phase-cell" style="grid-row:span 4">Start</div>
+  <div class="cell you">
+    <div class="box you" data-tip="Click 'Start Evening Review' in the\nsystem tray menu (top-right corner)">Click<br>"Start Evening Review"<br>in tray menu</div>
+  </div>
+  <div class="cell system"><div class="box muted">Checks: already in review?<br>If yes → ignore</div></div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Row: date dialog -->
+  <div class="cell you">
+    <div class="box you" data-tip="A small dialog appears.\nDefault is today's date.\nYou can change it for a past date.">Pick the date<br>(default = today)</div>
+  </div>
+  <div class="cell system"><div class="box system" data-tip="Creates folders in your Obsidian vault\nif they don't exist yet.\n(YYYY/MonthName/)">Creates daily note file<br>+ vault folders</div></div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes">
+    <div class="box notes" data-tip="File: ~/learning_vault/My Daily Notes/YYYY/Month/YYYY-MM-DD.md\nCreated from template if it doesn't exist.">Daily note created<br>(if new)</div>
+  </div>
+
+  <!-- Row: dashboard opens -->
+  <div class="cell you"><div class="box muted">Dashboard window<br>opens automatically</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="Opens review_dashboard.py as a\nseparate window. It polls every 500ms\nto show live progress.">Opens review dashboard<br>window</div>
+  </div>
+  <div class="cell ai"><div class="box ai" data-tip="Reads your last 3 days of evening reviews.\nSends them to Ollama to write a 3-4 sentence\nsynthesis in EN and HI.">🔄 Background: reading<br>last 3 days of notes…</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Row: AI narrates summary -->
+  <div class="cell you"><div class="box muted">👂 Listen to the<br>context summary</div></div>
+  <div class="cell system"><div class="box system" data-tip="Speaks aloud: streak (e.g. '5 days in a row!')\nand weekly focus trend on Sundays.">Announces your<br>review streak 🔥</div></div>
+  <div class="cell ai">
+    <div class="box ai" data-tip="Narrates a 3-4 sentence summary of what\nyou've been doing the past few days.\nHelps you remember context before speaking.">Narrates AI summary<br>of recent days<br>(EN or Hindi)</div>
+  </div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- ═══════════ PHASE 2 — STEPS ═══════════ -->
+  <div class="divider-row"></div>
+  <div class="section-label">② Each Review Step (repeats 6 times — Focus Word → Achievements → Priorities → Wellness → Meeting → Movement)</div>
+
+  <div class="phase-cell" style="grid-row:span 8">Steps<br>×6</div>
+
+  <!-- Step prompt -->
+  <div class="cell you"><div class="box muted">👂 Hear the step prompt<br>(e.g. "What did you accomplish today?")</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="Desktop notification + voice narration.\nThe prompt is randomly chosen from variants\nconfigured in review_config.json.">Sends step prompt<br>(notification + voice)</div>
+  </div>
+  <div class="cell ai"><div class="box ai" data-tip="Piper TTS (neural) speaks the prompt.\nFalls back to espeak if Piper fails.">Speaks step prompt<br>via TTS</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- You speak -->
+  <div class="cell you">
+    <div class="box you" data-tip="Press Ctrl+Alt+V (or use the Record button\nin the dashboard).\nSpeak naturally. You can record multiple\nclips for the same step.">Press Ctrl+Alt+V<br>and speak 🎤</div>
+  </div>
+  <div class="cell system">
+    <div class="box system" data-tip="Records mic audio to a WAV file.\nChecks audio quality (RMS level).\nIf too quiet → asks you to try again.">Records your voice<br>→ checks audio quality</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Too quiet guard -->
+  <div class="cell you"><div class="box branch" data-tip="If the recording was too quiet, the system\ncancels it and asks you to speak again.\nNo clip is saved.">Too quiet? → speak again<br><small>(or get closer to mic)</small></div></div>
+  <div class="cell system"><div class="box warn" data-tip="RMS energy below threshold × 0.5.\nNotifies you and discards the WAV.\nYou can immediately try again.">⛔ Audio too quiet<br>→ discard + retry</div></div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Transcribe -->
+  <div class="cell you"><div class="box muted">Wait 2-5 seconds…<br>🔵 Icon turns blue</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="faster-whisper runs locally on your machine.\nNo audio sent to the internet.\nResult is raw text of what you said.">Transcribes audio<br>(faster-whisper, local)</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Accumulated notice -->
+  <div class="cell you">
+    <div class="box branch" data-tip="After each clip you see a count:\n'1 clip recorded · ready'\nYou can speak more clips for the same step\nbefore clicking Next Step.">Clip saved ✓<br>Speak more? Or click<br><strong>Next Step →</strong></div>
+  </div>
+  <div class="cell system"><div class="box system" data-tip="Raw clips are accumulated in memory.\nNo LLM call yet. The system waits\nfor you to click 'Next Step'.">Saves raw clip(s)<br>Waits for Next Step</div></div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Next Step click -->
+  <div class="cell you">
+    <div class="box you" data-tip="Click 'Next Step' in dashboard or tray menu.\nThis triggers AI structuring of all your clips.">Click<br><strong>Next Step →</strong></div>
+  </div>
+  <div class="cell system">
+    <div class="box system" data-tip="Acquires an exclusive file lock.\nCombines all clips, sends to Ollama.\nDashboard shows ⏳ Processing spinner.">Locks · combines clips<br>· sends to AI</div>
+  </div>
+  <div class="cell ai">
+    <div class="box ai" data-tip="Ollama (local LLM) structures your speech:\n• Focus Word → single keyword\n• Achievements → bullet list with verbs\n• Priorities → '- [ ] task' checkbox list\n• Meeting → Decisions + Actions sections\n• Movement → 1-2 plain sentences">Structures your words<br>(local Ollama LLM)<br>into clean Markdown</div>
+  </div>
+  <div class="cell notes">
+    <div class="box notes" data-tip="Written under ## Evening Review\n### SectionName in your daily note.\nFor Wellness: separate wellness note file.">✍️ Written to<br>daily note<br>(under ## Evening Review)</div>
+  </div>
+
+  <!-- Skip or Redo -->
+  <div class="cell you">
+    <div class="box branch" data-tip="SKIP: nothing recorded? Click Skip.\nA default value is written (e.g. 'only office'\nfor Movement, '- [ ] (no priorities noted)'\nfor Tomorrow's Priorities).\n\nREDO: not happy? Click Redo.\nRemoves the last write from your note\nand re-prompts the same step.">Or: <strong>Skip</strong> (no input)<br>Or: <strong>Redo</strong> (redo step)</div>
+  </div>
+  <div class="cell system">
+    <div class="box system" data-tip="Skip: writes skip_default value to note (if configured).\nRedo: truncates the note file back to where it was\nbefore this step was written — fully reversible.">Skip → write default text<br>Redo → remove last<br>write from note</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes">
+    <div class="box branch" data-tip="Skip writes a default placeholder.\nRedo removes the content that was just written\nby truncating the file at the saved byte position.">Skip → placeholder saved<br>Redo → content removed</div>
+  </div>
+
+  <!-- ═══════════ PHASE 3 — COMPLETE ═══════════ -->
+  <div class="divider-row"></div>
+  <div class="section-label">③ After All 6 Steps</div>
+
+  <div class="phase-cell" style="grid-row:span 4">Done</div>
+
+  <!-- Streak -->
+  <div class="cell you"><div class="box muted">🔥 Hear your streak<br>and celebration!</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="Updates streak.json: consecutive days.\nMilestone narration at 7 / 14 / 30 / 100 days.\nTelegram message sent to your phone.">Updates review streak<br>Sends Telegram 📱<br>'✅ Evening Review done'</div>
+  </div>
+  <div class="cell ai"><div class="box ai" data-tip="Narrates the completion message.\nIf streak milestone reached, narrates a\nspecial message in Hindi.">Narrates<br>"Review complete!"<br>+ milestone if reached</div></div>
+  <div class="cell notes">
+    <div class="box notes" data-tip="streak.json updated with:\n{current, last_date, best}">streak.json updated</div>
+  </div>
+
+  <!-- AI summary -->
+  <div class="cell you"><div class="box muted">📬 Get a notification:<br>"AI summary added"</div></div>
+  <div class="cell system"><div class="box system" data-tip="Background thread starts.\nReads the full daily note and asks Ollama\nto write a 2-3 sentence summary.">Starts AI summary<br>in background</div></div>
+  <div class="cell ai">
+    <div class="box ai" data-tip="Reads your complete daily note.\nWrites a 2-3 sentence summary of your day.\nAppended as a new section.">Writes 2-3 sentence<br>summary of your day</div>
+  </div>
+  <div class="cell notes">
+    <div class="box notes" data-tip="Appended to your daily note:\n### 📋 Daily Summary\n(2-3 sentences from Ollama)">### 📋 Daily Summary<br>appended to note</div>
+  </div>
+
+  <!-- Review finished -->
+  <div class="cell you"><div class="box muted">Dashboard shows<br>✅ All steps complete<br>You can close it</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="State file deleted from /tmp/.\nTray icon returns to gray (idle).\nReview menu items disappear.">Tray resets to idle 🔘<br>Review finished</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Focus word -->
+  <div class="cell you"><div class="box muted" style="opacity:.6">Focus Word automatically<br>tracked for weekly trend</div></div>
+  <div class="cell system"><div class="box muted" style="opacity:.6">focus_words.jsonl updated</div></div>
+  <div class="cell ai">
+    <div class="box muted" style="opacity:.6" data-tip="Every Sunday: the most-used focus word\nof the week is narrated at session start.">On Sundays: narrates<br>most-used focus word</div>
+  </div>
+  <div class="cell notes"><div class="box notes" style="opacity:.6">focus_words.jsonl<br>append-only log</div></div>
+
+  <!-- ═══════════ PHASE 4 — NEXT MORNING ═══════════ -->
+  <div class="divider-row"></div>
+  <div class="section-label" id="morning-section">④ Next Morning (8 AM)</div>
+
+  <div class="phase-cell" style="grid-row:span 4">Morning<br>Brief</div>
+
+  <!-- Timer fires -->
+  <div class="cell you"><div class="box muted">8 AM (or when PC boots)<br>Morning brief runs</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="systemd user timer fires at 8:00 AM.\nPersistent=true means it runs at boot\nif the PC was off at 8 AM.\nNetwork dependency ensures Telegram works.">systemd timer fires<br>→ morning_brief.py runs</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Reads yesterday -->
+  <div class="cell you"><div class="box muted">👂 Listen to your<br>priorities for today</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="Reads yesterday's daily note.\nExtracts the ## Evening Review section.\nExtracts ### Tomorrow's Priorities.">Reads yesterday's note<br>→ finds your priorities</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box notes" data-tip="Yesterday's ### Tomorrow's Priorities section\nis read. Each '- [ ]' task is narrated.">Yesterday's priorities<br>read from vault</div></div>
+
+  <!-- Pending tasks -->
+  <div class="cell you"><div class="box muted">⚠️ Hear which tasks<br>have been pending<br>2, 3, 5+ days</div></div>
+  <div class="cell system">
+    <div class="box system" data-tip="Scans last 7 days of notes.\nMatches unchecked tasks across days\n(60% word-overlap threshold).\nGroups by age: 🆕 New, 📌 2 days, ⚠️ 3+ days, 🚨 5+ days.">Scans last 7 days<br>for recurring<br>unchecked tasks</div>
+  </div>
+  <div class="cell ai">
+    <div class="box ai" data-tip="Narrates: 'You have 3 pending tasks.\n5 days pending: Fix officer errors.\n3 days: Update DPR cost.'\nEmoji-free for TTS. Emoji shown in Telegram.">Narrates pending<br>task story<br>(oldest first)</div>
+  </div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Telegram -->
+  <div class="cell you">
+    <div class="box you" data-tip="Telegram message always sent:\n• If priorities found: full morning brief\n• If nothing found: 'No priorities — do a review tonight!'">📱 Telegram message<br>always arrives</div>
+  </div>
+  <div class="cell system">
+    <div class="box system" data-tip="telegram_service.send() called in a\nbackground thread. Includes pending tasks\n+ today's priorities in one message.">Sends Telegram<br>(pending + priorities)</div>
+  </div>
+  <div class="cell ai"><div class="box muted" style="opacity:.3">—</div></div>
+  <div class="cell notes"><div class="box muted" style="opacity:.3">—</div></div>
+
+  <!-- Bottom spacer -->
+  <div style="grid-column:1/-1; height:24px;"></div>
+
+</div><!-- /swim -->
+</div><!-- /canvas-wrap -->
+
+<!-- Key shortcuts reference -->
+<div style="position:fixed;bottom:12px;left:12px;background:#181825;border:1px solid #313244;border-radius:8px;padding:10px 14px;font-size:11px;color:#6c7086;line-height:1.7;">
+  <strong style="color:#89b4fa;">Key shortcuts</strong><br>
+  <span style="color:#cdd6f4;">Ctrl+Alt+V</span> — Record / stop<br>
+  <span style="color:#cdd6f4;">Ctrl+Alt+S</span> — Stop narration<br>
+  <span style="color:#cdd6f4;">Ctrl+Alt+R</span> — Replay narration
+</div>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+Task: Translate the following English speech transcription into professional Hindi.
+
+STRICT RULES:
+1. The input language is ENGLISH.
+2. Output MUST be in HINDI ONLY (Devanagari script). No English sentences.
+3. Remove filler words from the input before translating: uh, um, like, okay, actually.
+4. Maintain a professional, documentation-style tone.
+5. Handle technical terms naturally (translate meaning, or keep the term if untranslatable).
+6. Output ONLY the Hindi translation. No labels, no preamble, no explanations.
+
+ENGLISH INPUT:
+{text}
+
+HINDI TRANSLATION:

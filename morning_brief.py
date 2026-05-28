@@ -24,18 +24,18 @@ def _get_priorities(script_dir, config):
     Returns (None, yesterday_str) if the note or section is missing.
     """
     yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-    note_path = review_engine._get_daily_note_path(script_dir, config, yesterday)
+    note_path = review_engine.get_daily_note_path(script_dir, config, yesterday)
 
     if not os.path.exists(note_path):
         review_engine._rlog(f"morning_brief: no daily note for {yesterday}: {note_path}")
         return None, yesterday
 
-    evening_review = review_engine._extract_evening_review_section(note_path)
+    evening_review = review_engine.extract_evening_review_section(note_path)
     if not evening_review:
         review_engine._rlog(f"morning_brief: no Evening Review section in {note_path}")
         return None, yesterday
 
-    priorities = review_engine._extract_step_section("Tomorrow's Priorities", evening_review)
+    priorities = review_engine.extract_step_section("Tomorrow's Priorities", evening_review)
     if not priorities:
         review_engine._rlog(f"morning_brief: no Tomorrow's Priorities in {yesterday}")
         return None, yesterday
@@ -43,9 +43,10 @@ def _get_priorities(script_dir, config):
     return priorities, yesterday
 
 
-def _save_brief_state(text, date_str):
+def _save_brief_state(text, date_str, pending_display=""):
     state = {
         "text": text,
+        "pending_display": pending_display,
         "date": date_str,
         "generated_at": datetime.datetime.now().isoformat(timespec="seconds"),
     }
@@ -85,25 +86,57 @@ def run_morning_brief(script_dir):
 
     priorities, date_str = _get_priorities(script_dir, config)
 
-    if not priorities:
-        review_engine.send_notification(
-            "🌅 Morning Brief",
-            f"No priorities found from {date_str}. Do an evening review tonight!"
-        )
+    # ── Pending task story ─────────────────────────────────────────────────────
+    pending = review_engine.get_pending_tasks(script_dir, config)
+    story = review_engine.build_pending_story(pending, config) if pending else None
+
+    if not priorities and not story:
+        msg = f"No priorities found from {date_str}. Do an evening review tonight!"
+        review_engine.send_notification("🌅 Morning Brief", msg)
+        review_engine.send_telegram(f"🌅 Morning Brief — {date_str}\n\n{msg}", config)
         review_engine._rlog("morning_brief: no priorities found, notified user")
         return
 
-    _save_brief_state(priorities, date_str)
-
     lang = config.get("context_brief_language", "en")
-    if lang == "hi":
-        intro = f"गुड मॉर्निंग! कल की प्राथमिकताएं:\n{priorities}"
-    else:
-        intro = f"Good morning! Here are your priorities for today:\n{priorities}"
 
-    review_engine.send_notification("🌅 Morning Brief", priorities[:240])
-    review_engine.send_telegram(f"🌅 Morning Brief — {date_str}\n\n{priorities}", config)
-    review_engine.narrate(intro, config, blocking=True)
+    # ── Build narration and display strings ────────────────────────────────────
+    if lang == "hi":
+        priorities_intro = f"गुड मॉर्निंग! कल की प्राथमिकताएं:\n{priorities}" if priorities else ""
+    else:
+        priorities_intro = f"Good morning! Here are your priorities for today:\n{priorities}" if priorities else ""
+
+    # Narration: pending story first (emoji-free), then today's priorities
+    narration_parts = []
+    if story:
+        narration_parts.append(story["narration"])
+    if priorities_intro:
+        narration_parts.append(priorities_intro)
+    full_narration = "\n\n".join(narration_parts)
+
+    # Display (notification / Telegram): pending block first, then priorities
+    display_parts = []
+    if story:
+        display_parts.append(story["display"])
+    if priorities:
+        display_parts.append(priorities)
+    full_display = "\n\n".join(display_parts)
+
+    # Notification subtitle: pending count + first ~200 chars of priorities
+    if story and priorities:
+        notif_body = f"{len(pending)} pending · {priorities[:200]}"
+    elif story:
+        notif_body = story["display"][:240]
+    else:
+        notif_body = priorities[:240]
+
+    # Telegram: full combined message
+    telegram_msg = f"🌅 Morning Brief — {date_str}\n\n{full_display}"
+
+    _save_brief_state(priorities or "", date_str, story["display"] if story else "")
+
+    review_engine.send_notification("🌅 Morning Brief", notif_body)
+    review_engine.send_telegram(telegram_msg, config)
+    review_engine.narrate(full_narration, config, blocking=True)
     review_engine._rlog("morning_brief: done")
 
 

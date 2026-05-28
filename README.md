@@ -32,13 +32,14 @@ Built on top of this core, the **Evening Review** feature turns daily voice reco
 - **Streak tracker** — counts consecutive days of completed reviews; shown in the dashboard header (🔥 N); milestone narrations at 7 / 14 / 30 / 100 days; persisted in `streak.json`
 - **Focus word trend** — records each day's focus word to `focus_words.jsonl`; on Sundays narrates the most-repeated word from the past 7 entries ("इस हफ्ते आपका सबसे ज़्यादा ध्यान … पर रहा।"); dashboard shows a horizontal bar chart of the last 7 days' focus words
 - **Carry-forward tasks** — at a configurable step, reads unchecked `- [ ]` tasks from the previous day's vault note and narrates them; interactive checkboxes in the dashboard let you mark tasks done (writes `- [x]` back to the vault in real time); opt-in via `carryforward_tasks: true`
-- **Voice wake-word control** — say "stop" / "रुको" to halt narration, "again" / "फिर से" to replay, "आगे" / "aage" to advance to the next step, or "छोड़ो" / "chodo" to skip the current step; uses `faster-whisper tiny` (no extra models needed, supports Hindi + English); active only while TTS is speaking; opt-in via `voice_control: true` in Settings → Notifications (restart tray to take effect)
+- **Voice wake-word control** — say "stop" / "रुको" to halt narration, "again" / "फिर से" to replay, "आगे" / "aage" to advance to the next step, or "छोड़ो" / "chodo" to skip the current step; uses `faster-whisper tiny` (no extra models needed, supports Hindi + English); active throughout the entire review session (not just during TTS); opt-in via `voice_control: true` in Settings → Notifications (restart tray to take effect)
 - **Evening review reminder** — a systemd user timer fires `evening_reminder.py` at a configured time; sends a desktop notification + Telegram message if no review has been completed that day and no review is currently in progress; opt-in via `evening_reminder_enabled: true`; time set in Settings → Notifications
-- **Review time tracking** — automatically records how many seconds were spent on each step; on completion writes a timing summary line to the daily note (`⏱ Total: 4m 12s | Focus Word: 45s · Achievements: 1m 30s · …`) and shows per-step durations in the dashboard (`Done · 1m 30s`)
+- **Review time tracking** — automatically records how many seconds were spent on each step; shows live per-step elapsed time in the dashboard (`Speak now · ⏱ 55s`) and per-step durations on completion (`Done · 1m 30s`)
 - **Audio quality gate** — immediately after recording, computes RMS energy of the WAV file; if the recording is below half the silence threshold, shows a notification and plays a TTS warning ("Recording seems too quiet, please try again.") and aborts before transcription; avoids wasting LLM time on silent clips
 - **Narration hotkeys** — `Ctrl+Alt+S` stops the current narration; `Ctrl+Alt+R` replays the last narration; always registered, no-op outside review
 - **Telegram mobile notifications** — sends review-complete summary (with streak) and morning brief to your phone via a Telegram bot; configured in Settings → Notifications; powered by self-contained `telegram_service.py`
 - **Morning priority briefing** — a systemd user timer runs `morning_brief.py` at a configured time; reads yesterday's Tomorrow's Priorities, sends a desktop notification + Telegram message, and narrates the list aloud; tray shows **Replay Morning Brief** while the state is fresh
+- **Pending task story** — morning brief scans the last N daily notes (`pending_task_lookback_days`, default 7) for unchecked `- [ ]` tasks that recur across days; narrates a story grouped by age — 🚨 critical (`pending_task_critical_threshold`, default ≥5 days), ⚠️ warning (`pending_task_warn_threshold`, default 3–4 days), 📌 recent, 🆕 new; narration is emoji-free for clean TTS; notification and Telegram include emoji labels; set `pending_task_lookback_days: 0` to disable
 - **Customisable daily note template** — edit `templates/daily_note.md` with `{{date}}`, `{{prev_day}}`, `{{next_day}}`, `{{mod_date}}` tokens; no code changes needed
 - **Skip defaults** — skipping a step with a configured default (e.g. Movement → `only office`) writes that default to the note automatically
 - **Live dashboard** — customtkinter window showing all steps, context panel, status icons, progress bar, streak label, and control buttons; context panel has **⏹ Stop**, **🔁 Replay**, **↺ Regenerate** buttons and an **EN · HI** language toggle for the context brief
@@ -222,7 +223,14 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
     "TEMPERATURE": 0.1,
     "SAVE_TO_MARKDOWN": false,
     "MARKDOWN_PATH": "~/Documents/VoiceNotes",
-    "DIRECT_TYPING": false
+    "DIRECT_TYPING": false,
+    "FEATURES": {
+        "start_end_sounds": true,
+        "clipboard_output": true,
+        "markdown_output": false,
+        "direct_typing": false,
+        "evening_review": true
+    }
 }
 ```
 
@@ -235,6 +243,11 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `SILENCE_THRESHOLD` | Microphone energy threshold for silence detection; lower = more sensitive |
 | `SILENCE_DURATION` | Seconds of silence before auto-stop |
 | `DIRECT_TYPING` | If `true`, types refined text at cursor instead of (or in addition to) clipboard |
+| `FEATURES.start_end_sounds` | Play audio cues when recording starts and stops |
+| `FEATURES.clipboard_output` | Copy refined text to clipboard after processing |
+| `FEATURES.markdown_output` | Also save to Markdown file (requires `SAVE_TO_MARKDOWN` path) |
+| `FEATURES.direct_typing` | Type refined text at cursor (pynput) |
+| `FEATURES.evening_review` | Show **Start Evening Review** in the tray menu |
 
 ### `review_config.json` — Evening Review
 
@@ -287,6 +300,9 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `carryforward_step_id` | `3` | Step number (1-based) at which carry-forward tasks are narrated and shown |
 | `morning_briefing_enabled` | `false` | Enable the systemd morning briefing timer |
 | `morning_briefing_time` | `"08:00"` | Time the morning brief fires (HH:MM); re-run `install_morning_brief.sh` after changing |
+| `pending_task_lookback_days` | `7` | How many past daily notes the morning brief scans for recurring unchecked tasks; set `0` to disable the pending story entirely |
+| `pending_task_warn_threshold` | `3` | Days a task has been pending before it gets the ⚠️ warning label in the story |
+| `pending_task_critical_threshold` | `5` | Days a task has been pending before it gets the 🚨 critical label in the story |
 | `voice_control` | `false` | Opt-in: listen for spoken commands during narration (`stop`/`रुको`, `again`/`फिर से`, `आगे`/`aage` for next step, `छोड़ो`/`chodo` to skip) |
 | `voice_control_threshold` | `500` | RMS energy gate (0–32768 int16 scale); raise if TTS speaker bleed triggers false positives |
 | `evening_reminder_enabled` | `false` | Send a reminder if the review is not done by the reminder time |
@@ -320,12 +336,16 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 | `_fill_section` matching `### Meeting Notes` when looking for `### Meeting` | ✅ Fixed | Exact regex match instead of substring `find()` |
 | `cycle_mode` clobbering all config settings | ✅ Fixed | Re-reads config from disk before writing, only updates `MODE` key |
 | Log flooded with "State file not found" every 500 ms | ✅ Fixed | Removed log from `_load_state`; `_review_done` flag stops polling after completion |
-| Redo leaves previous text in note file silently | ✅ Fixed | Desktop notification warns user to remove old text manually |
+| Redo leaves previous text in note file | ✅ Fixed | `write_step_to_note` records byte offset; `redo_step` truncates file at that position — fully automatic for append steps; section_fill steps still warn manually |
 | Wellness step got wrong note template | ✅ Fixed | Separate `_create_wellness_note()` function |
 | Dashboard opens then immediately disappears | ✅ Fixed | `_poll_state()` was called synchronously before `mainloop()` — `CTkButton.configure()` crashed Tcl/Tk; fixed by scheduling via `root.after(200, ...)` |
 | Context panel shows raw token numbers (151644, 8948…) | ✅ Fixed | `str(response)` was dumping the full Ollama JSON dict; now uses `response.get("response", "")` |
 | TTS narrating Ollama JSON / long garbage text | ✅ Fixed | Same root cause as above; also removed narration for "no notes found" fallback message |
 | Exit menu item does not close tray app | ✅ Fixed | `faster-whisper` background thread kept process alive; `os._exit(0)` added after `icon.stop()` |
+| `FEATURES.clipboard_output` / `direct_typing` toggles had no effect | ✅ Fixed | `_run_normal_mode` was reading the old flat `DIRECT_TYPING` key and running `xclip` unconditionally; now reads `FEATURES` block |
+| TOCTOU race: two simultaneous "Next Step" clicks could run the LLM twice | ✅ Fixed | `structure_and_advance` now acquires an exclusive file lock (`/tmp/review_processing.lock`) with `LOCK_NB` before any state check — concurrent caller bails immediately |
+| `self.is_processing` flag in tray/dashboard could diverge from `state["processing"]` | ✅ Fixed | Both in-memory flags removed; `state["processing"]` in the state file is the sole guard for all processes |
+| Tray menu stuck showing review items after dashboard-driven completion | ✅ Fixed | `_watch_review_completion` daemon thread polls `is_review_active()` every 2 s; calls `_review_finished()` as soon as state disappears |
 
 ---
 
@@ -396,16 +416,18 @@ voice_to_refinedtext/
 │
 ├── tray_app.py           Main entry point — system tray, menus, hotkey, state routing
 ├── engine.py             Recording, Whisper transcription, Ollama refinement, logging
-├── review_engine.py      Evening Review state machine, note writing, narration, streak, focus trend
+├── review_engine.py      Evening Review state machine, note writing, narration, streak, focus trend; public API for all external callers (tray, dashboard, morning_brief, evening_reminder)
 ├── review_dashboard.py   Evening Review live dashboard (customtkinter)
-├── config_gui.py         Settings GUI — three tabs (Voice Refiner, Evening Review, Notifications)
+├── config_gui.py         Settings GUI — four tabs (Voice Refiner, Evening Review, Notifications, Features)
+├── theme.py              Shared UI colour palette (Catppuccin Mocha) — imported by all GUI files
 ├── telegram_service.py   Pluggable Telegram notification module (drop-in, no project imports)
 ├── morning_brief.py      Morning priority briefing — reads yesterday's priorities, narrates + notifies
 ├── voice_control.py      Wake-word listener — detects stop/replay commands during TTS narration
-├── utils.py              Shared helpers: config loading, Ollama calls, lang detection
+├── utils.py              Shared helpers: config loading, Ollama calls, lang detection, logging setup
 ├── main_gui.py           Standalone interactive GUI (record → refine → view)
 ├── voice_to_ai_clipboard.py  Legacy single-shot script (hotkey without tray)
 ├── compare_models.py     Test multiple Ollama models on the same input
+├── calibrate_threshold.py  Guided mic calibration utility — measures speech vs silence RMS and recommends SILENCE_THRESHOLD
 │
 ├── config.json           Voice Refiner settings (auto-created on first run)
 ├── review_config.json    Evening Review settings (auto-created on first run)
@@ -437,10 +459,15 @@ voice_to_refinedtext/
 └── docs/
     ├── setup_guide.md        Full installation and configuration reference
     ├── setup_summary.md      Quick-start summary
-    ├── progress_tracker.md   Feature completion status
     ├── idea.md               Original vision and architecture notes
-    ├── plan.md               Implementation planning notes
-    └── GEMINI.md             AI assistant session notes
+    ├── GEMINI.md             AI assistant session notes
+    ├── refactor/
+    │   ├── plan.md           Active refactoring plan (modularisation, bug fixes, configurability)
+    │   ├── steps.md          Granular implementation checklist
+    │   └── progress.md       Refactoring progress tracker
+    └── archive/
+        ├── plan_phases1to5.md        Original development plan (Phases 1–5, all completed)
+        └── progress_phases1to5.md    Original progress tracker (all ✅)
 ```
 
 ---
@@ -451,9 +478,9 @@ voice_to_refinedtext/
 |---|---|
 | [`docs/setup_guide.md`](docs/setup_guide.md) | Full installation guide: system requirements, step-by-step setup on a new PC, `review_config.json` field reference, daily note template, Wayland hotkey, troubleshooting tables |
 | [`docs/setup_summary.md`](docs/setup_summary.md) | Quick-start checklist — what the installer does and how to test it |
-| [`docs/progress_tracker.md`](docs/progress_tracker.md) | Feature completion table across all development phases |
+| [`docs/refactor/plan.md`](docs/refactor/plan.md) | Active refactoring plan — architecture decisions, phases, what changed and why |
+| [`docs/refactor/progress.md`](docs/refactor/progress.md) | Refactoring task progress tracker |
 | [`docs/idea.md`](docs/idea.md) | Original project vision, architecture diagram, planned features |
-| [`docs/plan.md`](docs/plan.md) | Implementation planning notes |
 
 ---
 
@@ -511,3 +538,10 @@ ollama list
 ```bash
 .venv/bin/python config_gui.py
 ```
+
+**Calibrate your microphone silence threshold:**
+```bash
+python3 calibrate_threshold.py
+```
+
+Guides you through 3 rounds of speak → silence, measures RMS energy levels, and recommends the best `SILENCE_THRESHOLD` value for your mic and environment. Has a one-click **Apply to config.json** button.

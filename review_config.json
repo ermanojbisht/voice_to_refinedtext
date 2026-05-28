@@ -11,11 +11,11 @@
   "carryforward_step_id": 3,
   "show_streak": true,
   "focus_word_trend": true,
-  "morning_briefing_enabled": false,
+  "morning_briefing_enabled": true,
   "morning_briefing_time": "08:00",
   "telegram_enabled": true,
-  "telegram_bot_token": "xxx",
-  "telegram_chat_id": "yyy",
+  "telegram_bot_token": "628283567:AAHtEW8_-d5MFn6_pzcC6341bp33ts6ZeV4",
+  "telegram_chat_id": "59509781",
   "review_steps": [
     {
       "step_id": 1,
@@ -68,7 +68,8 @@
         "कल के लिए कौन से काम सबसे अधिक ज़रूरी हैं, ज़रा बताइए",
         "तो बताइए, कल सुबह सबसे पहले किस काम पर ध्यान देंगे?",
         "What needs your attention first thing tomorrow?"
-      ]
+      ],
+      "skip_default": "- [ ] (no priorities noted)"
     },
     {
       "step_id": 4,
@@ -137,11 +138,14 @@
   "piper_model_hi": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
   "per_step_context": true,
   "structure_model": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
-  "context_brief_language": "hi",
+  "context_brief_language": "en",
   "brief_model_en": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "voice_control": true,
   "voice_control_threshold": 500,
   "evening_reminder_enabled": true,
-  "evening_reminder_time": "21:00"
+  "evening_reminder_time": "21:00",
+  "pending_task_lookback_days": 7,
+  "pending_task_warn_threshold": 3,
+  "pending_task_critical_threshold": 5
 }

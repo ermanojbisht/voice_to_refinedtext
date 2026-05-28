@@ -1,18 +1,120 @@
 {
     "qwen2.5_3b": {
-        "hi": ["इनपुट पाठ:", "आउटपुट:", "\n\n"],
-        "en": ["INPUT TEXT:", "REFINED TEXT:", "\n\n"]
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ]
     },
     "qwen3.5_0.8b": {
-        "hi": ["इनपुट पाठ:", "आउटपुट:", "\n\n"],
-        "en": ["INPUT TEXT:", "REFINED TEXT:", "\n\n"]
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ]
     },
     "mashriram_sarvam-1_latest": {
-        "hi": ["संवाद:", "शुद्ध रूप:", "\n", "यहाँ", "इस", "The", "Here"],
-        "en": ["Raw:", "Professional English:", "\n", "The", "This", "Here", "I have"]
+        "hi": [
+            "संवाद:",
+            "शुद्ध रूप:",
+            "\n",
+            "यहाँ",
+            "इस",
+            "The",
+            "Here"
+        ],
+        "en": [
+            "Raw:",
+            "Professional English:",
+            "\n",
+            "The",
+            "This",
+            "Here",
+            "I have"
+        ]
+    },
+    "llama3_hindi": {
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n",
+            "Note:",
+            "नोट:"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n",
+            "Note:",
+            "Explanation:"
+        ]
+    },
+    "nemotron_hindi": {
+        "hi": [
+            "इनपुट:",
+            "आउटपुट:",
+            "\n",
+            "User:",
+            "Assistant:",
+            "<extra_id_1>",
+            "Is this",
+            "Would you"
+        ],
+        "en": [
+            "Input:",
+            "Output:",
+            "\n",
+            "User:",
+            "Assistant:",
+            "<extra_id_1>",
+            "Is this",
+            "Would you"
+        ]
     },
     "default": {
-        "hi": ["Input:", "Output:", "\n"],
-        "en": ["Input:", "Output:", "\n"]
+        "hi": [
+            "Input:",
+            "Output:",
+            "\n"
+        ],
+        "en": [
+            "Input:",
+            "Output:",
+            "\n"
+        ]
+    },
+    "qwen2_5": {
+        "hi": [
+            "Input:",
+            "Output:",
+            "\n"
+        ],
+        "en": [
+            "Input:",
+            "Output:",
+            "\n"
+        ]
+    },
+    "llama3_hindi_8b_q5_km_gguf": {
+        "hi": [
+            "Input:",
+            "Output:",
+            "\n"
+        ],
+        "en": [
+            "Input:",
+            "Output:",
+            "\n"
+        ]
     }
 }

@@ -25,15 +25,7 @@ SENTENCES = [
     "I need to focus on completing the project by end of this week.",
 ]
 
-BG      = "#1e1e2e"
-SURFACE = "#313244"
-OVERLAY = "#45475a"
-TEXT    = "#cdd6f4"
-SUBTLE  = "#6c7086"
-ACCENT  = "#89b4fa"
-GREEN   = "#a6e3a1"
-RED     = "#f38ba8"
-YELLOW  = "#f9e2af"
+from theme import BG, SURFACE, OVERLAY, TEXT, SUBTLE, ACCENT, GREEN, RED, YELLOW
 
 
 def _rms(audio_float32):
@@ -310,12 +302,14 @@ class CalibrationApp:
                      text_color=TEXT, wraplength=560, justify="left").pack(
                      padx=12, pady=(0, 10))
 
-        # Apply button
+        # Apply button — store reference for feedback update in _apply()
         btn_row = ctk.CTkFrame(self.root, fg_color="transparent")
         btn_row.pack(pady=(4, 0))
-        ctk.CTkButton(btn_row, text=f"Apply {suggested} to config.json",
-                      font=("Inter", 13, "bold"), fg_color=ACCENT, text_color=BG,
-                      command=lambda: self._apply(suggested)).pack(side="left", padx=8)
+        self._apply_btn = ctk.CTkButton(
+            btn_row, text=f"Apply {suggested} to config.json",
+            font=("Inter", 13, "bold"), fg_color=ACCENT, text_color=BG,
+            command=lambda: self._apply(suggested))
+        self._apply_btn.pack(side="left", padx=8)
         ctk.CTkButton(btn_row, text="Close", font=("Inter", 13),
                       fg_color=OVERLAY, text_color=TEXT,
                       command=self.root.destroy).pack(side="left", padx=8)
@@ -329,13 +323,8 @@ class CalibrationApp:
             cfg["SILENCE_THRESHOLD"] = value
             with open(cfg_path, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, ensure_ascii=False, indent=2)
-            # Feedback
-            for w in self.root.winfo_children():
-                if isinstance(w, ctk.CTkFrame):
-                    for btn in w.winfo_children():
-                        if hasattr(btn, "configure") and "Apply" in str(getattr(btn, "_text", "")):
-                            btn.configure(text=f"✓ Applied {value}", state="disabled",
-                                          fg_color=GREEN, text_color=BG)
+            self._apply_btn.configure(text=f"✓ Applied {value}", state="disabled",
+                                      fg_color=GREEN, text_color=BG)
         except Exception as e:
             ctk.CTkLabel(self.root, text=f"Error saving: {e}",
                          text_color=RED, font=("Inter", 11)).pack()

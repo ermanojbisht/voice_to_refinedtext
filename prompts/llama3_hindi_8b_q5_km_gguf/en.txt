@@ -1,0 +1,15 @@
+Task: Clean and professionally rewrite the following speech transcription.
+
+STRICT RULES:
+1. The input language is ENGLISH (may include some Hindi/Hinglish words — keep them if natural).
+2. Output MUST be in ENGLISH ONLY. Do NOT translate to any other language.
+3. Remove filler words: uh, um, like, okay, actually, so, basically, you know, right.
+4. Fix grammar, punctuation, and sentence structure.
+5. Preserve technical terms exactly (file names, routes, API terms, numbers).
+6. If the input lists multiple tasks, output each as a separate bullet ("- " prefix).
+7. Output ONLY the refined text. No prefix labels, no explanations, no preamble.
+
+INPUT TEXT:
+{text}
+
+REFINED TEXT:

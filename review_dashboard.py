@@ -18,23 +18,17 @@ import customtkinter as ctk
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
 
+import utils as _utils
 import review_engine
 
-# Route dashboard logs to the project log file (not stdout)
+# Route all logs (dashboard + review_engine) to the project log file
+log_path = os.path.join(script_dir, "review_debug.log")
+_logger = _utils.get_logger("dashboard", log_path)
 review_engine.init_logging(script_dir)
-review_engine._rlog("=" * 40)
-review_engine._rlog(f"[dashboard] Starting (pid={os.getpid()})")
+_logger.info("=" * 40)
+_logger.info(f"Starting (pid={os.getpid()})")
 
-# ── Palette (Catppuccin Mocha) ─────────────────────────────────────────────────
-BG      = "#1e1e2e"
-SURFACE = "#313244"
-OVERLAY = "#45475a"
-TEXT    = "#cdd6f4"
-SUBTLE  = "#6c7086"
-ACCENT  = "#89b4fa"
-GREEN   = "#a6e3a1"
-RED     = "#f38ba8"
-YELLOW  = "#f9e2af"
+from theme import BG, SURFACE, OVERLAY, TEXT, SUBTLE, ACCENT, GREEN, RED, YELLOW
 
 
 class _Tooltip:
@@ -48,6 +42,8 @@ class _Tooltip:
         widget.bind("<Leave>", self._hide, add="+")
 
     def _show(self, _event=None):
+        if self._tip is not None:
+            return  # already visible — don't create a second one
         x = self._widget.winfo_rootx() + self._widget.winfo_width() // 2
         y = self._widget.winfo_rooty() + self._widget.winfo_height() + 4
         self._tip = tk.Toplevel(self._widget)
@@ -55,34 +51,33 @@ class _Tooltip:
         self._tip.wm_geometry(f"+{x}+{y}")
         tk.Label(
             self._tip, text=self._text,
-            background="#313244", foreground="#cdd6f4",
+            background=SURFACE, foreground=TEXT,
             relief="flat", padx=6, pady=3, font=("Inter", 10),
         ).pack()
 
     def _hide(self, _event=None):
-        if self._tip:
+        if self._tip is not None:
             self._tip.destroy()
             self._tip = None
 
 
 class ReviewDashboard:
     def __init__(self, root):
-        review_engine._rlog("[dashboard] __init__ start")
+        _logger.info("[dashboard] __init__ start")
         self.root = root
         self.root.title("Evening Review")
-        review_engine._rlog("[dashboard] title set")
+        _logger.info("[dashboard] title set")
         self.root.geometry("980x760")
         self.root.minsize(750, 580)
-        review_engine._rlog("[dashboard] geometry set")
+        _logger.info("[dashboard] geometry set")
         self.root.configure(fg_color=BG)
-        review_engine._rlog("[dashboard] fg_color configured")
+        _logger.info("[dashboard] fg_color configured")
         self.root.resizable(True, True)
-        review_engine._rlog("[dashboard] resizable set")
+        _logger.info("[dashboard] resizable set")
 
         self.config = review_engine.load_review_config(script_dir)
-        review_engine._rlog("[dashboard] config loaded")
+        _logger.info("[dashboard] config loaded")
         self.steps  = self.config.get("review_steps", [])
-        self.is_processing    = False
         self._review_done     = False
         self._last_context_step = -1
         self._engine          = None
@@ -92,15 +87,19 @@ class ReviewDashboard:
         self._ctx_lang        = self.config.get("context_brief_language", "en")
         # True when the right panel is showing the AI brief; False for per-step history
         self._showing_brief   = False
+        # Spinner state for the processing animation
+        self._spinner_running = False
+        self._spinner_idx     = 0
+        self._spinner_after   = None
 
-        review_engine._rlog("[dashboard] calling _build_ui")
+        _logger.info("[dashboard] calling _build_ui")
         self._build_ui()
-        review_engine._rlog("[dashboard] _build_ui done, scheduling first poll")
+        _logger.info("[dashboard] _build_ui done, scheduling first poll")
         # Schedule via after() so callbacks run INSIDE mainloop, not before.
         # Calling synchronously here causes CTkButton.configure() to crash Tcl/Tk.
         self.root.after(200, self._poll_state)
         self.root.after(250, self._build_focus_chart)
-        review_engine._rlog("[dashboard] __init__ complete")
+        _logger.info("[dashboard] __init__ complete")
 
     # ── Engine (lazy, for LLM structuring only) ────────────────────────────────
 
@@ -114,7 +113,7 @@ class ReviewDashboard:
     # ── UI construction ────────────────────────────────────────────────────────
 
     def _build_ui(self):
-        review_engine._rlog("[dashboard] _build_ui: header frame")
+        _logger.info("[dashboard] _build_ui: header frame")
         # ── Header bar (full width) ────────────────────────────────────────────
         hdr = ctk.CTkFrame(self.root, fg_color=ACCENT, corner_radius=0, height=50)
         hdr.pack(fill=ctk.X)
@@ -132,7 +131,7 @@ class ReviewDashboard:
         body.pack(fill=ctk.BOTH, expand=True, padx=8, pady=8)
 
         # ── Right panel (context sidebar) ─── pack first, expands into available space
-        review_engine._rlog("[dashboard] _build_ui: right panel")
+        _logger.info("[dashboard] _build_ui: right panel")
         right_panel = ctk.CTkFrame(body, fg_color=SURFACE, corner_radius=8)
         right_panel.pack(side=ctk.RIGHT, fill=ctk.BOTH, expand=True, padx=(8, 4), pady=4)
 
@@ -141,6 +140,15 @@ class ReviewDashboard:
         ctx_hdr.pack(fill=ctk.X, padx=10, pady=(8, 0))
         ctk.CTkLabel(ctx_hdr, text="📅 Context", text_color=ACCENT,
                      font=("Inter", 11, "bold")).pack(side=ctk.LEFT)
+
+        # Discard button — shown only when raw transcript is displayed
+        self.discard_btn = ctk.CTkButton(
+            ctx_hdr, text="🗑 Discard", width=80, height=28, font=("Inter", 12),
+            fg_color=RED, text_color=BG, hover_color="#c0506a",
+            command=self._do_redo)
+        _Tooltip(self.discard_btn, "Discard all clips and re-record this step")
+        # Not packed yet — shown/hidden dynamically
+        self._discard_visible = False
 
         # Narration controls — right side of title row
         self.regen_btn = ctk.CTkButton(
@@ -181,7 +189,7 @@ class ReviewDashboard:
         self.ctx_days_lbl.pack(side=ctk.RIGHT)
 
         # Right panel content pane — grid so ctx_text and tasks_outer share height cleanly
-        review_engine._rlog("[dashboard] _build_ui: content_pane")
+        _logger.info("[dashboard] _build_ui: content_pane")
         content_pane = ctk.CTkFrame(right_panel, fg_color="transparent")
         content_pane.pack(fill=ctk.BOTH, expand=True)
         content_pane.grid_rowconfigure(0, weight=1)   # ctx_text — expands
@@ -189,7 +197,7 @@ class ReviewDashboard:
         content_pane.grid_rowconfigure(2, weight=0)   # focus word chart — fixed
         content_pane.grid_columnconfigure(0, weight=1)
 
-        review_engine._rlog("[dashboard] _build_ui: ctx_text")
+        _logger.info("[dashboard] _build_ui: ctx_text")
         self.ctx_text = ctk.CTkTextbox(content_pane, fg_color="transparent",
                                         text_color=SUBTLE, font=("Inter", 15),
                                         wrap="word", activate_scrollbars=True,
@@ -199,7 +207,7 @@ class ReviewDashboard:
         self.ctx_text.configure(state="disabled")
 
         # Tasks panel — shown only when at the carry-forward step
-        review_engine._rlog("[dashboard] _build_ui: tasks panel")
+        _logger.info("[dashboard] _build_ui: tasks panel")
         self.tasks_outer = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
         ctk.CTkLabel(self.tasks_outer, text="📋 Yesterday's open tasks",
                      text_color=ACCENT, font=("Inter", 10, "bold")).pack(
@@ -226,7 +234,7 @@ class ReviewDashboard:
         self.focus_frame.grid_remove()
 
         # ── Left column ───────────────────────────────────────────────────────
-        review_engine._rlog("[dashboard] _build_ui: left column")
+        _logger.info("[dashboard] _build_ui: left column")
         left_col = ctk.CTkFrame(body, fg_color="transparent", width=650)
         left_col.pack(side=ctk.LEFT, fill=ctk.Y)
         left_col.pack_propagate(False)
@@ -238,14 +246,14 @@ class ReviewDashboard:
                      fill=ctk.X, padx=16, pady=(8, 4))
 
         # Progress bar
-        review_engine._rlog("[dashboard] _build_ui: progress bar")
+        _logger.info("[dashboard] _build_ui: progress bar")
         self.prog_canvas = ctk.CTkProgressBar(left_col, height=8, fg_color=OVERLAY,
                                      progress_color=GREEN, corner_radius=4)
         self.prog_canvas.pack(fill=ctk.X, padx=16, pady=(0, 10))
         self.prog_canvas.set(0)
 
         # Steps list
-        review_engine._rlog("[dashboard] _build_ui: CTkScrollableFrame")
+        _logger.info("[dashboard] _build_ui: CTkScrollableFrame")
         steps_frame = ctk.CTkScrollableFrame(left_col, fg_color="transparent")
         steps_frame.pack(fill=ctk.BOTH, expand=True, padx=8)
 
@@ -275,14 +283,14 @@ class ReviewDashboard:
             self.name_labels.append(name_lbl)
             self.status_labels.append(status_lbl)
 
-        review_engine._rlog("[dashboard] _build_ui: step rows done, building buttons")
+        _logger.info("[dashboard] _build_ui: step rows done, building buttons")
         try:
             # Primary buttons (Record + Next Step)
-            review_engine._rlog("[dashboard] _build_ui: btn_row1 frame")
+            _logger.info("[dashboard] _build_ui: btn_row1 frame")
             btn_row1 = ctk.CTkFrame(left_col, fg_color="transparent")
             btn_row1.pack(fill=ctk.X, padx=16, pady=(12, 6))
 
-            review_engine._rlog("[dashboard] _build_ui: record_btn")
+            _logger.info("[dashboard] _build_ui: record_btn")
             self.record_btn = ctk.CTkButton(
                 btn_row1, text="[Rec] Record", command=self._do_record,
                 fg_color=ACCENT, text_color=BG, font=("Inter", 14, "bold"),
@@ -290,7 +298,7 @@ class ReviewDashboard:
             )
             self.record_btn.pack(side=ctk.LEFT, expand=True, fill=ctk.X, padx=(0, 8))
 
-            review_engine._rlog("[dashboard] _build_ui: next_btn")
+            _logger.info("[dashboard] _build_ui: next_btn")
             self.next_btn = ctk.CTkButton(
                 btn_row1, text=">> Next Step", command=self._do_next,
                 fg_color=GREEN, text_color=BG, font=("Inter", 14, "bold"),
@@ -298,12 +306,12 @@ class ReviewDashboard:
             )
             self.next_btn.pack(side=ctk.LEFT, expand=True, fill=ctk.X)
 
-            review_engine._rlog("[dashboard] _build_ui: btn_row2 frame")
+            _logger.info("[dashboard] _build_ui: btn_row2 frame")
             # Secondary buttons (Skip, Redo, Cancel)
             btn_row2 = ctk.CTkFrame(left_col, fg_color="transparent")
             btn_row2.pack(fill=ctk.X, padx=16, pady=(0, 16))
 
-            review_engine._rlog("[dashboard] _build_ui: skip_btn")
+            _logger.info("[dashboard] _build_ui: skip_btn")
             self.skip_btn = ctk.CTkButton(
                 btn_row2, text=">> Skip", command=self._do_skip,
                 fg_color=OVERLAY, text_color=TEXT, font=("Inter", 12),
@@ -311,7 +319,7 @@ class ReviewDashboard:
             )
             self.skip_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-            review_engine._rlog("[dashboard] _build_ui: redo_btn")
+            _logger.info("[dashboard] _build_ui: redo_btn")
             self.redo_btn = ctk.CTkButton(
                 btn_row2, text="<< Redo", command=self._do_redo,
                 fg_color=OVERLAY, text_color=TEXT, font=("Inter", 12),
@@ -319,17 +327,17 @@ class ReviewDashboard:
             )
             self.redo_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-            review_engine._rlog("[dashboard] _build_ui: cancel_btn")
+            _logger.info("[dashboard] _build_ui: cancel_btn")
             self.cancel_btn = ctk.CTkButton(
                 btn_row2, text="X Cancel", command=self._do_cancel,
                 fg_color=RED, text_color=BG, font=("Inter", 12, "bold"),
                 hover_color="#f5c2e7", corner_radius=6, height=32, width=80
             )
             self.cancel_btn.pack(side=ctk.RIGHT)
-            review_engine._rlog("[dashboard] _build_ui: all buttons done")
+            _logger.info("[dashboard] _build_ui: all buttons done")
         except Exception as _btn_exc:
             import traceback as _tb
-            review_engine._rlog(
+            _logger.info(
                 f"[dashboard] _build_ui EXCEPTION in button creation: {_btn_exc}\n"
                 + _tb.format_exc()
             )
@@ -356,7 +364,7 @@ class ReviewDashboard:
         self._refresh_lang_buttons()
         if not self._showing_brief:
             return
-        state = review_engine._load_state()
+        state = review_engine.load_state()
         if state is None:
             return
         brief = state.get(self._brief_key(lang)) or state.get("context_brief", "")
@@ -370,33 +378,32 @@ class ReviewDashboard:
     def _poll_state(self):
         if self._review_done:
             return
-        review_engine._rlog("[dashboard] _poll_state: tick")
         try:
             active, state = review_engine.is_review_active(script_dir)
             if active and state:
                 self._update_ui(state)
             else:
-                raw_state = review_engine._load_state()
+                raw_state = review_engine.load_state()
                 if raw_state is None:
-                    review_engine._rlog("[dashboard] _poll_state: state gone → showing complete")
+                    _logger.info("[dashboard] _poll_state: state gone → showing complete")
                     self._show_complete()
                     return
                 if not raw_state.get("active", True):
-                    review_engine._rlog("[dashboard] _poll_state: active=False → showing complete")
+                    _logger.info("[dashboard] _poll_state: active=False → showing complete")
                     self._show_complete()
                     return
                 try:
                     started = datetime.datetime.fromisoformat(raw_state["started_at"])
                     expiry_h = self.config.get("review_expiry_hours", 1)
                     if (datetime.datetime.now() - started).total_seconds() / 3600 > expiry_h:
-                        review_engine._rlog("[dashboard] _poll_state: expired → showing complete")
+                        _logger.info("[dashboard] _poll_state: expired → showing complete")
                         self._show_complete()
                         return
                 except Exception:
                     pass
         except Exception as e:
             import traceback
-            review_engine._rlog(f"[dashboard] _poll_state exception: {traceback.format_exc()}")
+            _logger.info(f"[dashboard] _poll_state exception: {traceback.format_exc()}")
 
         self.root.after(500, self._poll_state)
 
@@ -407,8 +414,7 @@ class ReviewDashboard:
         total    = len(self.steps)
         awaiting = state.get("awaiting_more", False)
         clips    = len(state.get("accumulated_raw", []))
-        remote_processing = state.get("processing", False)
-        busy = self.is_processing or remote_processing
+        busy = state.get("processing", False)
 
         # Live elapsed time for the current step
         _step_elapsed = ""
@@ -417,7 +423,7 @@ class ReviewDashboard:
             if started:
                 secs = int((datetime.datetime.now() -
                             datetime.datetime.fromisoformat(started)).total_seconds())
-                _step_elapsed = f" · ⏱ {review_engine._fmt_duration(secs)}"
+                _step_elapsed = f" · ⏱ {review_engine.fmt_duration(secs)}"
         except Exception:
             pass
 
@@ -489,23 +495,52 @@ class ReviewDashboard:
 
     def _regen_brief(self):
         """Bust today's brief cache and regenerate."""
-        state = review_engine._load_state()
-        if state is None:
-            return
-        date_str = state.get("date") or datetime.date.today().isoformat()
-        review_engine._bust_brief_cache(script_dir, date_str)
-        state.pop("context_brief", None)
-        state.pop("context_brief_en", None)
-        state.pop("context_brief_hi", None)
-        state["context_ready"] = False
-        review_engine._save_state(state)
         self._last_context_step = -1
         self._showing_brief = False
         self._set_ctx_text("Regenerating…", SUBTLE)
-        threading.Thread(
-            target=review_engine._run_context_brief,
-            args=(script_dir, self.config, dict(state)),
-            daemon=True).start()
+        review_engine.regenerate_brief(script_dir, self.config)
+
+    # ── Processing spinner ────────────────────────────────────────────────────
+
+    _SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def _start_spinner(self):
+        if self._spinner_running:
+            return
+        self._spinner_running = True
+        self._spinner_idx = 0
+        self._set_ctx_text(
+            "Transcribing your recording…\nThen structuring with AI.\n\nThis takes a few seconds.",
+            YELLOW)
+        self._animate_spinner()
+
+    def _animate_spinner(self):
+        if not self._spinner_running:
+            return
+        frame = self._SPINNER_FRAMES[self._spinner_idx % len(self._SPINNER_FRAMES)]
+        self.ctx_days_lbl.configure(text=f"{frame}  Working…")
+        self._spinner_idx += 1
+        self._spinner_after = self.root.after(120, self._animate_spinner)
+
+    def _stop_spinner(self):
+        if not self._spinner_running:
+            return
+        self._spinner_running = False
+        if self._spinner_after is not None:
+            self.root.after_cancel(self._spinner_after)
+            self._spinner_after = None
+
+    def _show_discard_btn(self):
+        if not self._discard_visible:
+            self.discard_btn.pack(side=ctk.LEFT, padx=(8, 0))
+            self._discard_visible = True
+
+    def _hide_discard_btn(self):
+        if self._discard_visible:
+            self.discard_btn.pack_forget()
+            self._discard_visible = False
+
+    # ── Context panel ─────────────────────────────────────────────────────────
 
     def _update_context_panel(self, state):
         """Refresh the right context panel from state. Called from _update_ui."""
@@ -513,6 +548,27 @@ class ReviewDashboard:
         per_step = self.config.get("per_step_context", False)
         idx = state.get("current_step_index", 0)
         notes_data = state.get("context_notes", [])
+        busy     = state.get("processing", False)
+        awaiting = state.get("awaiting_more", False)
+        clips    = state.get("accumulated_raw", [])
+
+        # ── Processing: show spinner while transcribing / LLM structuring ────────
+        if busy:
+            self._hide_discard_btn()
+            self._start_spinner()
+            return
+        else:
+            self._stop_spinner()
+
+        # ── Clips recorded: show raw transcript so user can decide what to do next
+        if awaiting and clips:
+            joined = "\n\n──\n\n".join(clips)
+            label  = f"📝 Recorded · {len(clips)} clip{'s' if len(clips) != 1 else ''}"
+            self.ctx_days_lbl.configure(text=label)
+            self._set_ctx_text(joined, TEXT)
+            self._show_discard_btn()
+            return
+        self._hide_discard_btn()
 
         if not state.get("context_ready"):
             self._showing_brief = False
@@ -551,9 +607,8 @@ class ReviewDashboard:
         else:
             self._hide_tasks_panel()
 
-        if per_step and idx < len(self.steps) and idx != self._last_context_step:
+        if per_step and current_step and idx != self._last_context_step:
             # Per-step: show section-relevant history when the step changes.
-            current_step = self.steps[idx]
             is_isolated  = current_step.get("isolate_file", False)
             section_name = current_step["section_name"]
             self._last_context_step = idx
@@ -563,7 +618,7 @@ class ReviewDashboard:
                 # Isolated steps (e.g. Wellness) live in separate files — read those directly
                 n = self.config.get("last_n_days_context", 3)
                 date_str = state.get("date") or datetime.date.today().isoformat()
-                iso_notes = review_engine._read_last_n_isolated_notes(
+                iso_notes = review_engine.get_isolated_notes(
                     script_dir, self.config, n, date_str)
                 if iso_notes:
                     lines = [f"{note['date']}:\n{note['content']}" for note in reversed(iso_notes)]
@@ -575,7 +630,7 @@ class ReviewDashboard:
             elif notes_data:
                 lines = []
                 for note in reversed(notes_data):
-                    snippet = review_engine._extract_step_section(section_name, note["content"])
+                    snippet = review_engine.extract_step_section(section_name, note["content"])
                     if snippet:
                         lines.append(f"{note['date']}: {snippet}")
                 if lines:
@@ -622,7 +677,7 @@ class ReviewDashboard:
             return  # unchecking — do nothing (can't un-complete a task in vault)
         # Run in background so file I/O doesn't block the UI thread
         def _do_mark():
-            ok = review_engine._mark_task_done(script_dir, self.config, task_text, note_date_str)
+            ok = review_engine.mark_task_done(script_dir, self.config, task_text, note_date_str)
             if not ok:
                 self.root.after(0, lambda: (
                     var.set(False),
@@ -638,7 +693,7 @@ class ReviewDashboard:
         """Draw a horizontal bar chart of the last 7 focus words. No-op if disabled or no data."""
         if not self.config.get("focus_word_trend", True):
             return
-        counts = review_engine._get_focus_word_counts(script_dir, n=7)
+        counts = review_engine.get_focus_word_counts(script_dir, n=7)
         if not counts:
             return
         max_count = counts[0][1]
@@ -677,7 +732,7 @@ class ReviewDashboard:
             self.icon_labels[i].configure(text="✅", text_color=GREEN)
             self.name_labels[i].configure(text_color=SUBTLE)
             if i < len(self._last_step_times):
-                time_str = f" · {review_engine._fmt_duration(self._last_step_times[i])}"
+                time_str = f" · {review_engine.fmt_duration(self._last_step_times[i])}"
             else:
                 time_str = ""
             self.status_labels[i].configure(text=f"Done{time_str}", text_color=GREEN)
@@ -709,78 +764,37 @@ class ReviewDashboard:
             messagebox.showerror("Error", str(e))
 
     def _do_next(self):
-        if self.is_processing:
-            return
-        state = review_engine._load_state()
+        state = review_engine.load_state()
         if state is None:
             return
+        if not state.get("active", True):
+            return  # review already completed or cancelled — stale call, ignore
         if state.get("processing"):
             messagebox.showinfo("Busy", "Processing is already underway — please wait.")
             return
-        self.is_processing = True
-        self._update_ui(state)
         threading.Thread(
             target=self._structure_and_advance,
             args=(state,),
             daemon=True
         ).start()
 
-    def _structure_and_advance(self, state):
-        acquired_lock = False
+    def _structure_and_advance(self, _state):
+        """Delegate to review_engine.structure_and_advance; dashboard handles UI feedback only."""
         try:
-            fresh_state = review_engine._load_state()
-            if fresh_state is None:
-                return
-            if fresh_state.get("processing"):
-                return
-            fresh_state["processing"] = True
-            review_engine._save_state(fresh_state)
-            acquired_lock = True
-            state = fresh_state
-
-            step = review_engine.get_current_step(state, self.config)
-            if step is None:
-                return
-            raw_list     = state.get("accumulated_raw", [])
-            raw_combined = "\n".join(raw_list).strip()
-
-            if not raw_combined:
-                review_engine.skip_step(script_dir, state, self.config)
-            else:
-                if step.get("refine", True):
-                    tmpl = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
-                    full_prompt  = tmpl.replace("{raw_text}", raw_combined)
-                    struct_model = self.config.get("structure_model") or None
-                    structured   = self.engine.refine_with_prompt(full_prompt, structure_model=struct_model)
-                else:
-                    structured = raw_combined
-
-                step_name = step.get("section_name", "review")
-                self.engine.log(raw_combined, structured,
-                                mode=f"review:{step_name}", model="review_engine")
-                state["accumulated_raw"] = []
-                state["awaiting_more"]   = False
-                review_engine.write_step_to_note(
-                    script_dir, self.config, step, structured, state
-                )
-                review_engine.advance_step(script_dir, state, self.config)
-
+            success, error, still_active = review_engine.structure_and_advance(
+                script_dir, self.engine, self.config
+            )
+            if error:
+                self.root.after(0, lambda: messagebox.showerror("Structuring error", error[:200]))
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror(
-                "Structuring error", str(e)[:200]
-            ))
-        finally:
-            if acquired_lock:
-                final_state = review_engine._load_state()
-                if final_state is not None:
-                    final_state.pop("processing", None)
-                    review_engine._save_state(final_state)
-            self.is_processing = False
+            self.root.after(0, lambda: messagebox.showerror("Structuring error", str(e)[:200]))
 
     def _do_skip(self):
-        state = review_engine._load_state()
+        state = review_engine.load_state()
         if state is None:
             return
+        if not state.get("active", True):
+            return  # review already completed or cancelled — stale call, ignore
         if state.get("processing"):
             messagebox.showinfo("Busy", "Processing is underway — please wait.")
             return
@@ -790,17 +804,19 @@ class ReviewDashboard:
             self._show_complete()
 
     def _do_redo(self):
-        state = review_engine._load_state()
+        state = review_engine.load_state()
         if state is None:
             return
+        if not state.get("active", True):
+            return  # review already completed or cancelled — stale call, ignore
         if state.get("processing"):
             messagebox.showinfo("Busy", "Processing is underway — please wait.")
             return
         review_engine.redo_step(script_dir, state, self.config)
 
     def _do_cancel(self):
-        review_engine._rlog("[dashboard] _do_cancel called")
-        state = review_engine._load_state()
+        _logger.info("[dashboard] _do_cancel called")
+        state = review_engine.load_state()
         if state and state.get("processing"):
             messagebox.showinfo("Busy", "Processing is underway — cannot cancel right now.")
             return
@@ -808,7 +824,7 @@ class ReviewDashboard:
             "Cancel Review",
             "Cancel the Evening Review?\nAll progress so far is saved."
         ):
-            review_engine._rlog("[dashboard] cancel confirmed by user")
+            _logger.info("[dashboard] cancel confirmed by user")
             review_engine.cancel_review(script_dir)
             self.root.destroy()
 
@@ -819,22 +835,22 @@ def main():
 
     def _excepthook(exc_type, exc_val, exc_tb):
         msg = "".join(_tb_mod.format_exception(exc_type, exc_val, exc_tb))
-        review_engine._rlog(f"[dashboard] UNHANDLED EXCEPTION:\n{msg}")
+        _logger.info(f"[dashboard] UNHANDLED EXCEPTION:\n{msg}")
         _sys.__stderr__.write(f"[dashboard] UNHANDLED EXCEPTION:\n{msg}\n")
     _sys.excepthook = _excepthook
 
-    review_engine._rlog("[dashboard] main() started")
+    _logger.info("[dashboard] main() started")
     ctk.set_appearance_mode("dark")
-    review_engine._rlog("[dashboard] CTk appearance set")
+    _logger.info("[dashboard] CTk appearance set")
     root = ctk.CTk()
-    review_engine._rlog("[dashboard] CTk window created")
+    _logger.info("[dashboard] CTk window created")
 
     # GNOME Wayland sends WM_DELETE_WINDOW immediately to background-launched
     # windows (focus-stealing prevention). The default tkinter handler calls
     # root.destroy(), silently killing the window before the user sees it.
     # Suppress it NOW — before any CTk widget creation can process events.
     root.protocol("WM_DELETE_WINDOW", lambda: None)
-    review_engine._rlog("[dashboard] WM_DELETE_WINDOW suppressed")
+    _logger.info("[dashboard] WM_DELETE_WINDOW suppressed")
 
     # lift() is safe on Wayland; focus_force() triggers GNOME focus-stealing
     # defenses and can cause the window to be immediately hidden.
@@ -845,22 +861,22 @@ def main():
     # Route ALL tkinter callback exceptions to the log file, not just stderr,
     # so crashes inside after() callbacks and widget commands are always visible.
     def _report_tk_error(exc, val, tb):
-        review_engine._rlog(
+        _logger.info(
             f"[dashboard] tkinter callback exception: {val}\n"
             + "".join(_tb_mod.format_exception(exc, val, tb))
         )
     root.report_callback_exception = _report_tk_error
 
-    review_engine._rlog("[dashboard] building ReviewDashboard")
+    _logger.info("[dashboard] building ReviewDashboard")
     try:
         app = ReviewDashboard(root)
     except Exception as _e:
-        review_engine._rlog(
+        _logger.info(
             f"[dashboard] CRASH in ReviewDashboard.__init__: {_e}\n"
             + _tb_mod.format_exc()
         )
         raise
-    review_engine._rlog("[dashboard] ReviewDashboard built, entering mainloop")
+    _logger.info("[dashboard] ReviewDashboard built, entering mainloop")
 
     def _bind_close():
         root.protocol("WM_DELETE_WINDOW", app._do_cancel)
@@ -868,7 +884,7 @@ def main():
 
     def _heartbeat():
         if not app._review_done:
-            review_engine._rlog("[dashboard] heartbeat — alive")
+            _logger.info("[dashboard] heartbeat — alive")
             root.after(5000, _heartbeat)
     root.after(5000, _heartbeat)
 
@@ -881,7 +897,7 @@ def main():
     root.after(500, _wmctrl_focus)
 
     root.mainloop()
-    review_engine._rlog("[dashboard] mainloop exited")
+    _logger.info("[dashboard] mainloop exited")
 
 
 if __name__ == "__main__":

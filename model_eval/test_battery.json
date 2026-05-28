@@ -1,0 +1,160 @@
+[
+  {
+    "id": "en_01",
+    "mode": "refine",
+    "lang": "en",
+    "description": "English: rambling technical bug report with fillers",
+    "input": "there are some issues i thought that that in some length it shows uh value beyond the point zero zero zero something six or seven place it should be limited only up to three because it's a data enclosure so maximum place should be three places and it should be for every data i think consistent",
+    "criteria": [
+      "removes filler words (uh, i think, that that)",
+      "output is English only",
+      "decimal precision requirement preserved (3 places)",
+      "professional tone, no extra commentary or labels"
+    ],
+    "pass_keywords": ["three", "data"],
+    "fail_patterns": ["uh", "that that", "REFINED TEXT:", "Here is", "Please provide"]
+  },
+  {
+    "id": "en_02",
+    "mode": "refine",
+    "lang": "en",
+    "description": "English: short voice command with technical route reference",
+    "input": "uh go to web dot php routes and add a new get route for the dashboard page okay",
+    "criteria": [
+      "removes filler words (uh, okay)",
+      "preserves technical terms (web.php, routes, GET or get, dashboard)",
+      "output is English only",
+      "output is a clean single instruction, not a list"
+    ],
+    "pass_keywords": ["web.php", "route", "dashboard"],
+    "fail_patterns": ["uh", "okay", "REFINED TEXT:", "Here is", "Please provide"]
+  },
+  {
+    "id": "en_03",
+    "mode": "refine",
+    "lang": "en",
+    "description": "English: task list dictation with three items",
+    "input": "so my tasks for today are um first call the client about the project update second uh review the pull request from john and third like deploy the staging build okay so that's it",
+    "criteria": [
+      "three tasks are preserved (call client, review pull request, deploy staging build)",
+      "removes fillers (um, uh, like, so, okay)",
+      "output is English only",
+      "tasks are clearly separated (numbered or bulleted)"
+    ],
+    "pass_keywords": ["call", "review", "deploy"],
+    "fail_patterns": ["um", "uh", "so that's it", "REFINED TEXT:", "Please provide"]
+  },
+  {
+    "id": "en_04",
+    "mode": "refine",
+    "lang": "en",
+    "description": "English: very short single-sentence reminder",
+    "input": "um remind me to check the server logs at five pm",
+    "criteria": [
+      "removes um",
+      "output is a single clean sentence",
+      "time preserved (5 PM or five pm)",
+      "no added explanation or preamble"
+    ],
+    "pass_keywords": ["server logs", "5"],
+    "fail_patterns": ["um", "Here is", "Refined text:", "REFINED TEXT:", "Please provide"]
+  },
+  {
+    "id": "hi_01",
+    "mode": "refine",
+    "lang": "hi",
+    "description": "Hindi: meeting note with repetition and fillers",
+    "input": "मतलब आज की मीटिंग में हमने uh जो तय किया वो वो यह था कि अगला प्रेजेंटेशन शुक्रवार को होगा मतलब और सभी लोग तैयार रहें",
+    "criteria": [
+      "removes fillers (मतलब, uh, repeated words like वो वो)",
+      "output is Devanagari Hindi only — no English sentences",
+      "meeting decision preserved (Friday presentation, everyone ready)",
+      "clean grammatical Hindi"
+    ],
+    "pass_keywords": ["प्रेजेंटेशन", "शुक्रवार"],
+    "fail_patterns": ["मतलब", "uh", "वो वो", "आउटपुट:", "Here is", "Please provide"]
+  },
+  {
+    "id": "hi_02",
+    "mode": "refine",
+    "lang": "hi",
+    "description": "Hindi: short personal task note with informal opening",
+    "input": "यार कल सुबह uh बैंक जाना है और लाइट का बिल भरना है",
+    "criteria": [
+      "removes informal word (यार) and filler (uh)",
+      "output is clean Hindi",
+      "both tasks preserved (bank, electricity bill)",
+      "Devanagari script only"
+    ],
+    "pass_keywords": ["बैंक", "बिल"],
+    "fail_patterns": ["यार", "uh", "आउटपुट:", "Here is", "Please provide"]
+  },
+  {
+    "id": "hinglish_01",
+    "mode": "refine",
+    "lang": "en",
+    "description": "Hinglish: code review note mixing Hindi words and English technical terms",
+    "input": "basically uh yeh wala function mein kuch issue hai like the return value is not correct aur hum chahte hain ki yeh properly handle ho",
+    "criteria": [
+      "removes fillers (basically, uh, like)",
+      "preserves technical meaning (function, return value, handle)",
+      "output is coherent — either clean English or clean Hinglish, not garbled",
+      "no added labels or preamble"
+    ],
+    "pass_keywords": ["function", "return"],
+    "fail_patterns": ["basically", "uh", "Here is", "REFINED TEXT:", "Please provide"]
+  },
+  {
+    "id": "hinglish_02",
+    "mode": "refine",
+    "lang": "en",
+    "description": "Hinglish: deadline instruction — must extract two tasks AND preserve the deadline",
+    "input": "toh um kal tak yeh report submit kar do aur client ko bhi email karo okay",
+    "criteria": [
+      "removes fillers (toh, um, okay)",
+      "both tasks preserved: submit report AND email client",
+      "deadline preserved (kal tak = by tomorrow) — output must mention 'tomorrow'",
+      "output is coherent — either clean English or clean Hinglish"
+    ],
+    "pass_keywords": ["report", "email", "tomorrow"],
+    "fail_patterns": ["um", "okay", "toh um", "Here is", "REFINED TEXT:", "Please provide", "provide the input"]
+  },
+  {
+    "id": "translate_hi_01",
+    "mode": "translate",
+    "lang": "hi",
+    "description": "Translate: Hindi meeting decision to English",
+    "input": "आज की बैठक में यह तय हुआ कि अगला चरण दो सप्ताह में पूरा होना चाहिए और टीम को सभी आवश्यक संसाधन उपलब्ध कराए जाएंगे",
+    "criteria": [
+      "output is English only — no Devanagari words",
+      "meaning preserved accurately (meeting, next phase, two weeks, resources provided to team)",
+      "professional documentation tone",
+      "no translation label or preamble"
+    ],
+    "pass_keywords": ["meeting", "week", "resources"],
+    "fail_patterns": ["बैठक", "सप्ताह", "Here is the translation", "ENGLISH TRANSLATION:", "Please provide"]
+  },
+  {
+    "id": "translate_en_01",
+    "mode": "translate",
+    "lang": "en",
+    "description": "Translate: English deployment issue to Hindi — must use real Hindi words not transliterations",
+    "input": "the deployment pipeline failed because of a missing environment variable and we need to fix it before the release tomorrow",
+    "criteria": [
+      "output is Devanagari Hindi only — no English sentences",
+      "technical terms handled naturally (pipeline, environment variable, release)",
+      "meaning fully preserved (pipeline failed, missing variable, fix before tomorrow's release)",
+      "output uses real Hindi words — NOT nonsense transliterations like 'सुविल्वनीपालण' or 'पाइलाइच'"
+    ],
+    "pass_keywords": ["पाइपलाइन", "रिलीज"],
+    "fail_patterns": [
+      "deployment pipeline failed because",
+      "Here is",
+      "HINDI TRANSLATION:",
+      "Please provide",
+      "सुविल्वनीपालण",
+      "पाइलाइच",
+      "इनवर्सेबल"
+    ]
+  }
+]

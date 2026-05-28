@@ -1,0 +1,4 @@
+Translate this English text to Hindi. Output only the Hindi translation in Devanagari script.
+
+English: {text}
+Hindi:

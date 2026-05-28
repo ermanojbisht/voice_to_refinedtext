@@ -1,0 +1,38 @@
+{
+    "default": {
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ],
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ]
+    },
+    "qwen2_5": {
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ]
+    },
+    "llama3_hindi_8b_q5_km_gguf": {
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ]
+    }
+}

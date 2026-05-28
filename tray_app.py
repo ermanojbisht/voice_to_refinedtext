@@ -13,28 +13,25 @@ import review_engine
 import sys
 import signal
 
+import utils as _utils
+
 _AUDIO_QUALITY_RATIO = 0.5   # WAV RMS must be >= SILENCE_THRESHOLD * this ratio
 
-_LOG_FILE = None
+# Module-level logger — file handler added in VoiceAssistantTray.__init__()
+_logger = _utils.get_logger("tray")
+
 
 def _tlog(msg):
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] [tray] {msg}"
-    print(line)
-    if _LOG_FILE:
-        try:
-            with open(_LOG_FILE, "a", encoding="utf-8") as f:
-                f.write(line + "\n")
-        except Exception:
-            pass
+    """Compatibility shim — all existing call sites use _tlog()."""
+    _logger.info(msg)
 
 # ── Tray application ──────────────────────────────────────────────────────────
 
 class VoiceAssistantTray:
     def __init__(self):
-        global _LOG_FILE
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
-        _LOG_FILE = os.path.join(self.script_dir, "review_debug.log")
+        log_path = os.path.join(self.script_dir, "review_debug.log")
+        _utils.get_logger("tray", log_path)        # attach file handler to _logger
         review_engine.init_logging(self.script_dir)
         _tlog("=" * 50)
         _tlog("VoiceAssistantTray starting")
@@ -42,7 +39,6 @@ class VoiceAssistantTray:
 
         # App state flags
         self.is_recording = False
-        self.is_processing = False
         self.running = True
 
         # Review state
@@ -132,6 +128,8 @@ class VoiceAssistantTray:
                 return f"Step {idx+1}/{total}: {name}"
             return "Review in progress"
 
+        def _evening_review_enabled(item):
+            return self.engine.config.get("FEATURES", {}).get("evening_review", True)
         def _in_review(item):           return self.is_in_review
         def _not_in_review(item):       return not self.is_in_review
         def _awaiting(item):            return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more"))
@@ -140,6 +138,8 @@ class VoiceAssistantTray:
         def _has_morning_brief(item):
             import morning_brief as _mb
             return not self.is_in_review and _mb.load_brief_state() is not None
+        def _start_review_visible(item):
+            return not self.is_in_review and _evening_review_enabled(item)
 
         return pystray.Menu(
             # ── Review mode ──
@@ -152,7 +152,7 @@ class VoiceAssistantTray:
             # ── Normal mode ──
             pystray.MenuItem("Start Recording",        self.toggle_recording,               visible=_not_in_review),
             pystray.MenuItem(_mode_label,              self.cycle_mode,                     visible=_not_in_review),
-            pystray.MenuItem("Start Evening Review",   self.start_review,                   visible=_not_in_review),
+            pystray.MenuItem("Start Evening Review",   self.start_review,                   visible=_start_review_visible),
             pystray.MenuItem("🌅 Replay Morning Brief", self.replay_morning_brief,          visible=_has_morning_brief),
             pystray.MenuItem("Open Dashboard",         self.open_gui,                       visible=_not_in_review),
             pystray.MenuItem("Settings",               self.open_settings,                  visible=_not_in_review),
@@ -212,7 +212,7 @@ class VoiceAssistantTray:
     # ── Recording ─────────────────────────────────────────────────────────────
 
     def toggle_recording(self):
-        if not self.is_recording and not self.is_processing:
+        if not self.is_recording:
             threading.Thread(target=self.run_full_process, daemon=True).start()
         elif self.is_recording:
             self.engine.stop_recording()
@@ -242,7 +242,6 @@ class VoiceAssistantTray:
                 self.update_icon("review" if self.is_in_review else "idle")
                 return
 
-            self.is_processing = True
             self.update_icon("processing")
 
             # Narrate processing so user knows recording was captured
@@ -256,7 +255,6 @@ class VoiceAssistantTray:
             if not raw_text.strip():
                 self._notify("Voice Refiner", "No speech detected. Try again.")
                 _tlog("No speech detected")
-                self.is_processing = False
                 self.update_icon("review" if self.is_in_review else "idle")
                 return
 
@@ -267,7 +265,6 @@ class VoiceAssistantTray:
                 _tlog("Routing: NORMAL MODE")
                 self._run_normal_mode(raw_text)
 
-            self.is_processing = False
             self.update_icon("review" if self.is_in_review else "idle")
 
         except Exception as e:
@@ -275,7 +272,6 @@ class VoiceAssistantTray:
             _tlog(f"EXCEPTION in run_full_process:\n{traceback.format_exc()}")
             self._notify("Voice Refiner — Error", str(e)[:120])
             self.is_recording = False
-            self.is_processing = False
             self.update_icon("review" if self.is_in_review else "idle")
 
     def _check_audio_quality(self, wav_path):
@@ -303,13 +299,20 @@ class VoiceAssistantTray:
     def _handle_review_step(self, raw_text):
         """Accumulate raw transcription into state. No LLM call here — deferred to Next Step."""
         _tlog("_handle_review_step: accumulating raw text")
+        if self.review_config is None:
+            # cancel_review() fired between is_in_review check and this call — nothing to do
+            _tlog("_handle_review_step: review_config gone (cancel race), ignoring")
+            return
 
         # Always reload state from disk (may have changed via menu actions)
         _, fresh_state = review_engine.is_review_active(self.script_dir)
         if fresh_state is None:
-            _tlog("WARNING: review state gone mid-recording, falling back to normal mode")
+            # State vanished while recording was in flight (session expired, cancelled,
+            # or completed by another path). Processing this audio as normal voice input
+            # would be wrong — review content must not end up on the clipboard.
+            _tlog("WARNING: review state gone mid-recording, discarding orphaned transcript")
+            self._notify("Evening Review", "Review session ended — recording discarded.")
             self._review_finished()
-            self._run_normal_mode(raw_text)
             return
 
         self.review_state = fresh_state
@@ -319,14 +322,10 @@ class VoiceAssistantTray:
             self._notify("Voice Refiner", "Review error: could not get current step.")
             return
 
-        # Accumulate raw text in state file
-        accumulated = self.review_state.get("accumulated_raw", [])
-        accumulated.append(raw_text)
-        self.review_state["accumulated_raw"] = accumulated
-        self.review_state["awaiting_more"] = True
-        review_engine._save_state(self.review_state)
+        # Accumulate raw text in state file via public API
+        self.review_state = review_engine.accumulate_clip(self.review_state, raw_text)
 
-        clip_count = len(accumulated)
+        clip_count = len(self.review_state["accumulated_raw"])
         step_name = step.get("section_name", "this step")
         _tlog(f"Accumulated clip {clip_count} for step '{step_name}'")
 
@@ -340,18 +339,20 @@ class VoiceAssistantTray:
         final_text = self.engine.refine(raw_text)
         self._notify("Voice Refiner", "Done! Text copied to clipboard.")
         _tlog(f"_run_normal_mode: refined, len={len(final_text)}")
-        try:
-            subprocess.run("xclip -selection clipboard", input=final_text.encode(), shell=True, check=False)
-        except Exception:
+        features = self.engine.config.get("FEATURES", {})
+        if features.get("clipboard_output", True):
             try:
-                subprocess.run("xsel --clipboard --input", input=final_text.encode(), shell=True, check=False)
+                subprocess.run("xclip -selection clipboard", input=final_text.encode(), shell=True, check=False)
             except Exception:
-                pass
+                try:
+                    subprocess.run("xsel --clipboard --input", input=final_text.encode(), shell=True, check=False)
+                except Exception:
+                    pass
         try:
             subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "complete.oga")], check=False)
         except Exception:
             pass
-        if self.engine.config.get("DIRECT_TYPING"):
+        if features.get("direct_typing", False):
             self.engine.type_text(final_text)
 
     # ── Review controls ───────────────────────────────────────────────────────
@@ -391,6 +392,9 @@ class VoiceAssistantTray:
 
     def start_review(self, icon=None, item=None):
         _tlog("start_review called")
+        if self.is_in_review:
+            _tlog("start_review: already in review, ignoring")
+            return
 
         date_str = self._ask_review_date()
         if date_str is None:
@@ -402,12 +406,13 @@ class VoiceAssistantTray:
         review_engine.initialize_review(self.script_dir, date_str=date_str)
         active, state = review_engine.is_review_active(self.script_dir)
         if state is None:
-            state = review_engine._load_state()
+            state = review_engine.load_state()
             _tlog(f"start_review: fallback state load = {state}")
         self.review_state = state
         self.is_in_review = True
         self.update_icon("review")
         self._refresh_menu()
+        threading.Thread(target=self._watch_review_completion, daemon=True).start()
         # Kill any stale dashboard windows before opening a fresh one
         try:
             subprocess.run(["pkill", "-f", "review_dashboard.py"], capture_output=True)
@@ -428,126 +433,71 @@ class VoiceAssistantTray:
         except Exception as e:
             _tlog(f"ERROR launching dashboard: {e}")
 
+    def _load_review_state_or_finish(self):
+        """Load current review state; call _review_finished and return None if unavailable."""
+        _, state = review_engine.is_review_active(self.script_dir)
+        if state is None:
+            state = review_engine.load_state()
+        if state is None:
+            self._review_finished()
+            return None
+        return state
+
     def next_step_review(self, icon=None, item=None):
         """Trigger structuring + advance in a background thread so the menu stays responsive."""
         _tlog("next_step_review called")
         if not self.review_config:
             _tlog("next_step_review: no review_config, ignoring")
             return
-        if self.is_processing:
-            _tlog("next_step_review: already processing, ignoring")
-            return
 
-        _, state = review_engine.is_review_active(self.script_dir)
-        if state is None:
-            state = review_engine._load_state()
+        state = self._load_review_state_or_finish()
         if state is None:
             _tlog("next_step_review: no state, finishing review")
-            self._review_finished()
+            return
+
+        if state.get("processing", False):
+            _tlog("next_step_review: state[processing]=True, ignoring concurrent click")
             return
 
         self.review_state = state
-        self.is_processing = True
         self.update_icon("processing")
         threading.Thread(target=self._structure_and_advance, args=(state,), daemon=True).start()
 
-    def _structure_and_advance(self, state):
-        """Background: run LLM structuring prompt, write to note, then advance step."""
-        _tlog("_structure_and_advance: started")
-        # Capture a local snapshot of review_config so that a concurrent
-        # cancel_review() calling _review_finished() (which sets self.review_config = None)
-        # cannot crash this thread mid-execution.
+    def _structure_and_advance(self, _state):
+        """Background: delegate to review_engine.structure_and_advance, then update tray UI."""
+        # Snapshot config so a concurrent cancel_review() cannot set self.review_config=None
+        # and crash this thread mid-execution.
         review_config = self.review_config
         if review_config is None:
-            _tlog("_structure_and_advance: review_config is None at thread start, bailing")
+            _tlog("_structure_and_advance: review_config gone at thread start, bailing")
             return
-        acquired_lock = False
         try:
-            # Re-read freshest state from disk so we capture any clips accumulated
-            # between the "Next Step" click and this thread actually starting.
-            fresh_state = review_engine._load_state()
-            if fresh_state is None:
-                _tlog("_structure_and_advance: state file gone before processing started")
-                self._review_finished()
-                return
-
-            # Guard against concurrent structuring (e.g. dashboard also triggers Next Step)
-            if fresh_state.get("processing"):
-                _tlog("_structure_and_advance: concurrent processing detected, bailing")
-                return
-
-            fresh_state["processing"] = True
-            review_engine._save_state(fresh_state)
-            acquired_lock = True  # We own the lock — finally must clean it up
-            state = fresh_state
-
-            step = review_engine.get_current_step(state, review_config)
-            if step is None:
-                _tlog("_structure_and_advance: no step found")
-                self.update_icon("review")
-                return
-
-            step_name = step.get("section_name", "this step")
-            raw_list = state.get("accumulated_raw", [])
-            raw_combined = "\n".join(raw_list).strip()
-
-            if not raw_combined:
-                _tlog("_structure_and_advance: no accumulated raw, treating as skip")
-                review_engine.skip_step(self.script_dir, state, review_config)
-            else:
-                self._notify("Voice Refiner", f"Structuring '{step_name}'...")
-                _tlog(f"_structure_and_advance: structuring '{step_name}' ({len(raw_list)} clips)")
-
-                if step.get("refine", True):
-                    structure_prompt = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
-                    full_prompt = structure_prompt.replace("{raw_text}", raw_combined)
-                    struct_model = review_config.get("structure_model") or None
-                    structured_text = self.engine.refine_with_prompt(full_prompt, structure_model=struct_model)
-                else:
-                    structured_text = raw_combined
-
-                self.engine.log(raw_combined, structured_text,
-                                mode=f"review:{step_name}", model="review_engine")
-                _tlog(f"_structure_and_advance: structured preview='{structured_text[:80]}'")
-
-                state["accumulated_raw"] = []
-                state["awaiting_more"] = False
-                review_engine.write_step_to_note(self.script_dir, review_config, step, structured_text, state)
-                review_engine.advance_step(self.script_dir, state, review_config)
-
-            still_active, new_state = review_engine.is_review_active(self.script_dir)
-            _tlog(f"_structure_and_advance: still_active={still_active}")
+            success, error, still_active = review_engine.structure_and_advance(
+                self.script_dir, self.engine, review_config
+            )
+            _tlog(f"_structure_and_advance: success={success} error={error} still_active={still_active}")
+            if error:
+                self._notify("Voice Refiner — Error", error[:120])
             if still_active:
+                _, new_state = review_engine.is_review_active(self.script_dir)
                 self.review_state = new_state
                 self.update_icon("review")
             else:
                 self._review_finished()
-
         except Exception as e:
             import traceback
             _tlog(f"EXCEPTION in _structure_and_advance:\n{traceback.format_exc()}")
             self._notify("Voice Refiner — Error", str(e)[:120])
             self.update_icon("review" if self.is_in_review else "idle")
         finally:
-            # Only clear the processing lock if WE set it.
-            # If we bailed because someone else held the lock, don't touch it.
-            if acquired_lock:
-                final_state = review_engine._load_state()
-                if final_state is not None:
-                    final_state.pop("processing", None)
-                    review_engine._save_state(final_state)
-            self.is_processing = False
             self._refresh_menu()
 
     def skip_review_step(self, icon=None, item=None):
         _tlog("skip_review_step called")
         if not self.review_config:
             return
-        _, state = review_engine.is_review_active(self.script_dir)
+        state = self._load_review_state_or_finish()
         if state is None:
-            state = review_engine._load_state()
-        if state is None:
-            self._review_finished()
             return
         self.review_state = state
         review_engine.skip_step(self.script_dir, self.review_state, self.review_config)
@@ -562,11 +512,8 @@ class VoiceAssistantTray:
         _tlog("redo_review_step called")
         if not self.review_config:
             return
-        _, state = review_engine.is_review_active(self.script_dir)
+        state = self._load_review_state_or_finish()
         if state is None:
-            state = review_engine._load_state()
-        if state is None:
-            self._review_finished()
             return
         self.review_state = state
         review_engine.redo_step(self.script_dir, self.review_state, self.review_config)
@@ -586,9 +533,27 @@ class VoiceAssistantTray:
         self.is_in_review = False
         self.review_state = None
         self.review_config = None
-        self.is_processing = False
         self.update_icon("idle")
         self._refresh_menu()
+
+    def _watch_review_completion(self):
+        """Daemon thread: detect when the review completes via the dashboard and reset tray state.
+
+        The dashboard process calls review_engine.complete_review() which deletes the state file.
+        Without this watcher, the tray never learns the review ended and keeps showing stale
+        review menu items indefinitely.  This thread polls every 2 seconds and calls
+        _review_finished() as soon as is_review_active() returns False.
+        """
+        while self.is_in_review and self.running:
+            time.sleep(2)
+            if not self.is_in_review:
+                # Cleared by another path (cancel, tray-driven next-step) — nothing to do
+                break
+            active, _ = review_engine.is_review_active(self.script_dir)
+            if not active:
+                _tlog("_watch_review_completion: state gone — review finished externally, resetting tray")
+                self._review_finished()
+                break
 
     # ── Normal mode controls ──────────────────────────────────────────────────
 

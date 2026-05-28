@@ -1,0 +1,4 @@
+Translate this Hindi text to English. Output only the English translation.
+
+Hindi: {text}
+English:

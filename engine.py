@@ -27,7 +27,14 @@ class VoiceEngine:
         """Lazy loads the Whisper model to save memory when not in use."""
         if self._whisper_model is None:
             model_size = self.config.get("WHISPER_MODEL", "large-v3-turbo")
-            self._whisper_model = WhisperModel(model_size, compute_type="int8")
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    self._whisper_model = WhisperModel(model_size, device="cuda", compute_type="float16")
+                else:
+                    self._whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
+            except Exception:
+                self._whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
         return self._whisper_model
 
     def record(self, on_start=None, on_end=None, pre_record_notification=None):
@@ -53,8 +60,9 @@ class VoiceEngine:
 
         if on_start: on_start()
 
-        # Start sound
-        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "start.oga")], check=False)
+        play_sounds = self.config.get("FEATURES", {}).get("start_end_sounds", True)
+        if play_sounds:
+            subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "start.oga")], check=False)
 
         with sd.InputStream(samplerate=samplerate, channels=1, dtype='int16', blocksize=chunk_size) as stream:
             while not self.stop_event.is_set():
@@ -69,8 +77,8 @@ class VoiceEngine:
                 else:
                     silent_chunks = 0
 
-        # End sound
-        subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "end.oga")], check=False)
+        if play_sounds:
+            subprocess.run(["paplay", os.path.join(self.script_dir, "sounds", "end.oga")], check=False)
         if on_end: on_end()
 
         audio = np.concatenate(audio_buffer)
@@ -193,30 +201,6 @@ class VoiceEngine:
 
     def get_raw_transcription(self, wav_path):
         return self.transcribe(wav_path)
-
-    def run_pipeline(self, mode=None, on_start=None, on_end=None):
-        import review_engine
-        wav_path = self.record(on_start=on_start, on_end=on_end)
-        raw_text = self.transcribe(wav_path)
-        if not raw_text.strip():
-            return raw_text, "", False
-
-        active, state = review_engine.is_review_active(self.script_dir)
-        if active:
-            config = review_engine.load_review_config(self.script_dir)
-            step = review_engine.get_current_step(state, config)
-            if step and step.get("refine", True):
-                final_text = self.refine(raw_text, mode=mode)
-            else:
-                final_text = raw_text
-            review_engine.append_to_note(self.script_dir, config, step, final_text, state)
-            _, state = review_engine.is_review_active(self.script_dir)
-            if state:
-                review_engine.advance_step(self.script_dir, state, config)
-            return raw_text, final_text, True
-        else:
-            final_text = self.refine(raw_text, mode=mode)
-            return raw_text, final_text, False
 
     def stop_recording(self):
         """Force stops the recording process."""

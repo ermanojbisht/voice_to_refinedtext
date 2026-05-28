@@ -25,7 +25,7 @@ def main():
     today = datetime.date.today().isoformat()
 
     # Skip if review already completed today
-    streak = review_engine._load_streak(script_dir)
+    streak = review_engine.load_streak(script_dir)
     if streak.get("last_date") == today:
         return
 

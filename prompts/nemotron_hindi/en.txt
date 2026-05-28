@@ -1,0 +1,4 @@
+Rewrite this English transcription professionally. Remove filler words (uh, um, like, okay, actually). Fix grammar. Keep technical terms. Output only the rewritten text.
+
+Input: {text}
+Output:
