@@ -95,26 +95,26 @@
     },
     "qwen2_5": {
         "hi": [
-            "Input:",
-            "Output:",
-            "\n"
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
         ],
         "en": [
-            "Input:",
-            "Output:",
-            "\n"
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
         ]
     },
     "llama3_hindi_8b_q5_km_gguf": {
         "hi": [
-            "Input:",
-            "Output:",
-            "\n"
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
         ],
         "en": [
-            "Input:",
-            "Output:",
-            "\n"
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
         ]
     }
 }

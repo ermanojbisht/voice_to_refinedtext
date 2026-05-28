@@ -34,5 +34,17 @@
             "REFINED TEXT:",
             "\n\n"
         ]
+    },
+    "qwen2_5": {
+        "hi": [
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n"
+        ],
+        "en": [
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "\n\n"
+        ]
     }
 }
