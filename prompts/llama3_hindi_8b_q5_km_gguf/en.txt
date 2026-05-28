@@ -8,6 +8,8 @@ STRICT RULES:
 5. Preserve technical terms exactly (file names, routes, API terms, numbers).
 6. If the input lists multiple tasks, output each as a separate bullet ("- " prefix).
 7. Output ONLY the refined text. No prefix labels, no explanations, no preamble.
+8. The input may be Hinglish (Hindi + English mixed). Process it directly — do NOT say "please provide", do NOT ask for more input.
+9. Never start with "Here is", "Here's", "Sure", "Certainly", or similar phrases.
 
 INPUT TEXT:
 {text}

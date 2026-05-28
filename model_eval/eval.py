@@ -374,7 +374,7 @@ def refine_prompts_for_model(host, refiner_model, model_name, failures, config):
         )
 
         result = utils.call_ollama(
-            host, refiner_model, refiner_prompt, stop_tokens=[], temperature=0.3
+            host, refiner_model, refiner_prompt, stop_tokens=[], temperature=0.3, timeout=300
         )
         if "error" in result:
             print(f"    [warn] refiner error for {lang}/{mode}: {result['error']}")
