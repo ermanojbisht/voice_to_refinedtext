@@ -85,12 +85,22 @@ class ReviewDashboard:
         self._last_step_times = []            # cached from state; used in _show_complete
         # Language currently shown in the right panel brief ("en" or "hi")
         self._ctx_lang        = self.config.get("context_brief_language", "en")
-        # True when the right panel is showing the AI brief; False for per-step history
+        # True when the right panel is showing the AI brief
         self._showing_brief   = False
         # Spinner state for the processing animation
         self._spinner_running = False
         self._spinner_idx     = 0
         self._spinner_after   = None
+        # ── Append-only panel state ───────────────────────────────────────────
+        self._panel_has_brief      = False   # brief widget appended at top
+        self._panel_brief_widget   = None    # ref to brief CTkLabel (for lang switch)
+        self._panel_appended_steps = set()   # section_names whose history is appended
+        self._panel_widgets        = []      # all non-clip widgets (for selective clear)
+        self._clip_rows            = []      # CTkTextbox refs, one per in-progress clip
+        self._clip_zone_frame      = None    # container frame for the clip zone
+        self._clip_sep_added       = False   # thick separator added only once per step
+        self._last_clip_count      = -1      # detect when clips list changes
+        self._wrap_after_id        = None    # debounce timer for wraplength updates
 
         _logger.info("[dashboard] calling _build_ui")
         self._build_ui()
@@ -118,7 +128,7 @@ class ReviewDashboard:
         hdr = ctk.CTkFrame(self.root, fg_color=ACCENT, corner_radius=0, height=50)
         hdr.pack(fill=ctk.X)
         hdr.pack_propagate(False)
-        ctk.CTkLabel(hdr, text="🌙 Evening Review", text_color=BG,
+        ctk.CTkLabel(hdr, text="Evening Review", text_color=BG,
                      font=("Inter", 18, "bold")).pack(side=ctk.LEFT, padx=20)
         ctk.CTkLabel(hdr, text="powered by AI Voice Refiner", text_color=BG,
                      font=("Inter", 12)).pack(side=ctk.RIGHT, padx=20)
@@ -130,48 +140,42 @@ class ReviewDashboard:
         body = ctk.CTkFrame(self.root, fg_color="transparent")
         body.pack(fill=ctk.BOTH, expand=True, padx=8, pady=8)
 
-        # ── Right panel (context sidebar) ─── pack first, expands into available space
+        # ── Right panel (single panel — no tabs) ── pack first, expands
         _logger.info("[dashboard] _build_ui: right panel")
         right_panel = ctk.CTkFrame(body, fg_color=SURFACE, corner_radius=8)
         right_panel.pack(side=ctk.RIGHT, fill=ctk.BOTH, expand=True, padx=(8, 4), pady=4)
 
-        # Right panel: title row
-        ctx_hdr = ctk.CTkFrame(right_panel, fg_color="transparent")
-        ctx_hdr.pack(fill=ctk.X, padx=10, pady=(8, 0))
-        ctk.CTkLabel(ctx_hdr, text="📅 Context", text_color=ACCENT,
-                     font=("Inter", 11, "bold")).pack(side=ctk.LEFT)
+        _ctx_tab = ctk.CTkFrame(right_panel, fg_color="transparent")
+        _ctx_tab.pack(fill=ctk.BOTH, expand=True, padx=2, pady=2)
 
-        # Discard button — shown only when raw transcript is displayed
-        self.discard_btn = ctk.CTkButton(
-            ctx_hdr, text="🗑 Discard", width=80, height=28, font=("Inter", 12),
-            fg_color=RED, text_color=BG, hover_color="#c0506a",
-            command=self._do_redo)
-        _Tooltip(self.discard_btn, "Discard all clips and re-record this step")
-        # Not packed yet — shown/hidden dynamically
-        self._discard_visible = False
+        # ── Context panel header ──────────────────────────────────────────────
+        ctx_hdr = ctk.CTkFrame(_ctx_tab, fg_color="transparent")
+        ctx_hdr.pack(fill=ctk.X, padx=10, pady=(8, 0))
+        ctk.CTkLabel(ctx_hdr, text="Context", text_color=ACCENT,
+                     font=("Inter", 11, "bold")).pack(side=ctk.LEFT)
 
         # Narration controls — right side of title row
         self.regen_btn = ctk.CTkButton(
-            ctx_hdr, text="↺", width=42, height=28, font=("Inter", 16),
+            ctx_hdr, text="Regen", width=48, height=28, font=("Inter", 12),
             fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
             command=self._regen_brief)
         self.regen_btn.pack(side=ctk.RIGHT, padx=(3, 0))
         _Tooltip(self.regen_btn, "Regenerate context brief")
         self.replay_btn = ctk.CTkButton(
-            ctx_hdr, text="↻", width=42, height=28, font=("Inter", 16),
+            ctx_hdr, text="Replay", width=52, height=28, font=("Inter", 12),
             fg_color=SURFACE, text_color=ACCENT, hover_color=OVERLAY,
             command=self._replay_brief)
         self.replay_btn.pack(side=ctk.RIGHT, padx=(3, 0))
         _Tooltip(self.replay_btn, "Replay narration")
         self.stop_btn = ctk.CTkButton(
-            ctx_hdr, text="⏹", width=42, height=28, font=("Inter", 16),
+            ctx_hdr, text="Stop", width=44, height=28, font=("Inter", 12),
             fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
             command=review_engine.stop_narration)
         self.stop_btn.pack(side=ctk.RIGHT, padx=(3, 0))
         _Tooltip(self.stop_btn, "Stop narration")
 
-        # Right panel: EN/HI language toggle + stats label
-        lang_row = ctk.CTkFrame(right_panel, fg_color="transparent")
+        # Context tab: EN/HI language toggle + stats label
+        lang_row = ctk.CTkFrame(_ctx_tab, fg_color="transparent")
         lang_row.pack(fill=ctk.X, padx=10, pady=(6, 0))
 
         self.en_btn = ctk.CTkButton(
@@ -188,28 +192,33 @@ class ReviewDashboard:
                                           font=("Inter", 10))
         self.ctx_days_lbl.pack(side=ctk.RIGHT)
 
-        # Right panel content pane — grid so ctx_text and tasks_outer share height cleanly
+        # Content pane — ctx_scroll expands; tasks panel and focus chart sit below
         _logger.info("[dashboard] _build_ui: content_pane")
-        content_pane = ctk.CTkFrame(right_panel, fg_color="transparent")
+        content_pane = ctk.CTkFrame(_ctx_tab, fg_color="transparent")
         content_pane.pack(fill=ctk.BOTH, expand=True)
-        content_pane.grid_rowconfigure(0, weight=1)   # ctx_text — expands
+        content_pane.grid_rowconfigure(0, weight=1)   # ctx_scroll — expands
         content_pane.grid_rowconfigure(1, weight=0)   # tasks panel — fixed
         content_pane.grid_rowconfigure(2, weight=0)   # focus word chart — fixed
         content_pane.grid_columnconfigure(0, weight=1)
 
-        _logger.info("[dashboard] _build_ui: ctx_text")
-        self.ctx_text = ctk.CTkTextbox(content_pane, fg_color="transparent",
-                                        text_color=SUBTLE, font=("Inter", 15),
-                                        wrap="word", activate_scrollbars=True,
-                                        spacing1=4, spacing2=2, spacing3=6)
-        self.ctx_text.grid(row=0, column=0, sticky="nsew", padx=10, pady=(6, 4))
-        self.ctx_text.insert("end", "Analysing last days…")
-        self.ctx_text.configure(state="disabled")
+        _logger.info("[dashboard] _build_ui: ctx_scroll")
+        self.ctx_scroll = ctk.CTkScrollableFrame(
+            content_pane, fg_color="transparent", corner_radius=0)
+        self.ctx_scroll.grid(row=0, column=0, sticky="nsew", padx=6, pady=(4, 4))
+        self.ctx_scroll.columnconfigure(0, weight=1)
+        self._wrap_after_id = None
+        self.ctx_scroll.bind("<Configure>", self._on_scroll_resize)
+
+        # Fix: nested widgets (CTkTextbox etc.) consume mousewheel before it
+        # reaches the CTkScrollableFrame canvas. Catch at root level instead.
+        self.root.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
+        self.root.bind_all("<Button-4>",   self._on_mousewheel, add="+")
+        self.root.bind_all("<Button-5>",   self._on_mousewheel, add="+")
 
         # Tasks panel — shown only when at the carry-forward step
         _logger.info("[dashboard] _build_ui: tasks panel")
         self.tasks_outer = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
-        ctk.CTkLabel(self.tasks_outer, text="📋 Yesterday's open tasks",
+        ctk.CTkLabel(self.tasks_outer, text="Yesterday's open tasks",
                      text_color=ACCENT, font=("Inter", 10, "bold")).pack(
                      fill=ctk.X, padx=8, pady=(6, 2))
         self.tasks_scroll = ctk.CTkScrollableFrame(
@@ -224,7 +233,7 @@ class ReviewDashboard:
 
         # Focus word chart — bottom of right panel, hidden until data available
         self.focus_frame = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
-        ctk.CTkLabel(self.focus_frame, text="🎯 Focus Trend (7 days)",
+        ctk.CTkLabel(self.focus_frame, text="Focus Trend (7 days)",
                      text_color=ACCENT, font=("Inter", 10, "bold")).pack(
                      fill=ctk.X, padx=8, pady=(6, 2))
         self.focus_canvas = tk.Canvas(self.focus_frame, bg=OVERLAY, highlightthickness=0,
@@ -266,7 +275,7 @@ class ReviewDashboard:
             row = ctk.CTkFrame(steps_frame, fg_color=SURFACE, corner_radius=8)
             row.pack(fill=ctk.X, pady=4, padx=4)
 
-            icon_lbl = ctk.CTkLabel(row, text="○", fg_color="transparent", text_color=SUBTLE,
+            icon_lbl = ctk.CTkLabel(row, text="o", fg_color="transparent", text_color=SUBTLE,
                                 font=("Inter", 16), width=40, anchor="center")
             icon_lbl.pack(side=ctk.LEFT, pady=8)
 
@@ -359,16 +368,19 @@ class ReviewDashboard:
                 btn.configure(fg_color=OVERLAY, text_color=SUBTLE)
 
     def _switch_lang(self, lang):
-        """Switch right-panel language, re-render brief, and narrate."""
+        """Switch right-panel language, update brief widget in place, and narrate."""
         self._ctx_lang = lang
         self._refresh_lang_buttons()
-        if not self._showing_brief:
+        if not self._showing_brief or self._panel_brief_widget is None:
             return
         state = review_engine.load_state()
         if state is None:
             return
         brief = state.get(self._brief_key(lang)) or state.get("context_brief", "")
-        self._set_ctx_text(brief or "No context available.", TEXT if brief else SUBTLE)
+        self._panel_brief_widget.configure(
+            text=brief or "No context available.",
+            text_color=TEXT if brief else SUBTLE,
+        )
         if brief:
             threading.Thread(
                 target=review_engine.narrate, args=(brief, self.config), daemon=True).start()
@@ -412,9 +424,10 @@ class ReviewDashboard:
             self._last_step_times = state["step_times"]
         idx      = state.get("current_step_index", 0)
         total    = len(self.steps)
-        awaiting = state.get("awaiting_more", False)
-        clips    = len(state.get("accumulated_raw", []))
-        busy = state.get("processing", False)
+        awaiting     = state.get("awaiting_more", False)
+        clips        = len(state.get("accumulated_raw", []))
+        synthesising = state.get("synthesising", False)
+        busy         = state.get("processing", False) or synthesising
 
         # Live elapsed time for the current step
         _step_elapsed = ""
@@ -428,7 +441,9 @@ class ReviewDashboard:
             pass
 
         # Subtitle
-        if idx < total:
+        if synthesising:
+            self.subtitle_var.set("Secretary is writing your notes — please wait...")
+        elif idx < total:
             sname = self.steps[idx]["section_name"]
             clip_str = f" · {clips} clip{'s' if clips != 1 else ''}" if awaiting else ""
             self.subtitle_var.set(f"Step {idx+1} of {total}: {sname}{clip_str}")
@@ -446,7 +461,7 @@ class ReviewDashboard:
             st_lbl   = self.status_labels[i]
 
             if i < idx:
-                icon_lbl.configure(text="✅", text_color=GREEN)
+                icon_lbl.configure(text="[ok]", text_color=GREEN)
                 name_lbl.configure(text_color=SUBTLE)
                 st_lbl.configure(text="Saved", text_color=GREEN)
                 frame.configure(fg_color=SURFACE)
@@ -454,18 +469,19 @@ class ReviewDashboard:
                 frame.configure(fg_color=OVERLAY)
                 name_lbl.configure(text_color=TEXT)
                 if busy:
-                    icon_lbl.configure(text="⏳", text_color=YELLOW)
-                    st_lbl.configure(text="Processing…", text_color=YELLOW)
+                    icon_lbl.configure(text="...", text_color=YELLOW)
+                    busy_label = "Writing notes..." if synthesising else "Processing..."
+                    st_lbl.configure(text=busy_label, text_color=YELLOW)
                 elif awaiting:
-                    icon_lbl.configure(text="✓", text_color=ACCENT)
+                    icon_lbl.configure(text="[v]", text_color=ACCENT)
                     st_lbl.configure(
                         text=f"{clips} clip{'s' if clips != 1 else ''} · ready{_step_elapsed}",
                         text_color=ACCENT)
                 else:
-                    icon_lbl.configure(text="🎤", text_color=RED)
+                    icon_lbl.configure(text="[rec]", text_color=RED)
                     st_lbl.configure(text=f"Speak now{_step_elapsed}", text_color=RED)
             else:
-                icon_lbl.configure(text="○", text_color=SUBTLE)
+                icon_lbl.configure(text="o", text_color=SUBTLE)
                 name_lbl.configure(text_color=SUBTLE)
                 st_lbl.configure(text="Pending", text_color=SUBTLE)
                 frame.configure(fg_color=SURFACE)
@@ -474,15 +490,24 @@ class ReviewDashboard:
         streak_n = state.get("streak_current", 0)
         if streak_n != self._last_streak_n:
             self._last_streak_n = streak_n
-            self.streak_lbl.configure(text=f"🔥 {streak_n}" if streak_n > 0 else "")
+            self.streak_lbl.configure(text=f"Streak: {streak_n}" if streak_n > 0 else "")
 
         # Right panel
         self._update_context_panel(state)
 
+        # Focus chart hidden during active review — shown only on completion
+        self.focus_frame.grid_remove()
+
         # Button states
+        if synthesising:
+            record_label = "Writing notes..."
+        elif busy:
+            record_label = "Processing..."
+        else:
+            record_label = "[Rec] Record"
         self.record_btn.configure(
             state="disabled" if busy else "normal",
-            text="⏳ Processing…" if busy else "🎤 Record",
+            text=record_label,
             fg_color=OVERLAY if busy else ACCENT
         )
         self.next_btn.configure(state="normal" if (awaiting and not busy) else "disabled")
@@ -496,22 +521,20 @@ class ReviewDashboard:
     def _regen_brief(self):
         """Bust today's brief cache and regenerate."""
         self._last_context_step = -1
-        self._showing_brief = False
-        self._set_ctx_text("Regenerating…", SUBTLE)
+        self._panel_clear()
+        self._panel_add_brief("Regenerating…", SUBTLE)
+        self.ctx_days_lbl.configure(text="")
         review_engine.regenerate_brief(script_dir, self.config)
 
     # ── Processing spinner ────────────────────────────────────────────────────
 
-    _SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    _SPINNER_FRAMES = ["|", "/", "-", "\\", "|", "/", "-", "\\", "|", "/"]
 
     def _start_spinner(self):
         if self._spinner_running:
             return
         self._spinner_running = True
         self._spinner_idx = 0
-        self._set_ctx_text(
-            "Transcribing your recording…\nThen structuring with AI.\n\nThis takes a few seconds.",
-            YELLOW)
         self._animate_spinner()
 
     def _animate_spinner(self):
@@ -530,114 +553,340 @@ class ReviewDashboard:
             self.root.after_cancel(self._spinner_after)
             self._spinner_after = None
 
-    def _show_discard_btn(self):
-        if not self._discard_visible:
-            self.discard_btn.pack(side=ctk.LEFT, padx=(8, 0))
-            self._discard_visible = True
-
-    def _hide_discard_btn(self):
-        if self._discard_visible:
-            self.discard_btn.pack_forget()
-            self._discard_visible = False
-
     # ── Context panel ─────────────────────────────────────────────────────────
 
-    def _update_context_panel(self, state):
-        """Refresh the right context panel from state. Called from _update_ui."""
-        n = self.config.get("last_n_days_context", 3)
-        per_step = self.config.get("per_step_context", False)
-        idx = state.get("current_step_index", 0)
-        notes_data = state.get("context_notes", [])
-        busy     = state.get("processing", False)
-        awaiting = state.get("awaiting_more", False)
-        clips    = state.get("accumulated_raw", [])
+    def _on_mousewheel(self, event):
+        """Forward mousewheel events to ctx_scroll canvas (Linux Button-4/5 and Windows delta)."""
+        try:
+            canvas = self.ctx_scroll._parent_canvas
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            elif event.delta:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        except Exception:
+            pass
 
-        # ── Processing: show spinner while transcribing / LLM structuring ────────
+    def _on_scroll_resize(self, event=None):
+        """Debounced handler: update wraplength of all panel labels when panel width changes."""
+        if self._wrap_after_id is not None:
+            self.root.after_cancel(self._wrap_after_id)
+        self._wrap_after_id = self.root.after(150, self._apply_wraplength)
+
+    def _apply_wraplength(self):
+        """Set wraplength on every CTkLabel in ctx_scroll to match current panel width."""
+        self._wrap_after_id = None
+        try:
+            w = self.ctx_scroll.winfo_width()
+            if w < 50:
+                return
+            wrap = max(100, w - 28)
+            for widget in self._panel_widgets:
+                if isinstance(widget, ctk.CTkLabel):
+                    widget.configure(wraplength=wrap)
+        except Exception:
+            pass
+
+    def _panel_clear(self):
+        """Destroy all widgets inside ctx_scroll and reset tracking state."""
+        for w in self.ctx_scroll.winfo_children():
+            w.destroy()
+        self._panel_has_brief      = False
+        self._panel_brief_widget   = None
+        self._panel_appended_steps = set()
+        self._panel_widgets        = []
+        self._clip_rows            = []
+        self._clip_zone_frame      = None
+        self._clip_sep_added       = False
+        self._last_clip_count      = -1
+        self._showing_brief        = False
+
+    def _panel_add_label(self, text, color, font=("Inter", 13), bold=False, pady=(4, 2)):
+        """Add a read-only CTkLabel to ctx_scroll. Returns the widget."""
+        weight = "bold" if bold else "normal"
+        lbl = ctk.CTkLabel(
+            self.ctx_scroll, text=text, text_color=color,
+            font=(font[0], font[1], weight),
+            anchor="w", justify="left", wraplength=400,
+        )
+        lbl.pack(fill="x", padx=8, pady=pady)
+        self._panel_widgets.append(lbl)
+        return lbl
+
+    def _panel_add_separator(self, thick=False):
+        """Add a horizontal rule. thick=True for the past/present divider."""
+        color  = ACCENT if thick else OVERLAY
+        height = 2    if thick else 1
+        sep = ctk.CTkFrame(self.ctx_scroll, fg_color=color, height=height, corner_radius=0)
+        sep.pack_propagate(False)   # enforce fixed height — empty frame collapses to 0 without this
+        sep.pack(fill="x", padx=4, pady=(8, 8))
+        self._panel_widgets.append(sep)
+
+    def _panel_add_brief(self, text, color):
+        """Append the AI context brief at the current bottom of the scroll panel."""
+        lbl = self._panel_add_label(text, color, font=("Inter", 13), pady=(6, 4))
+        self._panel_has_brief    = True
+        self._panel_brief_widget = lbl
+        self._showing_brief      = True
+
+    def _panel_add_history(self, section_name, text):
+        """Append a step-history block (section header + past-notes text)."""
+        hdr = self._panel_add_label(
+            f"{section_name}  ·  history",
+            ACCENT, font=("Inter", 11), bold=True, pady=(6, 2))
+        self._panel_add_label(text, SUBTLE, font=("Inter", 12), pady=(2, 6))
+
+    def _panel_scroll_bottom(self):
+        """Scroll ctx_scroll to the bottom so newly appended content is visible."""
+        self.root.after(150, lambda: self.ctx_scroll._parent_canvas.yview_moveto(1.0))
+
+    def _panel_scroll_top(self):
+        """Scroll ctx_scroll to the top."""
+        self.root.after(50, lambda: self.ctx_scroll._parent_canvas.yview_moveto(0.0))
+
+    def _rebuild_clip_zone(self, current_step, clips):
+        """Tear down and rebuild the in-progress clip widgets at bottom of panel."""
+        # Remove old clip zone frame if it exists
+        if self._clip_zone_frame is not None:
+            try:
+                self._clip_zone_frame.destroy()
+            except Exception:
+                pass
+        self._clip_rows       = []
+        self._clip_zone_frame = None
+
+        section      = current_step.get("section_name", "")
+        is_isolated  = current_step.get("isolate_file", False)
+        privacy_note = " — private note" if is_isolated else ""
+
+        # Thick separator before clip zone — added only once per step
+        if not self._clip_sep_added:
+            self._panel_add_separator(thick=True)
+            self._clip_sep_added = True
+
+        # Clip zone container
+        zone = ctk.CTkFrame(self.ctx_scroll, fg_color="transparent")
+        zone.pack(fill="x", padx=4, pady=(0, 8))
+        zone.columnconfigure(0, weight=1)
+        self._clip_zone_frame = zone
+        self._panel_widgets.append(zone)
+
+        # Section header
+        ctk.CTkLabel(
+            zone, text=f"[ {section}{privacy_note} — recording ]",
+            text_color=ACCENT, font=("Inter", 12, "bold"),
+            anchor="w",
+        ).grid(row=0, column=0, columnspan=2, sticky="ew", padx=4, pady=(4, 6))
+
+        for i, clip_text in enumerate(clips):
+            row_frame = ctk.CTkFrame(zone, fg_color=OVERLAY, corner_radius=6)
+            row_frame.grid(row=i + 1, column=0, sticky="ew", padx=2, pady=(0, 4))
+            row_frame.columnconfigure(0, weight=1)
+
+            tb = ctk.CTkTextbox(
+                row_frame, wrap="word", height=72,
+                fg_color="transparent", text_color=GREEN,
+                font=("Inter", 13), activate_scrollbars=False,
+                spacing1=2, spacing2=1, spacing3=2,
+            )
+            tb.grid(row=0, column=0, sticky="ew", padx=(6, 2), pady=4)
+            tb.insert("end", clip_text)
+
+            del_btn = ctk.CTkButton(
+                row_frame, text="x", width=24, height=24,
+                fg_color="transparent", text_color=RED,
+                hover_color=SURFACE, font=("Inter", 12, "bold"),
+                corner_radius=4,
+                command=lambda ci=i: self._delete_clip(ci),
+            )
+            del_btn.grid(row=0, column=1, padx=(2, 6), pady=4, sticky="n")
+            self._clip_rows.append(tb)
+
+        self._panel_scroll_bottom()
+
+    def _clear_clip_zone(self):
+        """Remove the clip zone frame (called after step confirmed or redo)."""
+        if self._clip_zone_frame is not None:
+            try:
+                self._clip_zone_frame.destroy()
+            except Exception:
+                pass
+            self._clip_zone_frame = None
+        self._clip_rows      = []
+        self._clip_sep_added = False
+
+    def _delete_clip(self, clip_idx):
+        """Remove clip at clip_idx from state and trigger clip zone rebuild."""
+        state = review_engine.load_state()
+        if state is None:
+            return
+        clips = list(state.get("accumulated_raw", []))
+        if 0 <= clip_idx < len(clips):
+            clips.pop(clip_idx)
+            state["accumulated_raw"] = clips
+            if not clips:
+                state["awaiting_more"] = False
+            review_engine._save_state(state)
+
+    def _flush_clip_edits(self):
+        """Read edited text from green clip textboxes → write back to state."""
+        if not self._clip_rows:
+            return
+        state = review_engine.load_state()
+        if state is None:
+            return
+        edited = []
+        for tb in self._clip_rows:
+            try:
+                text = tb.get("1.0", "end").strip()
+                if text:
+                    edited.append(text)
+            except Exception:
+                pass
+        if edited:
+            state["accumulated_raw"] = edited
+            review_engine._save_state(state)
+
+    # ── Main context panel update (called every 500 ms) ───────────────────────
+
+    def _update_context_panel(self, state):
+        """Refresh the right context panel from state."""
+        n            = self.config.get("last_n_days_context", 3)
+        per_step     = self.config.get("per_step_context", False)
+        idx          = state.get("current_step_index", 0)
+        notes_data   = state.get("context_notes", [])
+        synthesising = state.get("synthesising", False)
+        busy         = state.get("processing", False) or synthesising
+        awaiting     = state.get("awaiting_more", False)
+        clips        = state.get("accumulated_raw", [])
+        current_step = self.steps[idx] if idx < len(self.steps) else None
+        interview_raw = state.get("interview_raw", {})
+        in_progress  = bool(awaiting and clips and current_step)
+
+        # ── Synthesis lock ────────────────────────────────────────────────────
+        if synthesising:
+            self._stop_spinner()
+            self._hide_tasks_panel()
+            self._clear_clip_zone()
+            self._last_clip_count = -1
+            if not self._panel_has_brief:
+                self._panel_clear()
+                self._panel_add_brief(
+                    "Organising your interview into note sections.\n\n"
+                    "This may take 30–90 seconds.\n\n"
+                    "Please wait — do not close the dashboard.",
+                    YELLOW)
+                self.ctx_days_lbl.configure(text="Secretary writing notes…")
+            return
+
+        # ── Processing / transcribing: spinner ───────────────────────────────
         if busy:
-            self._hide_discard_btn()
             self._start_spinner()
             return
         else:
             self._stop_spinner()
 
-        # ── Clips recorded: show raw transcript so user can decide what to do next
-        if awaiting and clips:
-            joined = "\n\n──\n\n".join(clips)
-            label  = f"📝 Recorded · {len(clips)} clip{'s' if len(clips) != 1 else ''}"
-            self.ctx_days_lbl.configure(text=label)
-            self._set_ctx_text(joined, TEXT)
-            self._show_discard_btn()
-            return
-        self._hide_discard_btn()
-
+        # ── Loading: context not ready yet ───────────────────────────────────
         if not state.get("context_ready"):
-            self._showing_brief = False
-            self.ctx_days_lbl.configure(text=f"last {n} days")
-            self._set_ctx_text("Analysing last days…", SUBTLE)
+            if not self._panel_has_brief:
+                self._panel_clear()
+                self._panel_add_brief("Analysing last days…", SUBTLE)
+                self.ctx_days_lbl.configure(text=f"last {n} days")
             return
 
-        # Always show the AI brief first on initial load, before any per-step content.
-        # Without this guard the per-step branch fires immediately at step 0 (because
-        # idx=0 != _last_context_step=-1) and the brief is never shown.
-        if self._last_context_step == -1:
-            self._last_context_step = idx   # arm per-step: fires on next step change
-            self._showing_brief = True
-            brief = state.get(self._brief_key(self._ctx_lang)) or state.get("context_brief", "")
-            found = len(notes_data)
-            model = (self.config.get("brief_model")
-                     or self.config.get("structure_model")
-                     or "default")
+        # ── Brief: append once at top, never again ────────────────────────────
+        if not self._panel_has_brief:
+            brief     = state.get(self._brief_key(self._ctx_lang)) or state.get("context_brief", "")
+            found     = len(notes_data)
             date_str  = state.get("date", "")
             days_part = f"{found} day(s)" if found else f"{n} days"
-            self.ctx_days_lbl.configure(text=f"{days_part} · {date_str} · {model}")
-            self._set_ctx_text(brief or "No context available.", TEXT if brief else SUBTLE)
-            return
+            self.ctx_days_lbl.configure(text=f"{days_part} · {date_str}")
+            self._panel_add_brief(brief or "No context available.", TEXT if brief else SUBTLE)
+            self._panel_scroll_top()
 
-        # Carry-forward tasks panel: show at the configured step
-        carry_step_id   = self.config.get("carryforward_step_id", 3)
-        current_step    = self.steps[idx] if idx < len(self.steps) else None
-        at_carry_step   = (self.config.get("carryforward_tasks", False)
-                           and current_step
-                           and current_step.get("step_id") == carry_step_id)
-        tasks           = state.get("carryforward_tasks", [])
-        note_date_str   = state.get("carryforward_date", "")
+        # ── Per-step history: append once per section (before first recording) ─
+        current_step_id = str(current_step.get("step_id", "")) if current_step else ""
+        current_in_interview = current_step_id in interview_raw
+        if (per_step and current_step and not in_progress and not current_in_interview):
+            section_name = current_step["section_name"]
+            if section_name not in self._panel_appended_steps:
+                self._panel_appended_steps.add(section_name)
+                self._last_context_step = idx
+                shown = False
+                is_isolated = current_step.get("isolate_file", False)
+                if is_isolated:
+                    n_ctx    = self.config.get("last_n_days_context", 3)
+                    date_str = state.get("date") or datetime.date.today().isoformat()
+                    iso_notes = review_engine.get_isolated_notes(
+                        script_dir, self.config, n_ctx, date_str)
+                    if iso_notes:
+                        lines = [f"{note['date']}:\n{note['content']}"
+                                 for note in reversed(iso_notes)]
+                        self._panel_add_separator()
+                        self._panel_add_history(section_name, "\n\n".join(lines))
+                        shown = True
+                elif notes_data:
+                    lines = []
+                    for note in reversed(notes_data):
+                        snippet = review_engine.extract_step_section(
+                            section_name, note["content"])
+                        if snippet:
+                            lines.append(f"{note['date']}:\n{snippet}")
+                    if lines:
+                        self._panel_add_separator()
+                        self._panel_add_history(section_name, "\n\n".join(lines))
+                        shown = True
+                if shown:
+                    self._panel_scroll_bottom()
 
-        if at_carry_step and tasks:
+        # ── Carryforward tasks panel ──────────────────────────────────────────
+        self._eval_tasks_panel(state, current_step)
+
+        # ── Clip zone: rebuild only when clip count changes ───────────────────
+        n_clips = len(clips) if in_progress else 0
+        if n_clips != self._last_clip_count:
+            self._last_clip_count = n_clips
+            if in_progress and clips:
+                # Merge inline edits from existing textboxes with newly added clips.
+                # e.g. user edits clip1 text, then records clip2:
+                #   edited_existing = [edited_clip1]
+                #   clips (from state) = [original_clip1, clip2]
+                #   merged = [edited_clip1, clip2]
+                edited_existing = []
+                for tb in self._clip_rows:
+                    try:
+                        text = tb.get("1.0", "end").strip()
+                        if text:
+                            edited_existing.append(text)
+                    except Exception:
+                        pass
+                if edited_existing and len(clips) > len(edited_existing):
+                    # New clips were appended to state; preserve edits to old ones
+                    merged = edited_existing + list(clips[len(edited_existing):])
+                    fresh = review_engine.load_state()
+                    if fresh is not None:
+                        fresh["accumulated_raw"] = merged
+                        review_engine._save_state(fresh)
+                    rebuild_clips = merged
+                else:
+                    rebuild_clips = list(clips)
+                self._rebuild_clip_zone(current_step, rebuild_clips)
+            else:
+                self._clear_clip_zone()
+
+    def _eval_tasks_panel(self, state, current_step):
+        """Show or hide the carry-forward task panel based on current step."""
+        carry_step_id = self.config.get("carryforward_step_id", 3)
+        at_carry = (self.config.get("carryforward_tasks", False)
+                    and current_step
+                    and current_step.get("step_id") == carry_step_id)
+        tasks         = state.get("carryforward_tasks", [])
+        note_date_str = state.get("carryforward_date", "")
+        if at_carry and tasks:
             self._show_tasks_panel(tasks, note_date_str)
         else:
             self._hide_tasks_panel()
-
-        if per_step and current_step and idx != self._last_context_step:
-            # Per-step: show section-relevant history when the step changes.
-            is_isolated  = current_step.get("isolate_file", False)
-            section_name = current_step["section_name"]
-            self._last_context_step = idx
-            self._showing_brief = False
-
-            if is_isolated:
-                # Isolated steps (e.g. Wellness) live in separate files — read those directly
-                n = self.config.get("last_n_days_context", 3)
-                date_str = state.get("date") or datetime.date.today().isoformat()
-                iso_notes = review_engine.get_isolated_notes(
-                    script_dir, self.config, n, date_str)
-                if iso_notes:
-                    lines = [f"{note['date']}:\n{note['content']}" for note in reversed(iso_notes)]
-                    self.ctx_days_lbl.configure(text=f"{section_name} · last {len(iso_notes)} day(s)")
-                    self._set_ctx_text("\n\n".join(lines), TEXT)
-                else:
-                    self.ctx_days_lbl.configure(text=section_name)
-                    self._set_ctx_text(f"No {section_name} notes found.", SUBTLE)
-            elif notes_data:
-                lines = []
-                for note in reversed(notes_data):
-                    snippet = review_engine.extract_step_section(section_name, note["content"])
-                    if snippet:
-                        lines.append(f"{note['date']}: {snippet}")
-                if lines:
-                    self.ctx_days_lbl.configure(text=f"{section_name} · last {len(notes_data)} day(s)")
-                    self._set_ctx_text("\n".join(lines), TEXT)
-                # If no entries found, keep showing the existing AI brief — don't replace with error text
-        # else: brief already shown and no step change — nothing to update
 
     # ── Carry-forward task panel ───────────────────────────────────────────────
 
@@ -652,13 +901,24 @@ class ReviewDashboard:
         for widget in self.tasks_scroll.winfo_children():
             widget.destroy()
         for task in tasks:
+            # tasks may be dicts {"text": str, "days_pending": int, "first_seen": str}
+            # or plain strings (legacy). Use first_seen as the note date to update.
+            if isinstance(task, dict):
+                task_text = task["text"]
+                days = task.get("days_pending", 1)
+                task_date = task.get("first_seen", note_date_str)
+                label = f"{task_text}  ({days}d)" if days > 1 else task_text
+            else:
+                task_text = task
+                task_date = note_date_str
+                label = task
             var = ctk.BooleanVar(value=False)
             self._task_vars.append(var)
             cb = ctk.CTkCheckBox(
-                self.tasks_scroll, text=task, variable=var,
+                self.tasks_scroll, text=label, variable=var,
                 font=("Inter", 11), text_color=TEXT,
                 fg_color=ACCENT, hover_color="#b4befe", checkmark_color=BG,
-                command=lambda t=task, v=var: self._on_task_checked(t, note_date_str, v)
+                command=lambda t=task_text, d=task_date, v=var: self._on_task_checked(t, d, v)
             )
             cb.pack(fill=ctk.X, padx=4, pady=2, anchor="w")
         if not self._tasks_showing:
@@ -718,18 +978,12 @@ class ReviewDashboard:
                 fill=SUBTLE, font=("Inter", 9))
         self.focus_frame.grid()
 
-    def _set_ctx_text(self, text, color):
-        self.ctx_text.configure(state="normal")
-        self.ctx_text.delete("1.0", "end")
-        self.ctx_text.insert("end", text)
-        self.ctx_text.configure(state="disabled", text_color=color)
-
     def _show_complete(self):
         self._review_done = True
         self._build_focus_chart()
-        self.subtitle_var.set("✅ Evening Review complete!")
+        self.subtitle_var.set("Evening Review complete!")
         for i in range(len(self.steps)):
-            self.icon_labels[i].configure(text="✅", text_color=GREEN)
+            self.icon_labels[i].configure(text="[ok]", text_color=GREEN)
             self.name_labels[i].configure(text_color=SUBTLE)
             if i < len(self._last_step_times):
                 time_str = f" · {review_engine.fmt_duration(self._last_step_times[i])}"
@@ -772,6 +1026,33 @@ class ReviewDashboard:
         if state.get("processing"):
             messagebox.showinfo("Busy", "Processing is already underway — please wait.")
             return
+
+        # Capture clip text and step name BEFORE clearing
+        captured_clips = []
+        for tb in self._clip_rows:
+            try:
+                text = tb.get("1.0", "end").strip()
+                if text:
+                    captured_clips.append(text)
+            except Exception:
+                pass
+        idx = state.get("current_step_index", 0)
+        current_step = self.steps[idx] if idx < len(self.steps) else None
+        section_name = current_step.get("section_name", "") if current_step else ""
+
+        # Flush any user edits from green clip textboxes before secretary runs
+        self._flush_clip_edits()
+        # Replace clip zone with a persistent "saved" read-only block
+        self._clear_clip_zone()
+        self._last_clip_count = -1
+        if captured_clips and section_name:
+            self._panel_add_separator()
+            self._panel_add_label(
+                f"[ok] {section_name} — saved", GREEN, font=("Inter", 11), bold=True)
+            for clip in captured_clips:
+                self._panel_add_label(clip, SUBTLE, font=("Inter", 12), pady=(2, 4))
+            self._panel_scroll_bottom()
+
         threading.Thread(
             target=self._structure_and_advance,
             args=(state,),

@@ -165,6 +165,37 @@ def load_review_config(script_dir):
     return default_config
 
 
+# ── Review session log ────────────────────────────────────────────────────────
+
+_REVIEW_LOG_FILE = "review_log.json"
+
+
+def _log_review(script_dir, entry):
+    """Append one entry to review_log.json.
+
+    Each entry has at minimum: timestamp, session_date, step_id, step_name, event.
+    Two event types:
+      'clip_recorded'  — raw Whisper text captured for a step
+      'step_structured' — final text written to the vault for a step
+    Never raises; log failures are swallowed so they don't interrupt the review.
+    """
+    try:
+        entry["timestamp"] = datetime.datetime.now().isoformat()
+        log_path = os.path.join(script_dir, _REVIEW_LOG_FILE)
+        data = []
+        if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+            with open(log_path, "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                except Exception:
+                    data = []
+        data.append(entry)
+        with open(log_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        _rlog(f"_log_review: failed to write review_log.json: {e}")
+
+
 # ── State I/O ─────────────────────────────────────────────────────────────────
 
 import fcntl as _fcntl
@@ -388,10 +419,11 @@ def _create_daily_note(file_path, date_str):
             f"---\n\n"
             f"<< [[{prev_day}]] | [[{next_day}]] >>\n\n"
             f"# {date_str}\n\n"
-            f"### Audio\n\n"
-            f"### Meeting\n\n"
             f"### Movement\n\n"
-            f"## Evening Review\n\n"
+            f"### Meeting\n\n"
+            f"### Achievements\n\n"
+            f"### Tomorrow's Priorities\n\n"
+            f"### Focus Word\n\n"
         )
         _rlog("_create_daily_note: template file not found, using hardcoded fallback")
 
@@ -414,23 +446,43 @@ def _ensure_evening_review_section(file_path):
 # ── Last-N-days context ────────────────────────────────────────────────────────
 
 def extract_evening_review_section(note_path):
-    """Extract text under ## Evening Review from a daily note. Returns '' if not found."""
+    """Extract all named review sections (### …) from a daily note for context.
+
+    No longer requires a ## Evening Review parent header — reads any ### section
+    whose name is not 'Audio'. Falls back gracefully on old-format notes that still
+    have a ## Evening Review header.
+    """
+    _SKIP_SECTIONS = {"Audio"}
     try:
         with open(note_path, "r", encoding="utf-8") as f:
             content = f.read()
-        m = re.search(r'^## Evening Review\s*\n(.*?)(?=^## |\Z)',
-                      content, re.MULTILINE | re.DOTALL)
-        if m:
-            return m.group(1).strip()
+        # Split on any ### header; collect (name, body) pairs
+        parts = re.split(r'^### (.+)$', content, flags=re.MULTILINE)
+        # parts = [pre, name, body, name, body, ...]
+        collected = []
+        i = 1
+        while i + 1 < len(parts):
+            name = parts[i].strip()
+            body = parts[i + 1].strip()
+            i += 2
+            if name in _SKIP_SECTIONS or not body:
+                continue
+            collected.append(f"**{name}**\n{body}")
+        if collected:
+            return "\n\n".join(collected)
     except Exception:
         pass
     return ""
 
 
 def extract_step_section(section_name, evening_review_content):
-    """Extract text under ### SectionName from an evening review content string."""
+    """Extract text under a section from an evening review content string.
+
+    extract_evening_review_section converts ### headings to **bold** format,
+    so we search for **SectionName** rather than ### SectionName.
+    """
     m = re.search(
-        r'^### ' + re.escape(section_name) + r'\s*\n(.*?)(?=^### |\Z)',
+        r'^\*\*' + re.escape(section_name) + r'\*\*\s*\n(.*?)(?=^\*\*|\Z)',
         evening_review_content, re.MULTILINE | re.DOTALL
     )
     if m:
@@ -484,10 +536,8 @@ def _tasks_match(norm_a, norm_b):
 def get_pending_tasks(script_dir, config):
     """Scan the last N daily notes and return tasks that are still unchecked.
 
-    For each unchecked task in *yesterday's* Tomorrow's Priorities, the function
-    walks backward through older notes to find the earliest consecutive day the
-    same task appeared.  Days with no note are skipped (no review done ≠ task
-    completed); days with a note that doesn't include the task break the chain.
+    Scans ALL days in the lookback window (not just yesterday) so tasks that
+    were written several days ago but never carried forward are still surfaced.
 
     Config keys used:
       pending_task_lookback_days  — how many days to scan (default 7; 0 = off)
@@ -501,78 +551,57 @@ def get_pending_tasks(script_dir, config):
         return []
 
     today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
-    yesterday_str = yesterday.isoformat()
 
-    # ── Step 1: yesterday's tasks ──────────────────────────────────────────────
-    yesterday_path = get_daily_note_path(script_dir, config, yesterday_str)
-    if not os.path.exists(yesterday_path):
-        _rlog("pending_tasks: no daily note for yesterday, skipping")
-        return []
-    yesterday_evening = extract_evening_review_section(yesterday_path)
-    yesterday_priorities = extract_step_section("Tomorrow's Priorities", yesterday_evening)
-    yesterday_tasks = _parse_priority_tasks(yesterday_priorities)
-    if not yesterday_tasks:
-        _rlog("pending_tasks: no tasks in yesterday's priorities")
-        return []
-
-    # ── Step 2: older days (day -2 … day -lookback) ───────────────────────────
-    older_days = []   # list of {"date": str, "tasks": list|None}
-    for i in range(2, lookback + 1):
+    # ── Step 1: scan ALL days in lookback window ──────────────────────────────
+    # day_data: list of {"date": str, "tasks": list|None}, most-recent first
+    day_data = []
+    for i in range(1, lookback + 1):
         day_str = (today - datetime.timedelta(days=i)).isoformat()
         note_path = get_daily_note_path(script_dir, config, day_str)
         if not os.path.exists(note_path):
-            older_days.append({"date": day_str, "tasks": None})   # no review that day
+            day_data.append({"date": day_str, "tasks": None})
             continue
         evening = extract_evening_review_section(note_path)
         priorities_text = extract_step_section("Tomorrow's Priorities", evening)
-        older_days.append({"date": day_str, "tasks": _parse_priority_tasks(priorities_text)})
+        day_data.append({"date": day_str, "tasks": _parse_priority_tasks(priorities_text)})
 
-    # ── Step 3: build "done" set — task checked on ANY day means it's complete ─
+    # ── Step 2: build "done" set — task checked on ANY day means it's complete ─
     done_norms = set()
-    for task in yesterday_tasks:
-        if task["done"]:
-            done_norms.add(_normalize_task(task["text"]))
-    for day_info in older_days:
+    for day_info in day_data:
         if day_info["tasks"]:
             for task in day_info["tasks"]:
                 if task["done"]:
                     done_norms.add(_normalize_task(task["text"]))
 
-    # ── Step 4: find age of each unchecked yesterday task ─────────────────────
-    pending = []
-    for task in yesterday_tasks:
-        if task["done"]:
+    # ── Step 3: collect all unique unchecked tasks across all days ────────────
+    # Track by normalised text → earliest date seen (to compute days_pending)
+    seen: dict = {}   # norm -> {"text": str, "first_seen": str}
+    for day_info in day_data:
+        if not day_info["tasks"]:
             continue
-        norm = _normalize_task(task["text"])
-        # Skip if completed on any other day
-        if any(_tasks_match(norm, d) for d in done_norms):
-            continue
-
-        # Walk backward: extend first_seen while older days have the same task.
-        # A missing note (tasks=None) is skipped — we can't know.
-        # A present note that lacks the task breaks the chain.
-        first_seen_str = yesterday_str
-        for day_info in older_days:
-            if day_info["tasks"] is None:
-                continue   # no review that day — skip, don't break chain
-            matched = any(
-                not t["done"] and _tasks_match(norm, _normalize_task(t["text"]))
-                for t in day_info["tasks"]
-            )
-            if matched:
-                first_seen_str = day_info["date"]
+        for task in day_info["tasks"]:
+            if task["done"]:
+                continue
+            norm = _normalize_task(task["text"])
+            if any(_tasks_match(norm, d) for d in done_norms):
+                continue   # completed on some other day
+            if norm not in seen:
+                seen[norm] = {"text": task["text"], "first_seen": day_info["date"]}
             else:
-                break      # note exists but task absent — chain starts here
+                # day_data is most-recent-first, so later entries are older
+                seen[norm]["first_seen"] = day_info["date"]
 
-        first_dt = datetime.date.fromisoformat(first_seen_str)
-        days_pending = (yesterday - first_dt).days + 1
+    # ── Step 4: build result list ─────────────────────────────────────────────
+    pending = []
+    for norm, info in seen.items():
+        first_dt = datetime.date.fromisoformat(info["first_seen"])
+        days_pending = (today - first_dt).days
         pending.append({
-            "text": task["text"],
+            "text": info["text"],
             "days_pending": days_pending,
-            "first_seen": first_seen_str,
+            "first_seen": info["first_seen"],
         })
-        _rlog(f"pending_tasks: '{task['text'][:40]}' — {days_pending} day(s)")
+        _rlog(f"pending_tasks: '{info['text'][:40]}' — {days_pending} day(s)")
 
     pending.sort(key=lambda x: x["days_pending"], reverse=True)
     return pending
@@ -878,7 +907,7 @@ def _run_context_brief(script_dir, config, state):
                 notes_block += f"--- {note['date']} ---\n{note['content']}\n\n"
             try:
                 main_config = _utils.load_config(script_dir)
-                host  = main_config.get("OLLAMA_HOST", "http://localhost:11434")
+                host  = config.get("ollama_host") or main_config.get("OLLAMA_HOST", "http://localhost:11434")
                 temp  = main_config.get("TEMPERATURE", 0.3)
                 default_model = config.get("structure_model") or main_config.get("OLLAMA_MODELS", {}).get("en", "qwen2.5:3b")
 
@@ -925,13 +954,6 @@ def _run_context_brief(script_dir, config, state):
         _rlog("context_brief: state updated with context_ready=True")
         if notes_data:
             narrate(brief, config, blocking=True)
-
-        # Narrate streak after brief (blocking so mic doesn't open mid-speech)
-        if config.get("show_streak", True):
-            streak_n = live_state.get("streak_current", 0)
-            if streak_n > 0:
-                streak_text = f"आपकी लगातार {streak_n} दिनों की streak है!"
-                narrate(streak_text, config, blocking=True)
 
         # Narrate weekly focus word trend on Sundays (blocking)
         if config.get("focus_word_trend", True):
@@ -1221,6 +1243,7 @@ def initialize_review(script_dir, date_str=None):
         "last_written": None,
         "awaiting_more": False,
         "accumulated_raw": [],
+        "interview_raw": {},         # step_id → combined raw text, filled during interview
         "step_started_at": now.isoformat(),  # timer for per-step duration tracking
         "step_times": [],                    # seconds per step, appended at each advance/skip/complete
     }
@@ -1235,10 +1258,10 @@ def initialize_review(script_dir, date_str=None):
         state["context_ready"] = True
         state["context_notes"] = []
 
-    # Carry-forward: read yesterday's unchecked tasks now (fast — just file parse)
+    # Carry-forward: scan last N days for unchecked tasks (multi-day, age-aware)
     if config.get("carryforward_tasks", False):
         prev_date = (datetime.date.fromisoformat(date_str) - datetime.timedelta(days=1)).isoformat()
-        state["carryforward_tasks"] = _read_unchecked_tasks(script_dir, config, date_str)
+        state["carryforward_tasks"] = get_pending_tasks(script_dir, config)
         state["carryforward_date"] = prev_date
     else:
         state["carryforward_tasks"] = []
@@ -1324,8 +1347,8 @@ def write_step_to_note(script_dir, config, step, structured_text, state):
     state["last_written"] = {"file": file_path, "section": section_name, "offset": write_offset}
     _save_state(state)
 
-    # Track focus word for weekly trend (step 1 only, non-isolated)
-    if (step.get("step_id") == 1
+    # Track focus word for weekly trend (Focus Word section only, non-isolated)
+    if (section_name == "Focus Word"
             and not is_isolated
             and config.get("focus_word_trend", True)):
         _append_focus_word(script_dir, date_str, structured_text.strip())
@@ -1499,22 +1522,36 @@ def structure_and_advance(script_dir, engine_instance, config):
             _rlog("structure_and_advance: no accumulated raw, treating as skip")
             skip_step(script_dir, state, config)
         else:
-            _rlog(f"structure_and_advance: structuring '{step_name}' ({len(raw_list)} clips)")
-            if step.get("refine", True):
-                tmpl            = step.get("structure_prompt", "Reformat as clear bullet points:\n{raw_text}")
-                full_prompt     = tmpl.replace("{raw_text}", raw_combined)
-                struct_model    = config.get("structure_model") or None
-                structured_text = engine_instance.refine_with_prompt(full_prompt, structure_model=struct_model)
+            if step.get("isolate_file", False):
+                # Wellness and other isolated steps: write immediately to their own file.
+                # refine=False for these so use raw text directly.
+                _rlog(f"structure_and_advance: isolated step '{step_name}' — writing immediately")
+                if engine_instance is not None:
+                    engine_instance.log(raw_combined, raw_combined,
+                                        mode=f"review:{step_name}", model="review_engine")
+                state["accumulated_raw"] = []
+                state["awaiting_more"]   = False
+                write_step_to_note(script_dir, config, step, raw_combined, state)
+                # Log isolated steps to review_log.json as both raw and structured
+                # (they are written verbatim — no secretary LLM involved)
+                _log_review(script_dir, {
+                    "session_date":    state.get("date", ""),
+                    "step_id":         step.get("step_id", ""),
+                    "step_name":       step_name,
+                    "event":           "step_structured",
+                    "raw_text":        raw_combined,
+                    "structured_text": raw_combined,
+                    "note":            "isolated step — written verbatim",
+                })
             else:
-                structured_text = raw_combined
+                # Secretary model: accumulate raw interview text — LLM synthesis runs after
+                # the final step in _secretary_synthesis() called from complete_review().
+                _rlog(f"structure_and_advance: storing '{step_name}' in interview_raw ({len(raw_list)} clips)")
+                step_id = str(step.get("step_id", step_name))
+                state.setdefault("interview_raw", {})[step_id] = raw_combined
+                state["accumulated_raw"] = []
+                state["awaiting_more"]   = False
 
-            engine_instance.log(raw_combined, structured_text,
-                                 mode=f"review:{step_name}", model="review_engine")
-            _rlog(f"structure_and_advance: structured preview='{structured_text[:80]}'")
-
-            state["accumulated_raw"] = []
-            state["awaiting_more"]   = False
-            write_step_to_note(script_dir, config, step, structured_text, state)
             advance_step(script_dir, state, config)
 
         still_active, _ = is_review_active(script_dir)
@@ -1585,19 +1622,185 @@ def _generate_and_append_summary(script_dir, daily_note_path, date_str):
         _rlog(f"_generate_and_append_summary: ERROR: {e}")
 
 
+def _secretary_synthesis(script_dir, config, state, daily_note_path):
+    """One LLM call that reads all raw interview answers and writes each note section.
+
+    The 'secretary' sees the full interview context at once, so it can:
+    - Route meeting details mentioned in Movement into ### Meeting
+    - Pull action items from any answer into ### Tomorrow's Priorities
+    - Avoid duplication across sections
+
+    Isolated steps (Wellness) are excluded — they are written immediately during the
+    interview.  Skipped steps are excluded — they write their skip_default immediately
+    via skip_step().  Only steps with recorded content in interview_raw are processed.
+    """
+    steps = config.get("review_steps", [])
+    interview_raw = state.get("interview_raw", {})
+
+    # Build per-step lines for the transcript, preserving conversation order
+    transcript_lines = []
+    recorded_sections = []
+    for step in steps:
+        if step.get("isolate_file", False):
+            continue
+        step_id  = str(step.get("step_id", step.get("section_name", "")))
+        raw      = interview_raw.get(step_id, "").strip()
+        if not raw:
+            continue  # skipped step — already written via skip_step()
+        section  = step.get("section_name", "")
+        question = step.get("prompt_notification", f"Tell me about {section}.")
+        # Strip "Step N/6: " prefix from prompt_notification for cleaner display
+        question = re.sub(r'^Step \d+/\d+:\s*', '', question)
+        transcript_lines.append(f"[{section}]\nQ: {question}\nA: {raw}")
+        recorded_sections.append(section)
+
+    if not transcript_lines:
+        _rlog("_secretary_synthesis: no recorded interview data — nothing to synthesise")
+        return
+
+    transcript = "\n\n".join(transcript_lines)
+
+    # Build the output template listing only the sections that need to be filled.
+    # Sections already filled by skip_default are NOT listed here.
+    section_formats = {
+        "Movement":             "[1–2 plain sentences about physical movement/location.]",
+        "Meeting":              "[Per meeting: **Meeting:** <title>\\n- Time: / Place: / Attendees: / Chairperson: / Discussion: / Decisions: •]",
+        "Achievements":         "[Numbered paragraphs: 1. First achievement…  2. Second…]",
+        "Tomorrow's Priorities":"[Checkbox list: - [ ] task. Include action items from ALL sections.]",
+        "Focus Word":           "[Single word or short phrase only.]",
+    }
+    output_blocks = "\n\n".join(
+        f"### {s}\n{section_formats.get(s, '[content]')}"
+        for s in recorded_sections
+    )
+
+    prompt = (
+        "You are an executive secretary writing a professional's daily review notes "
+        "from a voice interview transcript.\n\n"
+        "Read carefully. Some answers may contain information relevant to OTHER sections:\n"
+        "- Movement answers may mention meetings → extract into ### Meeting\n"
+        "- Any answer may mention tasks for tomorrow → add to ### Tomorrow's Priorities\n"
+        "- Do not duplicate content across sections\n"
+        "- Write concisely and professionally\n"
+        "- If a section has no relevant information, write a single dash (-)\n"
+        "- Output ONLY the section blocks shown below, nothing else\n\n"
+        f"INTERVIEW TRANSCRIPT:\n{transcript}\n\n"
+        f"OUTPUT:\n{output_blocks}"
+    )
+
+    host  = config.get("ollama_host", "http://localhost:11434")
+    # Prefer a dedicated secretary_model (qwen2.5:3b works well for English-structured
+    # output); fall back to the general structure_model if not set.
+    model = config.get("secretary_model") or config.get("structure_model", "")
+
+    def _fallback_write():
+        """If LLM synthesis fails, write raw interview text directly under each section."""
+        _rlog("_secretary_synthesis: using raw-text fallback")
+        send_notification("Daily Review — Note", "AI organisation failed — raw notes saved.")
+        for step in steps:
+            if step.get("isolate_file", False):
+                continue
+            step_id  = str(step.get("step_id", step.get("section_name", "")))
+            raw      = interview_raw.get(step_id, "").strip()
+            section  = step.get("section_name", "")
+            if raw and section:
+                try:
+                    _fill_section(daily_note_path, section, raw)
+                except Exception as fe:
+                    _rlog(f"_secretary_synthesis fallback: error writing '{section}': {fe}")
+
+    if not model:
+        _rlog("_secretary_synthesis: no model configured — skipping")
+        _fallback_write()
+        return
+
+    _rlog(f"_secretary_synthesis: calling '{model}' with {len(recorded_sections)} sections")
+    try:
+        result = _utils.call_ollama(host, model, prompt, stop_tokens=[], temperature=0.2, timeout=300)
+    except Exception as e:
+        _rlog(f"_secretary_synthesis: LLM call failed: {e}")
+        _fallback_write()
+        return
+
+    # call_ollama returns a dict {"response": "...", ...} or {"error": "..."}
+    if isinstance(result, dict):
+        if "error" in result:
+            _rlog(f"_secretary_synthesis: model error: {result['error']}")
+            _fallback_write()
+            return
+        raw_response = result.get("response", "")
+    else:
+        raw_response = str(result)
+
+    raw_response = raw_response.strip()
+    if not raw_response:
+        _rlog("_secretary_synthesis: empty response from model")
+        _fallback_write()
+        return
+
+    _rlog(f"_secretary_synthesis: response ({len(raw_response)} chars), preview='{raw_response[:120]}'")
+
+    # Parse response: split on ### headers
+    parts = re.split(r'^### (.+)$', raw_response, flags=re.MULTILINE)
+    # parts = [preamble, section_name, content, section_name, content, ...]
+    i = 1
+    while i + 1 < len(parts):
+        section_name = parts[i].strip()
+        content      = parts[i + 1].strip()
+        i += 2
+        if not content or content == "-":
+            _rlog(f"_secretary_synthesis: no content for '{section_name}', skipping")
+            continue
+        _rlog(f"_secretary_synthesis: writing '{section_name}' ({len(content)} chars)")
+        try:
+            _fill_section(daily_note_path, section_name, content)
+        except Exception as e:
+            _rlog(f"_secretary_synthesis: error writing '{section_name}': {e}")
+
+        # Log structured output to review_log.json (raw_text comes from interview_raw)
+        matched_step = next(
+            (s for s in steps if s.get("section_name", "").lower() == section_name.lower()),
+            None,
+        )
+        raw_for_step = ""
+        if matched_step:
+            raw_for_step = interview_raw.get(str(matched_step.get("step_id", "")), "")
+        _log_review(script_dir, {
+            "session_date":    state.get("date", ""),
+            "step_id":         matched_step.get("step_id", "") if matched_step else "",
+            "step_name":       section_name,
+            "event":           "step_structured",
+            "raw_text":        raw_for_step,
+            "structured_text": content,
+        })
+
+        # Track focus word separately (stored in jsonl for trend)
+        if section_name == "Focus Word" and config.get("focus_word_trend", True):
+            date_str = state.get("date", datetime.date.today().isoformat())
+            _append_focus_word(script_dir, date_str, content)
+
+
 def complete_review(script_dir, engine_instance, state, config):
     date_str = state.get("date", datetime.date.today().isoformat())
     daily_note_path = get_daily_note_path(script_dir, config, date_str)
 
     _rlog(f"complete_review: date={date_str} daily_note={daily_note_path}")
 
-    # Ensure daily note exists
+    # Ensure daily note exists before synthesis writes to it
     if not os.path.exists(daily_note_path):
         try:
             _create_daily_note(daily_note_path, date_str)
             _rlog(f"complete_review: created daily note at {daily_note_path}")
         except Exception as e:
             _rlog(f"complete_review: ERROR creating daily note: {e}")
+
+    # Secretary synthesis: one LLM call organises all interview_raw into note sections.
+    # Must run BEFORE state is deleted (needs interview_raw).
+    # Set synthesising=True so the dashboard shows a locked spinner during this phase.
+    state["synthesising"] = True
+    _save_state(state)
+    send_notification("Daily Review — Writing Notes", "Secretary is organising your notes…")
+    _secretary_synthesis(script_dir, config, state, daily_note_path)
 
     # Update streak before deleting state so the dashboard's final poll tick
     # can display the newly-incremented value before _show_complete() fires.
@@ -1624,7 +1827,7 @@ def complete_review(script_dir, engine_instance, state, config):
         milestone_text = f"वाह! {_STREAK_MILESTONES[new_n]} लगातार समीक्षा के! बहुत शानदार!"
         narrate(milestone_text, config)
 
-    send_notification("Evening Review Complete", "All steps done! Generating summary in background...")
+    send_notification("Evening Review Complete", "Notes written to your vault. Great work!")
     streak_n = state.get("streak_current", 0)
     streak_str = f"🔥 Streak: {streak_n} day{'s' if streak_n != 1 else ''}\n" if streak_n > 0 else ""
     send_telegram(
@@ -1632,13 +1835,16 @@ def complete_review(script_dir, engine_instance, state, config):
         config
     )
 
-    t = threading.Thread(
-        target=_generate_and_append_summary,
-        args=(script_dir, daily_note_path, date_str),
-        daemon=True
-    )
-    t.start()
-    _rlog("complete_review: background summary thread started")
+    if config.get("generate_daily_summary", False):
+        t = threading.Thread(
+            target=_generate_and_append_summary,
+            args=(script_dir, daily_note_path, date_str),
+            daemon=True
+        )
+        t.start()
+        _rlog("complete_review: background summary thread started")
+    else:
+        _rlog("complete_review: generate_daily_summary=false, skipping summary")
 
 
 def check_startup_state(script_dir):

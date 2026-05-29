@@ -8,7 +8,7 @@
   "last_n_days_context": 3,
   "voice_narration": true,
   "carryforward_tasks": true,
-  "carryforward_step_id": 3,
+  "carryforward_step_id": 5,
   "show_streak": true,
   "focus_word_trend": true,
   "morning_briefing_enabled": true,
@@ -19,62 +19,8 @@
   "review_steps": [
     {
       "step_id": 1,
-      "section_name": "Focus Word",
-      "prompt_notification": "Step 1/6: Speak today's core focus word or overarching theme.",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}",
-      "narration_variants": [
-        "दोस्त, आज आपका ध्यान सबसे ज़्यादा किस चीज़ पर रहा?",
-        "यार, आज किस बात ने आपका सबसे ज़्यादा ध्यान खींचा?",
-        "बताइए, आज का आपका मुख्य फोकस क्या था?",
-        "अरे दोस्त, आज दिन भर आप किस चीज़ पर सबसे ज़्यादा ध्यान देते रहे?",
-        "मित्र, आज आपकी सबसे बड़ी प्राथमिकता क्या रही?"
-      ]
-    },
-    {
-      "step_id": 2,
-      "section_name": "Achievements",
-      "prompt_notification": "Step 2/6: What did you accomplish, build, or unblock today?",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Convert this voice note into a concise bullet-point list of achievements. Each bullet must start with a past-tense action verb. Output only the bullet points, no headings:\n{raw_text}",
-      "narration_variants": [
-        "दोस्त, आज आपने क्या-क्या किया? अपनी उपलब्धियाँ बताइए",
-        "यार, आज आपने कौन-कौन से अच्छे काम पूरे किए?",
-        "मित्र, आज कौन से काम पूरे हुए, ज़रा बताइए",
-        "बताइए, आज आपने क्या हासिल किया? कोई रुकावट भी पार की?",
-        "तो बताइए, आज आपने क्या-क्या पूरा किया?",
-        "So what did you get done today? Speak your wins."
-      ]
-    },
-    {
-      "step_id": 3,
-      "section_name": "Tomorrow's Priorities",
-      "prompt_notification": "Step 3/6: What tasks need immediate attention tomorrow?",
-      "section_fill": false,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}",
-      "narration_variants": [
-        "अच्छा दोस्त, कल के लिए आपकी क्या योजना है?",
-        "यार, कल सबसे पहले किस काम पर ध्यान देना है?",
-        "बताइए, कल आपकी सबसे ज़रूरी प्राथमिकताएँ क्या हैं?",
-        "कल के लिए कौन से काम सबसे अधिक ज़रूरी हैं, ज़रा बताइए",
-        "तो बताइए, कल सुबह सबसे पहले किस काम पर ध्यान देंगे?",
-        "What needs your attention first thing tomorrow?"
-      ],
-      "skip_default": "- [ ] (no priorities noted)"
-    },
-    {
-      "step_id": 4,
       "section_name": "Wellness Log",
-      "prompt_notification": "Step 4/6: Any wellness or personal reflections? (Speak or Skip).",
+      "prompt_notification": "Step 1/6: Any wellness or personal reflections? (Speak or Skip).",
       "section_fill": false,
       "isolate_file": true,
       "skippable": true,
@@ -90,27 +36,9 @@
       ]
     },
     {
-      "step_id": 5,
-      "section_name": "Meeting",
-      "prompt_notification": "Step 5/6: Summarise today's meetings — decisions made and actions assigned.",
-      "section_fill": true,
-      "isolate_file": false,
-      "skippable": true,
-      "refine": true,
-      "structure_prompt": "Summarise this meeting note into structured bullet points. Group under two sub-sections labelled 'Decisions:' and 'Actions:'. Output only the bullet points:\n{raw_text}",
-      "narration_variants": [
-        "मित्र, आज की बैठकों में क्या हुआ? लिए गए फैसले और तय काम बताइए",
-        "यार, आज कौन-कौन सी बैठकें हुईं और उनसे क्या नतीजा निकला?",
-        "बताइए दोस्त, आज की बैठकों का सार क्या रहा?",
-        "आज की बैठकों में क्या तय हुआ और किसे क्या काम मिला?",
-        "तो बताइए, आज की बैठकों में लिए गए फैसले और सौंपे गए काम क्या हैं?",
-        "Summarise today's meetings — decisions made and actions assigned."
-      ]
-    },
-    {
-      "step_id": 6,
+      "step_id": 2,
       "section_name": "Movement",
-      "prompt_notification": "Step 6/6: Any movement, exercise, or physical activity today?",
+      "prompt_notification": "Step 2/6: Any movement, exercise, or physical activity today?",
       "section_fill": true,
       "isolate_file": false,
       "skippable": true,
@@ -124,7 +52,79 @@
         "तो बताइए, आज आपने कोई व्यायाम या सक्रियता रखी?",
         "Any movement, exercise, or physical activity today?"
       ],
-      "skip_default": "only office"
+      "skip_default": "At office (no dedicated physical activity)"
+    },
+    {
+      "step_id": 3,
+      "section_name": "Meeting",
+      "prompt_notification": "Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.",
+      "section_fill": true,
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true,
+      "structure_prompt": "Summarise this voice note into one entry per meeting. For each meeting use this format:\n**Meeting:** <short title or topic>\n- Time: <time if mentioned>\n- Place: <location if mentioned>\n- Attendees: <names or roles if mentioned>\n- Chairperson: <name if mentioned>\n- Discussion: <brief summary of what was discussed>\n- Decisions: <decisions taken, one per line starting with •>\n\nIf multiple meetings are described, repeat the block for each. Output only the structured entries, no extra commentary:\n{raw_text}",
+      "narration_variants": [
+        "मित्र, आज की बैठकों में क्या हुआ? समय, जगह, कौन थे, और क्या तय हुआ — बताइए",
+        "यार, आज कौन-कौन सी बैठकें हुईं? किसने किया चेयर, क्या चर्चा हुई और क्या फैसला?",
+        "बताइए दोस्त, आज की बैठकों का सार क्या रहा?",
+        "आज की बैठकों में क्या तय हुआ? समय, स्थान और फैसले बताइए",
+        "तो बताइए, आज कौन सी बैठकें हुईं और उनमें क्या निर्णय लिए गए?",
+        "Describe today's meetings — time, place, who attended, and what was decided."
+      ]
+    },
+    {
+      "step_id": 4,
+      "section_name": "Achievements",
+      "prompt_notification": "Step 4/6: What did you accomplish, build, or unblock today?",
+      "section_fill": true,
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true,
+      "structure_prompt": "Convert this voice note into numbered paragraphs of achievements. Write each achievement as a short, clear paragraph starting with '1.', '2.', '3.' etc. Each paragraph should begin with a past-tense action verb and describe what was done and why it matters. Output only the numbered paragraphs, no headings:\n{raw_text}",
+      "narration_variants": [
+        "दोस्त, आज आपने क्या-क्या किया? अपनी उपलब्धियाँ बताइए",
+        "यार, आज आपने कौन-कौन से अच्छे काम पूरे किए?",
+        "मित्र, आज कौन से काम पूरे हुए, ज़रा बताइए",
+        "बताइए, आज आपने क्या हासिल किया? कोई रुकावट भी पार की?",
+        "तो बताइए, आज आपने क्या-क्या पूरा किया?",
+        "So what did you get done today? Speak your wins."
+      ]
+    },
+    {
+      "step_id": 5,
+      "section_name": "Tomorrow's Priorities",
+      "prompt_notification": "Step 5/6: What tasks need immediate attention tomorrow?",
+      "section_fill": true,
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true,
+      "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}",
+      "narration_variants": [
+        "अच्छा दोस्त, कल के लिए आपकी क्या योजना है?",
+        "यार, कल सबसे पहले किस काम पर ध्यान देना है?",
+        "बताइए, कल आपकी सबसे ज़रूरी प्राथमिकताएँ क्या हैं?",
+        "कल के लिए कौन से काम सबसे अधिक ज़रूरी हैं, ज़रा बताइए",
+        "तो बताइए, कल सुबह सबसे पहले किस काम पर ध्यान देंगे?",
+        "What needs your attention first thing tomorrow?"
+      ],
+      "skip_default": "- [ ] (no priorities noted)"
+    },
+    {
+      "step_id": 6,
+      "section_name": "Focus Word",
+      "prompt_notification": "Step 6/6: Speak today's core focus word or overarching theme.",
+      "section_fill": true,
+      "isolate_file": false,
+      "skippable": true,
+      "refine": true,
+      "structure_prompt": "Extract the single core focus word or theme from this voice note. Output only the word or short phrase, nothing else:\n{raw_text}",
+      "narration_variants": [
+        "दोस्त, आज आपका ध्यान सबसे ज़्यादा किस चीज़ पर रहा?",
+        "यार, आज किस बात ने आपका सबसे ज़्यादा ध्यान खींचा?",
+        "बताइए, आज का आपका मुख्य फोकस क्या था?",
+        "अरे दोस्त, आज दिन भर आप किस चीज़ पर सबसे ज़्यादा ध्यान देते रहे?",
+        "मित्र, आज आपकी सबसे बड़ी प्राथमिकता क्या रही?"
+      ]
     }
   ],
   "ui_narrations": {
@@ -137,11 +137,13 @@
   "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-ryan-high.onnx",
   "piper_model_hi": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
   "per_step_context": true,
+  "ollama_host": "http://localhost:11434",
   "structure_model": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
+  "secretary_model": "qwen2.5:3b",
   "context_brief_language": "en",
   "brief_model_en": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
   "brief_model_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",
-  "voice_control": true,
+  "voice_control": false,
   "voice_control_threshold": 500,
   "evening_reminder_enabled": true,
   "evening_reminder_time": "21:00",

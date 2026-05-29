@@ -7,8 +7,12 @@ modification date: {{mod_date}}
 
 # {{date}}
 
-## Evening Review
+### Movement
 
 ### Meeting
 
-### Movement
+### Achievements
+
+### Tomorrow's Priorities
+
+### Focus Word

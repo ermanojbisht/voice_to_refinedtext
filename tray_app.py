@@ -45,6 +45,7 @@ class VoiceAssistantTray:
         self.is_in_review = False
         self.review_config = None
         self.review_state = None
+        self._auto_advance_timer = None   # fires after silence to auto-advance step
 
         # Icons
         self.icons = {
@@ -100,6 +101,7 @@ class VoiceAssistantTray:
                 lambda: review_engine.replay_narration(self._get_active_config()),
                 next_fn=lambda: self.next_step_review() if self.is_in_review else None,
                 skip_fn=lambda: self.skip_review_step() if self.is_in_review else None,
+                back_fn=lambda: self.redo_review_step() if self.is_in_review else None,
             )
             _tlog("voice_control: wake word listener started")
         except ImportError:
@@ -329,8 +331,78 @@ class VoiceAssistantTray:
         step_name = step.get("section_name", "this step")
         _tlog(f"Accumulated clip {clip_count} for step '{step_name}'")
 
+        # Log each clip to review_log.json (mirrors log.json for normal mode)
+        review_engine._log_review(self.script_dir, {
+            "session_date": self.review_state.get("review_date", ""),
+            "step_id":      step.get("step_id", ""),
+            "step_name":    step_name,
+            "clip_number":  clip_count,
+            "event":        "clip_recorded",
+            "raw_text":     raw_text,
+        })
+
         review_engine.send_awaiting_notification(self.review_state, self.review_config)
         self._refresh_menu()
+
+        # Prompt the user to add more or move on.
+        # Use Hindi when configured; mention voice keywords only when voice_control is on.
+        voice_on = self.review_config.get("voice_control", False) if self.review_config else False
+        lang     = (self.review_config or {}).get("context_brief_language", "en")
+        if lang == "hi":
+            prompt_text = (
+                "नोट हो गया। कुछ और जोड़ना है? 'आगे' बोलें या 'Next Step' दबाएं।"
+                if voice_on else
+                "नोट हो गया। और बोलना हो तो बोलें, या 'Next Step' दबाएं।"
+            )
+        else:
+            prompt_text = (
+                "Noted. Anything to add? Say 'next' to continue."
+                if voice_on else
+                "Noted. Record more, or click Next Step when ready."
+            )
+        review_engine.narrate(prompt_text, self.review_config, blocking=False)
+
+        # Auto-advance timer only runs in voice-control mode.
+        # In click-driven mode the user explicitly clicks Next Step.
+        if voice_on:
+            self._reset_auto_advance_timer()
+
+    def _cancel_auto_advance_timer(self):
+        """Cancel any pending auto-advance timer."""
+        if self._auto_advance_timer is not None:
+            self._auto_advance_timer.cancel()
+            self._auto_advance_timer = None
+
+    def _reset_auto_advance_timer(self):
+        """Cancel existing timer and start a fresh 10-second countdown.
+
+        When the timer fires it narrates a brief prompt then calls next_step_review(),
+        exactly as if the user had said 'next'. Cancelled if the user records another clip,
+        presses Next Step, skips, or redoes the step.
+        """
+        self._cancel_auto_advance_timer()
+
+        def _fire():
+            if not self.is_in_review:
+                return
+            # If TTS is still speaking, postpone to avoid intermingling.
+            if review_engine.is_narrating():
+                _tlog("auto-advance timer: narration active — postponing 5s")
+                self._auto_advance_timer = threading.Timer(5.0, _fire)
+                self._auto_advance_timer.daemon = True
+                self._auto_advance_timer.start()
+                return
+            _tlog("auto-advance timer fired")
+            review_engine.narrate(
+                "ठीक है, अगले सवाल पर चलते हैं। / Moving to the next question.",
+                self.review_config,
+                blocking=True,
+            )
+            self.next_step_review()
+
+        self._auto_advance_timer = threading.Timer(10.0, _fire)
+        self._auto_advance_timer.daemon = True
+        self._auto_advance_timer.start()
 
     def _run_normal_mode(self, raw_text):
         """Normal mode: refine → clipboard → optional direct typing."""
@@ -446,6 +518,7 @@ class VoiceAssistantTray:
     def next_step_review(self, icon=None, item=None):
         """Trigger structuring + advance in a background thread so the menu stays responsive."""
         _tlog("next_step_review called")
+        self._cancel_auto_advance_timer()
         if not self.review_config:
             _tlog("next_step_review: no review_config, ignoring")
             return
@@ -494,6 +567,7 @@ class VoiceAssistantTray:
 
     def skip_review_step(self, icon=None, item=None):
         _tlog("skip_review_step called")
+        self._cancel_auto_advance_timer()
         if not self.review_config:
             return
         state = self._load_review_state_or_finish()
@@ -510,6 +584,7 @@ class VoiceAssistantTray:
 
     def redo_review_step(self, icon=None, item=None):
         _tlog("redo_review_step called")
+        self._cancel_auto_advance_timer()
         if not self.review_config:
             return
         state = self._load_review_state_or_finish()
@@ -530,6 +605,7 @@ class VoiceAssistantTray:
 
     def _review_finished(self):
         _tlog("_review_finished called")
+        self._cancel_auto_advance_timer()
         self.is_in_review = False
         self.review_state = None
         self.review_config = None

@@ -93,15 +93,16 @@ class ConfigApp:
 
         self._build_ui()
         self._load_ollama_models()
+        self._load_review_ollama_models()
 
     def _build_ui(self):
         self.tabview = ctk.CTkTabview(self.root, fg_color=SURFACE, segmented_button_selected_color=ACCENT, segmented_button_selected_hover_color="#b4befe")
         self.tabview.pack(fill="both", expand=True, padx=20, pady=(10, 20))
 
-        self.tab1 = self.tabview.add("🎙 Voice Refiner")
-        self.tab2 = self.tabview.add("🌙 Evening Review")
-        self.tab3 = self.tabview.add("📱 Notifications")
-        self.tab4 = self.tabview.add("⚙ Features")
+        self.tab1 = self.tabview.add("Voice Refiner")
+        self.tab2 = self.tabview.add("Evening Review")
+        self.tab3 = self.tabview.add("Notifications")
+        self.tab4 = self.tabview.add("Features")
 
         # Scrollable frames for tabs
         self.scroll1 = ctk.CTkScrollableFrame(self.tab1, fg_color="transparent")
@@ -288,58 +289,77 @@ class ConfigApp:
 
         self._on_tts_engine_change(self.tts_engine_var.get())  # set initial visibility
 
-        _section(f, "🤖  Step Structuring Model", 26)
-        _note(f, "Which Ollama model converts your voice clips into formatted notes.", 27)
-        _label(f, "Structuring Model:", 28)
+        _section(f, "🤖  AI Models for Review", 26)
+        _note(f, "The Secretary Model organises your interview into note sections after the review.\n"
+                 "The Context Brief Model generates the summary of past days shown at review start.", 27)
+
+        _label(f, "Secretary Model:", 28)
+        self.secretary_model_var = ctk.StringVar(value=self.review_raw.get("secretary_model", ""))
+        self.secretary_cb = ctk.CTkComboBox(f, variable=self.secretary_model_var, width=300)
+        self.secretary_cb.grid(row=28, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Organises all your interview answers into note sections at the end of the review.\n"
+                 "Recommended: qwen2.5:3b (fast, good English structure).", 29)
+
+        _label(f, "Context Brief Model:", 30)
         self.struct_model_var = ctk.StringVar(value=self.review_raw.get("structure_model", ""))
         self.struct_cb = ctk.CTkComboBox(f, variable=self.struct_model_var, width=300)
-        self.struct_cb.grid(row=28, column=1, sticky="we", padx=20, pady=4)
-        _note(f, "Leave blank to use the English Refiner model from Voice Refiner tab.", 29)
+        self.struct_cb.grid(row=30, column=1, sticky="we", padx=20, pady=4)
+        _note(f, "Generates the AI context brief from past notes shown at review start.\n"
+                 "Leave blank to fall back to the Brief Model or English Refiner.", 31)
 
-        _section(f, "🌐  Context Brief", 30)
-        _note(f, "Language and model(s) used to generate the nightly context synthesis.", 31)
+        _label(f, "Ollama Host (Review):", 32)
+        self.review_host_var = ctk.StringVar(
+            value=self.review_raw.get("ollama_host", "http://localhost:11434"))
+        ctk.CTkEntry(f, textvariable=self.review_host_var, width=300,
+                     placeholder_text="http://localhost:11434").grid(
+                     row=32, column=1, sticky="we", padx=20, pady=4)
+        self.review_host_var.trace_add("write", lambda *_: self._load_review_ollama_models())
+        _note(f, "Ollama server for secretary synthesis and context brief. Usually same as Voice Refiner host.", 33)
 
-        _label(f, "Brief Language:", 32)
+        _section(f, "🌐  Context Brief", 34)
+        _note(f, "Language and model(s) used to generate the nightly context synthesis.", 35)
+
+        _label(f, "Brief Language:", 36)
         self.brief_lang_var = ctk.StringVar(value=self.review_raw.get("context_brief_language", "en"))
         ctk.CTkComboBox(f, variable=self.brief_lang_var,
-                        values=["en", "hi"], width=100).grid(row=32, column=1, sticky="w", padx=20, pady=4)
+                        values=["en", "hi"], width=100).grid(row=36, column=1, sticky="w", padx=20, pady=4)
 
-        _label(f, "Brief Mode:", 33)
+        _label(f, "Brief Mode:", 37)
         _has_two = bool(self.review_raw.get("brief_model_en") or self.review_raw.get("brief_model_hi"))
         self.brief_mode_var = ctk.StringVar(value="Two Models" if _has_two else "Single Model")
         ctk.CTkComboBox(f, variable=self.brief_mode_var,
                         values=["Single Model", "Two Models"], width=150,
-                        command=self._on_brief_mode_change).grid(row=33, column=1, sticky="w", padx=20, pady=4)
+                        command=self._on_brief_mode_change).grid(row=37, column=1, sticky="w", padx=20, pady=4)
         self._brief_mode_note = ctk.CTkLabel(f,
             text="Single Model: one call returns both languages.  Two Models: parallel calls, one per language.",
             text_color=SUBTLE, font=("Inter", 11), wraplength=380, justify="left")
-        self._brief_mode_note.grid(row=34, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
+        self._brief_mode_note.grid(row=38, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 4))
 
-        _label(f, "Brief Model:", 35)
+        _label(f, "Brief Model:", 39)
         self.brief_model_var = ctk.StringVar(value=self.review_raw.get("brief_model", ""))
         self.brief_model_entry = ctk.CTkEntry(f, textvariable=self.brief_model_var, width=300,
                                                placeholder_text="e.g. qwen2.5:7b  (blank = structure model)")
-        self.brief_model_entry.grid(row=35, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_entry.grid(row=39, column=1, sticky="we", padx=20, pady=4)
 
-        _label(f, "Brief Model (EN):", 36)
+        _label(f, "Brief Model (EN):", 40)
         self.brief_model_en_var = ctk.StringVar(value=self.review_raw.get("brief_model_en", ""))
         self.brief_model_en_entry = ctk.CTkEntry(f, textvariable=self.brief_model_en_var, width=300,
                                                   placeholder_text="e.g. qwen2.5:7b")
-        self.brief_model_en_entry.grid(row=36, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_en_entry.grid(row=40, column=1, sticky="we", padx=20, pady=4)
 
-        _label(f, "Brief Model (HI):", 37)
+        _label(f, "Brief Model (HI):", 41)
         self.brief_model_hi_var = ctk.StringVar(value=self.review_raw.get("brief_model_hi", ""))
         self.brief_model_hi_entry = ctk.CTkEntry(f, textvariable=self.brief_model_hi_var, width=300,
                                                   placeholder_text="e.g. aya-expanse:8b")
-        self.brief_model_hi_entry.grid(row=37, column=1, sticky="we", padx=20, pady=4)
+        self.brief_model_hi_entry.grid(row=41, column=1, sticky="we", padx=20, pady=4)
 
         self._on_brief_mode_change(self.brief_mode_var.get())  # set initial visibility
 
-        _section(f, "📋  Step Configuration", 38)
-        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 39)
+        _section(f, "📋  Step Configuration", 42)
+        _note(f, "Toggle per-step behaviour. Step prompts are edited in review_config.json.", 43)
 
         hdr = ctk.CTkFrame(f, fg_color=SURFACE, corner_radius=6)
-        hdr.grid(row=40, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
+        hdr.grid(row=44, column=0, columnspan=2, sticky="we", padx=20, pady=(10, 4))
         for col_text, col_w in [("Step", 200), ("Skippable", 100), ("AI Refine", 100)]:
             ctk.CTkLabel(hdr, text=col_text, text_color=ACCENT, font=("Inter", 12, "bold"), width=col_w, anchor="w").pack(side=ctk.LEFT, padx=10, pady=6)
 
@@ -350,7 +370,7 @@ class ConfigApp:
 
         for row_i, step in enumerate(full_cfg.get("review_steps", [])):
             row_frame = ctk.CTkFrame(f, fg_color="transparent")
-            row_frame.grid(row=41 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
+            row_frame.grid(row=45 + row_i, column=0, columnspan=2, sticky="we", padx=20, pady=2)
 
             ctk.CTkLabel(row_frame, text=f"{step['step_id']}. {step['section_name']}",
                      text_color=TEXT, font=("Inter", 12), width=200, anchor="w").pack(side=ctk.LEFT, padx=(10,0), pady=4)
@@ -435,8 +455,11 @@ class ConfigApp:
         _note(f, "Days pending before a task gets the 🚨 critical label (default 5).", 18)
 
         _section(f, "🎙  Voice Wake-Word Control", 19)
-        _note(f, "Say 'stop' / 'रुको' to stop narration. Say 'again' / 'फिर से' to replay. "
-                 "Active only while TTS is speaking — idle at all other times.", 20)
+        _note(f, "Keywords (EN / HI): 'stop' / 'रुको' — stop narration · 'again' / 'फिर से' — replay · "
+                 "'next' / 'आगे' — advance step · 'skip' / 'छोड़ो' — skip step · "
+                 "'back' / 'वापस' — redo previous step.\n"
+                 "Active only while TTS is speaking — idle at all other times. "
+                 "Disable if voice commands interfere with dictation.", 20)
 
         _label(f, "Enable Voice Control:", 21)
         self.voice_ctrl_var = tk.BooleanVar(value=self.review_raw.get("voice_control", False))
@@ -513,9 +536,20 @@ class ConfigApp:
             self.root.after(0, lambda: self._populate_model_dropdowns(models))
         threading.Thread(target=_fetch, daemon=True).start()
 
+    def _load_review_ollama_models(self, *_):
+        def _fetch():
+            host   = getattr(self, "review_host_var", None)
+            models = get_ollama_models(host.get() if host else "http://localhost:11434")
+            self.root.after(0, lambda: self._populate_review_dropdowns(models))
+        threading.Thread(target=_fetch, daemon=True).start()
+
     def _populate_model_dropdowns(self, models):
         for cb in (self.en_cb, self.hi_cb, self.to_en_cb, self.to_hi_cb):
             cb.configure(values=models)
+
+    def _populate_review_dropdowns(self, models):
+        if hasattr(self, "secretary_cb"):
+            self.secretary_cb.configure(values=[""] + models)
         if hasattr(self, "struct_cb"):
             self.struct_cb.configure(values=[""] + models)
 
@@ -608,6 +642,9 @@ class ConfigApp:
                 existing.pop("brief_model", None)
                 existing["brief_model_en"] = self.brief_model_en_var.get().strip()
                 existing["brief_model_hi"] = self.brief_model_hi_var.get().strip()
+
+            existing["secretary_model"] = self.secretary_model_var.get().strip()
+            existing["ollama_host"]     = self.review_host_var.get().strip() or "http://localhost:11434"
 
             struct_model = self.struct_model_var.get().strip()
             if struct_model:

@@ -86,15 +86,47 @@ class VoiceEngine:
         wav.write(wav_path, samplerate, audio)
         return wav_path
 
+    # Languages this app legitimately produces. Anything else → re-transcribe as English.
+    _ALLOWED_LANGS = {"en", "hi"}
+
     def transcribe(self, wav_path):
-        """Converts audio file to raw text with a hint to use Devanagari for Hindi."""
-        # The initial_prompt trick forces Whisper to use Devanagari instead of Urdu script
-        initial_prompt = "नमस्ते, यह एक हिंदी ट्रांसक्रिप्शन है।" 
-        segments, _ = self.whisper_model.transcribe(
-            wav_path, 
-            initial_prompt=initial_prompt
+        """Converts audio file to raw text with language guard and hallucination filtering.
+
+        faster-whisper returns TranscriptionInfo (including detected language) before
+        consuming segments. We use that to detect mis-identification: if Whisper thinks
+        the audio is Kannada / Punjabi / Urdu / etc. — which happens when the user speaks
+        English with an Indian accent — we discard the result and re-transcribe forcing
+        English. Hindi and English are the only valid outputs.
+        """
+        segments, info = self.whisper_model.transcribe(
+            wav_path,
+            condition_on_previous_text=False,
+            no_speech_threshold=0.6,
+            log_prob_threshold=-1.0,
         )
-        return " ".join(seg.text for seg in segments)
+
+        # If Whisper detected a language we don't expect, force English and re-transcribe.
+        if info.language not in self._ALLOWED_LANGS:
+            segments, info = self.whisper_model.transcribe(
+                wav_path,
+                language="en",
+                condition_on_previous_text=False,
+                no_speech_threshold=0.6,
+                log_prob_threshold=-1.0,
+            )
+
+        parts = []
+        for seg in segments:
+            if seg.no_speech_prob > 0.6:
+                continue
+            text = seg.text.strip()
+            if not text:
+                continue
+            # Pure-numeral/punctuation segments are hallucinations (no alphabetic chars)
+            if sum(1 for c in text if c.isalpha()) == 0:
+                continue
+            parts.append(text)
+        return " ".join(parts)
 
     def refine(self, text, mode=None):
         """Sends text to Ollama for refinement/translation based on language."""
