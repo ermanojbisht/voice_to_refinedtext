@@ -2046,6 +2046,8 @@ def _narrate_piper(text, config, blocking):
         model = os.path.expanduser(config.get("piper_model_hi", "") or config.get("piper_model", ""))
     else:
         model = os.path.expanduser(config.get("piper_model", ""))
+    if model and not os.path.isabs(model):
+        model = os.path.join(_SCRIPT_DIR, model)
     if not model or not os.path.exists(model):
         _rlog("narrate/piper: model not found — falling back to espeak")
         _narrate_espeak(text, blocking)
