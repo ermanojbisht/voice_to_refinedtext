@@ -28,7 +28,7 @@ review_engine.init_logging(script_dir)
 _logger.info("=" * 40)
 _logger.info(f"Starting (pid={os.getpid()})")
 
-from theme import BG, SURFACE, OVERLAY, TEXT, SUBTLE, ACCENT, GREEN, RED, YELLOW
+from theme import BG, SURFACE, OVERLAY, TEXT, SUBTLE, MUTED, ACCENT, GREEN, RED, YELLOW
 
 
 class _Tooltip:
@@ -157,7 +157,7 @@ class ReviewDashboard:
         # Narration controls — right side of title row
         self.regen_btn = ctk.CTkButton(
             ctx_hdr, text="Regen", width=48, height=28, font=("Inter", 12),
-            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            fg_color="transparent", text_color=MUTED, hover_color=OVERLAY,
             command=self._regen_brief)
         self.regen_btn.pack(side=ctk.RIGHT, padx=(3, 0))
         _Tooltip(self.regen_btn, "Regenerate context brief")
@@ -169,7 +169,7 @@ class ReviewDashboard:
         _Tooltip(self.replay_btn, "Replay narration")
         self.stop_btn = ctk.CTkButton(
             ctx_hdr, text="Stop", width=44, height=28, font=("Inter", 12),
-            fg_color="transparent", text_color=SUBTLE, hover_color=OVERLAY,
+            fg_color="transparent", text_color=MUTED, hover_color=OVERLAY,
             command=review_engine.stop_narration)
         self.stop_btn.pack(side=ctk.RIGHT, padx=(3, 0))
         _Tooltip(self.stop_btn, "Stop narration")
@@ -189,7 +189,7 @@ class ReviewDashboard:
         self._refresh_lang_buttons()
 
         self.ctx_days_lbl = ctk.CTkLabel(lang_row, text="", text_color=SUBTLE,
-                                          font=("Inter", 10))
+                                          font=("Inter", 11))
         self.ctx_days_lbl.pack(side=ctk.RIGHT)
 
         # Content pane — ctx_scroll expands; tasks panel and focus chart sit below
@@ -218,8 +218,8 @@ class ReviewDashboard:
         # Tasks panel — shown only when at the carry-forward step
         _logger.info("[dashboard] _build_ui: tasks panel")
         self.tasks_outer = ctk.CTkFrame(content_pane, fg_color=OVERLAY, corner_radius=6)
-        ctk.CTkLabel(self.tasks_outer, text="Yesterday's open tasks",
-                     text_color=ACCENT, font=("Inter", 10, "bold")).pack(
+        ctk.CTkLabel(self.tasks_outer, text="Open tasks from past days",
+                     text_color=ACCENT, font=("Inter", 11, "bold")).pack(
                      fill=ctk.X, padx=8, pady=(6, 2))
         self.tasks_scroll = ctk.CTkScrollableFrame(
             self.tasks_outer, fg_color="transparent", height=140)
@@ -275,16 +275,16 @@ class ReviewDashboard:
             row = ctk.CTkFrame(steps_frame, fg_color=SURFACE, corner_radius=8)
             row.pack(fill=ctk.X, pady=4, padx=4)
 
-            icon_lbl = ctk.CTkLabel(row, text="o", fg_color="transparent", text_color=SUBTLE,
+            icon_lbl = ctk.CTkLabel(row, text="o", fg_color="transparent", text_color=MUTED,
                                 font=("Inter", 16), width=40, anchor="center")
             icon_lbl.pack(side=ctk.LEFT, pady=8)
 
             name_lbl = ctk.CTkLabel(row, text=step["section_name"], fg_color="transparent",
-                                text_color=SUBTLE, font=("Inter", 13, "bold"), anchor="w")
+                                text_color=MUTED, font=("Inter", 14, "bold"), anchor="w")
             name_lbl.pack(side=ctk.LEFT, fill=ctk.X, expand=True, pady=8)
 
             status_lbl = ctk.CTkLabel(row, text="Pending", fg_color="transparent",
-                                  text_color=SUBTLE, font=("Inter", 12), width=120, anchor="e")
+                                  text_color=MUTED, font=("Inter", 12), width=120, anchor="e")
             status_lbl.pack(side=ctk.RIGHT, padx=12, pady=8)
 
             self.row_frames.append(row)
@@ -481,9 +481,9 @@ class ReviewDashboard:
                     icon_lbl.configure(text="[rec]", text_color=RED)
                     st_lbl.configure(text=f"Speak now{_step_elapsed}", text_color=RED)
             else:
-                icon_lbl.configure(text="o", text_color=SUBTLE)
-                name_lbl.configure(text_color=SUBTLE)
-                st_lbl.configure(text="Pending", text_color=SUBTLE)
+                icon_lbl.configure(text="o", text_color=MUTED)
+                name_lbl.configure(text_color=MUTED)
+                st_lbl.configure(text="Pending", text_color=MUTED)
                 frame.configure(fg_color=SURFACE)
 
         # Streak label in header — only reconfigure when value changes
@@ -625,7 +625,7 @@ class ReviewDashboard:
 
     def _panel_add_brief(self, text, color):
         """Append the AI context brief at the current bottom of the scroll panel."""
-        lbl = self._panel_add_label(text, color, font=("Inter", 13), pady=(6, 4))
+        lbl = self._panel_add_label(text, color, font=("Inter", 14), pady=(6, 4))
         self._panel_has_brief    = True
         self._panel_brief_widget = lbl
         self._showing_brief      = True
@@ -634,8 +634,8 @@ class ReviewDashboard:
         """Append a step-history block (section header + past-notes text)."""
         hdr = self._panel_add_label(
             f"{section_name}  ·  history",
-            ACCENT, font=("Inter", 11), bold=True, pady=(6, 2))
-        self._panel_add_label(text, SUBTLE, font=("Inter", 12), pady=(2, 6))
+            ACCENT, font=("Inter", 13), bold=True, pady=(8, 2))
+        self._panel_add_label(text, SUBTLE, font=("Inter", 13), pady=(2, 8))
 
     def _panel_scroll_bottom(self):
         """Scroll ctx_scroll to the bottom so newly appended content is visible."""
@@ -685,10 +685,10 @@ class ReviewDashboard:
             row_frame.columnconfigure(0, weight=1)
 
             tb = ctk.CTkTextbox(
-                row_frame, wrap="word", height=72,
+                row_frame, wrap="word", height=76,
                 fg_color="transparent", text_color=GREEN,
-                font=("Inter", 13), activate_scrollbars=False,
-                spacing1=2, spacing2=1, spacing3=2,
+                font=("Inter", 14), activate_scrollbars=False,
+                spacing1=3, spacing2=2, spacing3=3,
             )
             tb.grid(row=0, column=0, sticky="ew", padx=(6, 2), pady=4)
             tb.insert("end", clip_text)
@@ -916,7 +916,7 @@ class ReviewDashboard:
             self._task_vars.append(var)
             cb = ctk.CTkCheckBox(
                 self.tasks_scroll, text=label, variable=var,
-                font=("Inter", 11), text_color=TEXT,
+                font=("Inter", 12), text_color=TEXT,
                 fg_color=ACCENT, hover_color="#b4befe", checkmark_color=BG,
                 command=lambda t=task_text, d=task_date, v=var: self._on_task_checked(t, d, v)
             )
@@ -1048,9 +1048,9 @@ class ReviewDashboard:
         if captured_clips and section_name:
             self._panel_add_separator()
             self._panel_add_label(
-                f"[ok] {section_name} — saved", GREEN, font=("Inter", 11), bold=True)
+                f"[ok] {section_name} — saved", GREEN, font=("Inter", 12), bold=True)
             for clip in captured_clips:
-                self._panel_add_label(clip, SUBTLE, font=("Inter", 12), pady=(2, 4))
+                self._panel_add_label(clip, SUBTLE, font=("Inter", 13), pady=(2, 6))
             self._panel_scroll_bottom()
 
         threading.Thread(

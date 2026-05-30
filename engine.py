@@ -86,17 +86,25 @@ class VoiceEngine:
         wav.write(wav_path, samplerate, audio)
         return wav_path
 
-    # Languages this app legitimately produces. Anything else → re-transcribe as English.
+    # Languages this app legitimately produces as final output.
     _ALLOWED_LANGS = {"en", "hi"}
+
+    # Languages that are close enough to Hindi that Whisper confuses them with Hindi.
+    # When detected, re-transcribe forcing "hi" to get proper Devanagari output.
+    _HINDI_FAMILY  = {"hi", "ur", "pa", "mr", "gu", "ne", "sd", "bho"}
+
+    # Initial prompt that steers Whisper toward Devanagari script for Hindi audio.
+    _HINDI_PROMPT  = "नमस्ते, यह हिंदी में है।"
 
     def transcribe(self, wav_path):
         """Converts audio file to raw text with language guard and hallucination filtering.
 
-        faster-whisper returns TranscriptionInfo (including detected language) before
-        consuming segments. We use that to detect mis-identification: if Whisper thinks
-        the audio is Kannada / Punjabi / Urdu / etc. — which happens when the user speaks
-        English with an Indian accent — we discard the result and re-transcribe forcing
-        English. Hindi and English are the only valid outputs.
+        Strategy:
+        1. Auto-detect language first (no constraint).
+        2. If detected language is Hindi-family (hi/ur/pa/mr/gu…) → re-transcribe
+           forcing "hi" with a Devanagari initial_prompt so script is correct.
+        3. If detected language is English → keep result as-is.
+        4. Anything else (unrelated language mis-detection) → force "en".
         """
         segments, info = self.whisper_model.transcribe(
             wav_path,
@@ -105,8 +113,18 @@ class VoiceEngine:
             log_prob_threshold=-1.0,
         )
 
-        # If Whisper detected a language we don't expect, force English and re-transcribe.
-        if info.language not in self._ALLOWED_LANGS:
+        if info.language in self._HINDI_FAMILY:
+            # Re-transcribe with explicit Hindi + Devanagari prompt for clean output.
+            segments, info = self.whisper_model.transcribe(
+                wav_path,
+                language="hi",
+                initial_prompt=self._HINDI_PROMPT,
+                condition_on_previous_text=False,
+                no_speech_threshold=0.6,
+                log_prob_threshold=-1.0,
+            )
+        elif info.language not in self._ALLOWED_LANGS:
+            # Unrelated mis-detection → fall back to English.
             segments, info = self.whisper_model.transcribe(
                 wav_path,
                 language="en",

@@ -34089,3 +34089,1921 @@ TypeError: sequence item 0: expected str instance, dict found
 [2026-05-29 22:47:10] [dashboard] [dashboard] mainloop exited
 [2026-05-29 22:47:10] [dashboard] [dashboard] mainloop exited
 [2026-05-29 22:47:42] [tray] exit_app called
+[2026-05-30 05:47:32] [tray] ==================================================
+[2026-05-30 05:47:32] [tray] VoiceAssistantTray starting
+[2026-05-30 05:47:32] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-30 05:47:40] [tray] start_review called
+[2026-05-30 05:47:43] [tray] start_review: review date = 2026-05-30
+[2026-05-30 05:47:43] [review_engine] ==================================================
+[2026-05-30 05:47:43] [review_engine] initialize_review called
+[2026-05-30 05:47:43] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:47:43] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 05:47:43] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 05:47:43] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 05:47:43] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 05:47:43] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:47:43] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 05:47:43] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 05:47:43] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 05:47:43] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 05:47:43] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 05:47:43] [tray] Dashboard subprocess launched
+[2026-05-30 05:47:44] [dashboard] ========================================
+[2026-05-30 05:47:44] [dashboard] ========================================
+[2026-05-30 05:47:44] [dashboard] Starting (pid=1717943)
+[2026-05-30 05:47:44] [dashboard] Starting (pid=1717943)
+[2026-05-30 05:47:44] [dashboard] [dashboard] main() started
+[2026-05-30 05:47:44] [dashboard] [dashboard] main() started
+[2026-05-30 05:47:44] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:47:44] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:47:44] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:47:44] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:47:44] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:47:44] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:47:44] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:47:44] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:47:44] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:47:44] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:47:44] [dashboard] [dashboard] title set
+[2026-05-30 05:47:44] [dashboard] [dashboard] title set
+[2026-05-30 05:47:44] [dashboard] [dashboard] geometry set
+[2026-05-30 05:47:44] [dashboard] [dashboard] geometry set
+[2026-05-30 05:47:44] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:47:44] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:47:44] [dashboard] [dashboard] resizable set
+[2026-05-30 05:47:44] [dashboard] [dashboard] resizable set
+[2026-05-30 05:47:44] [dashboard] [dashboard] config loaded
+[2026-05-30 05:47:44] [dashboard] [dashboard] config loaded
+[2026-05-30 05:47:44] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:47:44] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:47:44] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:47:44] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:47:44] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:47:44] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:47:44] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:47:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:47:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:47:53] [review_engine] context_brief: single-model generation done (model=SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest)
+[2026-05-30 05:47:53] [review_engine] context_brief: cached for 2026-05-30
+[2026-05-30 05:47:53] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:47:53] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 05:47:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:47:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:47:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:47:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:20] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 05:48:20] [review_engine] narrate: stopped by request
+[2026-05-30 05:48:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:48:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:49:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:50] [review_engine] narrate: replaying (456 chars)
+[2026-05-30 05:50:50] [review_engine] narrate: replaying (456 chars)
+[2026-05-30 05:50:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:50:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:51:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:25] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:52:25] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:52:27] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:52:27] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:52:27] [review_engine] cancel_review called
+[2026-05-30 05:52:27] [review_engine] cancel_review called
+[2026-05-30 05:52:27] [review_engine] State file deleted
+[2026-05-30 05:52:27] [review_engine] State file deleted
+[2026-05-30 05:52:27] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:27] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:28] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:52:28] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 05:52:28] [tray] _review_finished called
+[2026-05-30 05:52:28] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:52:28] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:52:29] [dashboard] [dashboard] mainloop exited
+[2026-05-30 05:52:29] [dashboard] [dashboard] mainloop exited
+[2026-05-30 05:52:33] [tray] start_review called
+[2026-05-30 05:52:35] [tray] start_review: review date = 2026-05-30
+[2026-05-30 05:52:35] [review_engine] ==================================================
+[2026-05-30 05:52:35] [review_engine] initialize_review called
+[2026-05-30 05:52:35] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:52:35] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 05:52:35] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 05:52:35] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 05:52:35] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 05:52:35] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:52:35] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 05:52:35] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 05:52:35] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 05:52:35] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 05:52:35] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 05:52:35] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 05:52:35] [tray] Dashboard subprocess launched
+[2026-05-30 05:52:35] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:52:35] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 05:52:35] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:35] [dashboard] ========================================
+[2026-05-30 05:52:35] [dashboard] ========================================
+[2026-05-30 05:52:35] [dashboard] Starting (pid=1719648)
+[2026-05-30 05:52:35] [dashboard] Starting (pid=1719648)
+[2026-05-30 05:52:35] [dashboard] [dashboard] main() started
+[2026-05-30 05:52:35] [dashboard] [dashboard] main() started
+[2026-05-30 05:52:35] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:52:35] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:52:35] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:52:35] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:52:35] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:52:35] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:52:35] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:52:35] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:52:35] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:52:35] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:52:35] [dashboard] [dashboard] title set
+[2026-05-30 05:52:35] [dashboard] [dashboard] title set
+[2026-05-30 05:52:35] [dashboard] [dashboard] geometry set
+[2026-05-30 05:52:35] [dashboard] [dashboard] geometry set
+[2026-05-30 05:52:35] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:52:35] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:52:35] [dashboard] [dashboard] resizable set
+[2026-05-30 05:52:35] [dashboard] [dashboard] resizable set
+[2026-05-30 05:52:35] [dashboard] [dashboard] config loaded
+[2026-05-30 05:52:35] [dashboard] [dashboard] config loaded
+[2026-05-30 05:52:35] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:52:35] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:52:35] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:52:35] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:52:35] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:52:35] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:52:35] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:52:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:50] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:52:50] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:52:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:52:52] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:52:52] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:52:52] [review_engine] cancel_review called
+[2026-05-30 05:52:52] [review_engine] cancel_review called
+[2026-05-30 05:52:52] [review_engine] State file deleted
+[2026-05-30 05:52:52] [review_engine] State file deleted
+[2026-05-30 05:52:52] [review_engine] narrate: cross-process stop (pid=1719704)
+[2026-05-30 05:52:52] [review_engine] narrate: cross-process stop (pid=1719704)
+[2026-05-30 05:52:52] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:52] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:52] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 05:52:52] [review_engine] narrate: stopped by request
+[2026-05-30 05:52:53] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:52:53] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 05:52:53] [tray] _review_finished called
+[2026-05-30 05:52:53] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:52:53] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:52:53] [dashboard] [dashboard] mainloop exited
+[2026-05-30 05:52:53] [dashboard] [dashboard] mainloop exited
+[2026-05-30 05:52:57] [tray] exit_app called
+[2026-05-30 05:53:08] [tray] ==================================================
+[2026-05-30 05:53:08] [tray] VoiceAssistantTray starting
+[2026-05-30 05:53:08] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-30 05:53:12] [tray] start_review called
+[2026-05-30 05:53:14] [tray] start_review: review date = 2026-05-30
+[2026-05-30 05:53:14] [review_engine] ==================================================
+[2026-05-30 05:53:14] [review_engine] initialize_review called
+[2026-05-30 05:53:14] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:53:14] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 05:53:14] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 05:53:14] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 05:53:14] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 05:53:14] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:53:14] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 05:53:14] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 05:53:14] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 05:53:14] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 05:53:14] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 05:53:14] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 05:53:14] [tray] Dashboard subprocess launched
+[2026-05-30 05:53:14] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:53:14] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 05:53:14] [dashboard] ========================================
+[2026-05-30 05:53:14] [dashboard] ========================================
+[2026-05-30 05:53:14] [dashboard] Starting (pid=1719984)
+[2026-05-30 05:53:14] [dashboard] Starting (pid=1719984)
+[2026-05-30 05:53:14] [dashboard] [dashboard] main() started
+[2026-05-30 05:53:14] [dashboard] [dashboard] main() started
+[2026-05-30 05:53:14] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:53:14] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 05:53:15] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:53:15] [dashboard] [dashboard] CTk window created
+[2026-05-30 05:53:15] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:53:15] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 05:53:15] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:53:15] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 05:53:15] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:53:15] [dashboard] [dashboard] __init__ start
+[2026-05-30 05:53:15] [dashboard] [dashboard] title set
+[2026-05-30 05:53:15] [dashboard] [dashboard] title set
+[2026-05-30 05:53:15] [dashboard] [dashboard] geometry set
+[2026-05-30 05:53:15] [dashboard] [dashboard] geometry set
+[2026-05-30 05:53:15] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:53:15] [dashboard] [dashboard] fg_color configured
+[2026-05-30 05:53:15] [dashboard] [dashboard] resizable set
+[2026-05-30 05:53:15] [dashboard] [dashboard] resizable set
+[2026-05-30 05:53:15] [dashboard] [dashboard] config loaded
+[2026-05-30 05:53:15] [dashboard] [dashboard] config loaded
+[2026-05-30 05:53:15] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:53:15] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:53:15] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 05:53:15] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:53:15] [dashboard] [dashboard] __init__ complete
+[2026-05-30 05:53:15] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:53:15] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 05:53:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:34] [review_engine] narrate: cross-process stop (pid=1720032)
+[2026-05-30 05:53:34] [review_engine] narrate: cross-process stop (pid=1720032)
+[2026-05-30 05:53:34] [review_engine] narrate: stopped by request
+[2026-05-30 05:53:34] [review_engine] narrate: stopped by request
+[2026-05-30 05:53:34] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 05:53:34] [review_engine] narrate: stopped by request
+[2026-05-30 05:53:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:53:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:13] [tray] run_full_process started. is_in_review=True
+[2026-05-30 05:54:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:35] [review_engine] narrate: stopped by request
+[2026-05-30 05:54:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:39] [tray] Transcription done: len=77 preview='Today I have no health issues and almost everything is fine and better today.'
+[2026-05-30 05:54:39] [tray] Routing: REVIEW MODE
+[2026-05-30 05:54:39] [tray] _handle_review_step: accumulating raw text
+[2026-05-30 05:54:39] [review_engine] State saved: step=0, awaiting=True
+[2026-05-30 05:54:39] [review_engine] accumulate_clip: clip 1 appended (77 chars)
+[2026-05-30 05:54:39] [tray] Accumulated clip 1 for step 'Wellness Log'
+[2026-05-30 05:54:39] [review_engine] NOTIFY: 'Evening Review — Step 1/6 Recorded' — ''Wellness Log' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-30 05:54:40] [review_engine] narrate: stopped by request
+[2026-05-30 05:54:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:41] [review_engine] narrate: cross-process stop (pid=1720518)
+[2026-05-30 05:54:41] [review_engine] narrate: stopped by request
+[2026-05-30 05:54:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:54:59] [review_engine] State saved: step=0, awaiting=True
+[2026-05-30 05:54:59] [review_engine] State saved: step=0, awaiting=True
+[2026-05-30 05:55:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:02] [review_engine] State saved: step=0, awaiting=True
+[2026-05-30 05:55:02] [review_engine] State saved: step=0, awaiting=True
+[2026-05-30 05:55:02] [review_engine] structure_and_advance: isolated step 'Wellness Log' — writing immediately
+[2026-05-30 05:55:02] [review_engine] structure_and_advance: isolated step 'Wellness Log' — writing immediately
+[2026-05-30 05:55:02] [review_engine] write_step_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-30.md'
+[2026-05-30 05:55:02] [review_engine] write_step_to_note: step='Wellness Log' file='/home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-30.md'
+[2026-05-30 05:55:02] [review_engine] _create_wellness_note: created /home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-30.md
+[2026-05-30 05:55:02] [review_engine] _create_wellness_note: created /home/manoj/learning_vault/My Daily Notes/Wellness/2026/May/2026-05-30.md
+[2026-05-30 05:55:02] [review_engine] write_step_to_note: appended 95 chars to isolated file
+[2026-05-30 05:55:02] [review_engine] write_step_to_note: appended 95 chars to isolated file
+[2026-05-30 05:55:02] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:55:02] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 05:55:02] [review_engine] advance_step: 0 → 1 (total=6)
+[2026-05-30 05:55:02] [review_engine] advance_step: 0 → 1 (total=6)
+[2026-05-30 05:55:02] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 05:55:02] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 05:55:02] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 05:55:02] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 05:55:03] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 05:55:03] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 05:55:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:19] [tray] run_full_process started. is_in_review=True
+[2026-05-30 05:55:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:27] [review_engine] narrate: stopped by request
+[2026-05-30 05:55:29] [tray] Transcription done: len=51 preview='You know it's morning and I have not done anything.'
+[2026-05-30 05:55:29] [tray] Routing: REVIEW MODE
+[2026-05-30 05:55:29] [tray] _handle_review_step: accumulating raw text
+[2026-05-30 05:55:29] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 05:55:29] [review_engine] accumulate_clip: clip 1 appended (51 chars)
+[2026-05-30 05:55:29] [tray] Accumulated clip 1 for step 'Movement'
+[2026-05-30 05:55:29] [review_engine] NOTIFY: 'Evening Review — Step 2/6 Recorded' — ''Movement' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-30 05:55:29] [review_engine] narrate: stopped by request
+[2026-05-30 05:55:30] [review_engine] narrate: stopped by request
+[2026-05-30 05:55:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:40] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 05:55:40] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 05:55:40] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 05:55:40] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 05:55:40] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 05:55:40] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 05:55:40] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 05:55:40] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 05:55:40] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 05:55:40] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 05:55:40] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 05:55:40] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 05:55:40] [review_engine] narrate: stopped by request
+[2026-05-30 05:55:40] [review_engine] narrate: stopped by request
+[2026-05-30 05:55:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:41] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 05:55:41] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 05:55:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:55:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:22] [review_engine] skip_step: 2 → 3 (total=6)
+[2026-05-30 05:56:22] [review_engine] skip_step: 2 → 3 (total=6)
+[2026-05-30 05:56:22] [review_engine] narrate: stopped by request
+[2026-05-30 05:56:22] [review_engine] narrate: stopped by request
+[2026-05-30 05:56:25] [review_engine] State saved: step=3, awaiting=False
+[2026-05-30 05:56:25] [review_engine] State saved: step=3, awaiting=False
+[2026-05-30 05:56:25] [review_engine] NOTIFY: 'Evening Review — Step 4/6' — 'Step 4/6: What did you accomplish, build, or unblock today?'
+[2026-05-30 05:56:25] [review_engine] NOTIFY: 'Evening Review — Step 4/6' — 'Step 4/6: What did you accomplish, build, or unblock today?'
+[2026-05-30 05:56:25] [review_engine] narrate: stopped by request
+[2026-05-30 05:56:25] [review_engine] narrate: stopped by request
+[2026-05-30 05:56:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:56:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:34] [review_engine] skip_step: 3 → 4 (total=6)
+[2026-05-30 05:57:34] [review_engine] skip_step: 3 → 4 (total=6)
+[2026-05-30 05:57:34] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:34] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:37] [review_engine] State saved: step=4, awaiting=False
+[2026-05-30 05:57:37] [review_engine] State saved: step=4, awaiting=False
+[2026-05-30 05:57:37] [review_engine] NOTIFY: 'Evening Review — Step 5/6' — 'Step 5/6: What tasks need immediate attention tomorrow?'
+[2026-05-30 05:57:37] [review_engine] NOTIFY: 'Evening Review — Step 5/6' — 'Step 5/6: What tasks need immediate attention tomorrow?'
+[2026-05-30 05:57:37] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:37] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:54] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:54] [review_engine] narrate: stopped by request
+[2026-05-30 05:57:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:57:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:14] [review_engine] skip_step: writing skip_default '- [ ] (no priorities noted)' for step 'Tomorrow's Priorities'
+[2026-05-30 05:58:14] [review_engine] skip_step: writing skip_default '- [ ] (no priorities noted)' for step 'Tomorrow's Priorities'
+[2026-05-30 05:58:14] [review_engine] write_step_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-30.md'
+[2026-05-30 05:58:14] [review_engine] write_step_to_note: step='Tomorrow's Priorities' file='/home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-30.md'
+[2026-05-30 05:58:14] [review_engine] _create_daily_note: created /home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-30.md
+[2026-05-30 05:58:14] [review_engine] _create_daily_note: created /home/manoj/learning_vault/My Daily Notes/2026/May/2026-05-30.md
+[2026-05-30 05:58:14] [review_engine] _fill_section: wrote 'Tomorrow's Priorities' into existing section
+[2026-05-30 05:58:14] [review_engine] _fill_section: wrote 'Tomorrow's Priorities' into existing section
+[2026-05-30 05:58:14] [review_engine] State saved: step=4, awaiting=False
+[2026-05-30 05:58:14] [review_engine] State saved: step=4, awaiting=False
+[2026-05-30 05:58:14] [review_engine] skip_step: 4 → 5 (total=6)
+[2026-05-30 05:58:14] [review_engine] skip_step: 4 → 5 (total=6)
+[2026-05-30 05:58:14] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:14] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:17] [review_engine] State saved: step=5, awaiting=False
+[2026-05-30 05:58:17] [review_engine] State saved: step=5, awaiting=False
+[2026-05-30 05:58:17] [review_engine] NOTIFY: 'Evening Review — Step 6/6' — 'Step 6/6: Speak today's core focus word or overarching theme.'
+[2026-05-30 05:58:17] [review_engine] NOTIFY: 'Evening Review — Step 6/6' — 'Step 6/6: Speak today's core focus word or overarching theme.'
+[2026-05-30 05:58:17] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:17] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:27] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:58:27] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 05:58:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 05:58:29] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:58:29] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 05:58:29] [review_engine] cancel_review called
+[2026-05-30 05:58:29] [review_engine] cancel_review called
+[2026-05-30 05:58:29] [review_engine] State file deleted
+[2026-05-30 05:58:29] [review_engine] State file deleted
+[2026-05-30 05:58:29] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:29] [review_engine] narrate: stopped by request
+[2026-05-30 05:58:30] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:58:30] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 05:58:31] [review_engine] is_review_active → False (no state file)
+[2026-05-30 05:58:31] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 05:58:31] [tray] _review_finished called
+[2026-05-30 05:58:31] [dashboard] [dashboard] mainloop exited
+[2026-05-30 05:58:31] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:09:17] [tray] exit_app called
+[2026-05-30 06:09:26] [tray] ==================================================
+[2026-05-30 06:09:26] [tray] VoiceAssistantTray starting
+[2026-05-30 06:09:26] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-30 06:09:33] [tray] start_review called
+[2026-05-30 06:09:34] [tray] start_review: review date = 2026-05-30
+[2026-05-30 06:09:34] [review_engine] ==================================================
+[2026-05-30 06:09:34] [review_engine] initialize_review called
+[2026-05-30 06:09:34] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:09:34] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 06:09:34] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 06:09:34] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 06:09:34] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 06:09:34] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:09:34] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 06:09:34] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 06:09:34] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 06:09:34] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 06:09:34] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 06:09:34] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 06:09:34] [tray] Dashboard subprocess launched
+[2026-05-30 06:09:34] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:09:34] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 06:09:34] [dashboard] ========================================
+[2026-05-30 06:09:34] [dashboard] ========================================
+[2026-05-30 06:09:34] [dashboard] Starting (pid=1725352)
+[2026-05-30 06:09:34] [dashboard] Starting (pid=1725352)
+[2026-05-30 06:09:34] [dashboard] [dashboard] main() started
+[2026-05-30 06:09:34] [dashboard] [dashboard] main() started
+[2026-05-30 06:09:34] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:09:34] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:09:34] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:09:34] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:09:34] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:09:34] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:09:34] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:09:34] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:09:34] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:09:34] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:09:34] [dashboard] [dashboard] title set
+[2026-05-30 06:09:34] [dashboard] [dashboard] title set
+[2026-05-30 06:09:34] [dashboard] [dashboard] geometry set
+[2026-05-30 06:09:34] [dashboard] [dashboard] geometry set
+[2026-05-30 06:09:34] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:09:34] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:09:34] [dashboard] [dashboard] resizable set
+[2026-05-30 06:09:34] [dashboard] [dashboard] resizable set
+[2026-05-30 06:09:34] [dashboard] [dashboard] config loaded
+[2026-05-30 06:09:34] [dashboard] [dashboard] config loaded
+[2026-05-30 06:09:34] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:09:34] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:09:34] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:09:34] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:09:35] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:09:35] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:09:35] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:09:35] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:09:35] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:09:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:44] [review_engine] narrate: cross-process stop (pid=1725402)
+[2026-05-30 06:09:44] [review_engine] narrate: cross-process stop (pid=1725402)
+[2026-05-30 06:09:44] [review_engine] narrate: stopped by request
+[2026-05-30 06:09:44] [review_engine] narrate: stopped by request
+[2026-05-30 06:09:44] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 06:09:44] [review_engine] narrate: stopped by request
+[2026-05-30 06:09:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:09:56] [review_engine] skip_step: 0 → 1 (total=6)
+[2026-05-30 06:09:56] [review_engine] skip_step: 0 → 1 (total=6)
+[2026-05-30 06:09:59] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 06:09:59] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 06:09:59] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 06:09:59] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 06:09:59] [review_engine] narrate: stopped by request
+[2026-05-30 06:09:59] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:09] [tray] run_full_process started. is_in_review=True
+[2026-05-30 06:10:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:23] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:28] [tray] Transcription done: len=80 preview='Yes, today I have done some exercise, muscles building, up and down from stairs.'
+[2026-05-30 06:10:28] [tray] Routing: REVIEW MODE
+[2026-05-30 06:10:28] [tray] _handle_review_step: accumulating raw text
+[2026-05-30 06:10:28] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:10:28] [review_engine] accumulate_clip: clip 1 appended (80 chars)
+[2026-05-30 06:10:28] [tray] Accumulated clip 1 for step 'Movement'
+[2026-05-30 06:10:28] [review_engine] NOTIFY: 'Evening Review — Step 2/6 Recorded' — ''Movement' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-30 06:10:28] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:29] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:36] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:10:36] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:10:38] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:10:38] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:10:38] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 06:10:38] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 06:10:38] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 06:10:38] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 06:10:38] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:10:38] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:10:38] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 06:10:38] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 06:10:38] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:38] [review_engine] narrate: stopped by request
+[2026-05-30 06:10:40] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:10:40] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:10:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:10:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:11:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:11:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:11:01] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:11:01] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:11:03] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:11:03] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:11:03] [review_engine] cancel_review called
+[2026-05-30 06:11:03] [review_engine] cancel_review called
+[2026-05-30 06:11:03] [review_engine] State file deleted
+[2026-05-30 06:11:03] [review_engine] State file deleted
+[2026-05-30 06:11:03] [review_engine] narrate: stopped by request
+[2026-05-30 06:11:03] [review_engine] narrate: stopped by request
+[2026-05-30 06:11:04] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:11:04] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 06:11:04] [tray] _review_finished called
+[2026-05-30 06:11:05] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:11:05] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:11:05] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:11:05] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:12:15] [tray] start_review called
+[2026-05-30 06:12:17] [tray] start_review: review date = 2026-05-30
+[2026-05-30 06:12:17] [review_engine] ==================================================
+[2026-05-30 06:12:17] [review_engine] initialize_review called
+[2026-05-30 06:12:17] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:12:17] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 06:12:17] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 06:12:17] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 06:12:17] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 06:12:17] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:12:17] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 06:12:17] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 06:12:17] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 06:12:17] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 06:12:17] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 06:12:17] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 06:12:17] [tray] Dashboard subprocess launched
+[2026-05-30 06:12:17] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:12:17] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 06:12:17] [review_engine] narrate: stopped by request
+[2026-05-30 06:12:17] [dashboard] ========================================
+[2026-05-30 06:12:17] [dashboard] ========================================
+[2026-05-30 06:12:17] [dashboard] Starting (pid=1726348)
+[2026-05-30 06:12:17] [dashboard] Starting (pid=1726348)
+[2026-05-30 06:12:17] [dashboard] [dashboard] main() started
+[2026-05-30 06:12:17] [dashboard] [dashboard] main() started
+[2026-05-30 06:12:17] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:12:17] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:12:17] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:12:17] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:12:17] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:12:17] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:12:17] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:12:17] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:12:17] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:12:17] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:12:17] [dashboard] [dashboard] title set
+[2026-05-30 06:12:17] [dashboard] [dashboard] title set
+[2026-05-30 06:12:17] [dashboard] [dashboard] geometry set
+[2026-05-30 06:12:17] [dashboard] [dashboard] geometry set
+[2026-05-30 06:12:17] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:12:17] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:12:17] [dashboard] [dashboard] resizable set
+[2026-05-30 06:12:17] [dashboard] [dashboard] resizable set
+[2026-05-30 06:12:17] [dashboard] [dashboard] config loaded
+[2026-05-30 06:12:17] [dashboard] [dashboard] config loaded
+[2026-05-30 06:12:17] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:12:17] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:12:17] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:12:17] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:12:17] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:12:17] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:12:17] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:12:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:23] [review_engine] narrate: cross-process stop (pid=1726397)
+[2026-05-30 06:12:23] [review_engine] narrate: cross-process stop (pid=1726397)
+[2026-05-30 06:12:23] [review_engine] narrate: stopped by request
+[2026-05-30 06:12:23] [review_engine] narrate: stopped by request
+[2026-05-30 06:12:23] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 06:12:23] [review_engine] narrate: stopped by request
+[2026-05-30 06:12:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:12:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:42] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:47] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:52] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:13:57] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:02] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:07] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:12] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:17] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:22] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:27] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:32] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:37] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:14:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:15:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:16:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:17:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:18:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:19:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:20:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:43] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:48] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:53] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:21:58] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:03] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:08] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:13] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:18] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:23] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:28] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:33] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:36] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:22:36] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:22:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:38] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:38] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:22:38] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:22:38] [review_engine] cancel_review called
+[2026-05-30 06:22:38] [review_engine] cancel_review called
+[2026-05-30 06:22:38] [review_engine] State file deleted
+[2026-05-30 06:22:38] [review_engine] State file deleted
+[2026-05-30 06:22:39] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:22:39] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 06:22:39] [tray] _review_finished called
+[2026-05-30 06:22:39] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:22:39] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:22:40] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:22:40] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:22:43] [tray] start_review called
+[2026-05-30 06:22:45] [tray] start_review: review date = 2026-05-30
+[2026-05-30 06:22:45] [review_engine] ==================================================
+[2026-05-30 06:22:45] [review_engine] initialize_review called
+[2026-05-30 06:22:45] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:22:45] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 06:22:45] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 06:22:45] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 06:22:45] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 06:22:45] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:22:45] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 06:22:45] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 06:22:45] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 06:22:45] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 06:22:45] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 06:22:45] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 06:22:45] [tray] Dashboard subprocess launched
+[2026-05-30 06:22:45] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:22:45] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 06:22:45] [review_engine] narrate: stopped by request
+[2026-05-30 06:22:45] [dashboard] ========================================
+[2026-05-30 06:22:45] [dashboard] ========================================
+[2026-05-30 06:22:45] [dashboard] Starting (pid=1729416)
+[2026-05-30 06:22:45] [dashboard] Starting (pid=1729416)
+[2026-05-30 06:22:45] [dashboard] [dashboard] main() started
+[2026-05-30 06:22:45] [dashboard] [dashboard] main() started
+[2026-05-30 06:22:45] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:22:45] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:22:45] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:22:45] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:22:45] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:22:45] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:22:45] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:22:45] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:22:45] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:22:45] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:22:45] [dashboard] [dashboard] title set
+[2026-05-30 06:22:45] [dashboard] [dashboard] title set
+[2026-05-30 06:22:45] [dashboard] [dashboard] geometry set
+[2026-05-30 06:22:45] [dashboard] [dashboard] geometry set
+[2026-05-30 06:22:45] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:22:45] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:22:45] [dashboard] [dashboard] resizable set
+[2026-05-30 06:22:45] [dashboard] [dashboard] resizable set
+[2026-05-30 06:22:45] [dashboard] [dashboard] config loaded
+[2026-05-30 06:22:45] [dashboard] [dashboard] config loaded
+[2026-05-30 06:22:45] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:22:45] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:22:45] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:22:46] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:22:46] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:22:46] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:22:46] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:22:46] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:22:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:22:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:04] [review_engine] narrate: cross-process stop (pid=1729467)
+[2026-05-30 06:23:04] [review_engine] narrate: cross-process stop (pid=1729467)
+[2026-05-30 06:23:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:23:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:23:04] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 06:23:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:23:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:34] [review_engine] narrate: cross-process stop (pid=1729659)
+[2026-05-30 06:23:34] [review_engine] narrate: cross-process stop (pid=1729659)
+[2026-05-30 06:23:34] [review_engine] narrate: stopped by request
+[2026-05-30 06:23:34] [review_engine] narrate: stopped by request
+[2026-05-30 06:23:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:23:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:24:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:36] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:41] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:46] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:51] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:25:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:24] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:26:24] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:26:25] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:26:25] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:26:25] [review_engine] cancel_review called
+[2026-05-30 06:26:25] [review_engine] cancel_review called
+[2026-05-30 06:26:25] [review_engine] State file deleted
+[2026-05-30 06:26:25] [review_engine] State file deleted
+[2026-05-30 06:26:27] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:26:27] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:26:27] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:26:27] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:26:27] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:26:27] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 06:26:27] [tray] _review_finished called
+[2026-05-30 06:26:32] [tray] start_review called
+[2026-05-30 06:26:33] [tray] start_review: review date = 2026-05-30
+[2026-05-30 06:26:33] [review_engine] ==================================================
+[2026-05-30 06:26:33] [review_engine] initialize_review called
+[2026-05-30 06:26:33] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:26:33] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 06:26:33] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 06:26:33] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 06:26:33] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 06:26:33] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:26:33] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 06:26:33] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 06:26:33] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 06:26:33] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 06:26:33] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 06:26:33] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 06:26:33] [tray] Dashboard subprocess launched
+[2026-05-30 06:26:34] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:26:34] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 06:26:34] [review_engine] narrate: stopped by request
+[2026-05-30 06:26:34] [dashboard] ========================================
+[2026-05-30 06:26:34] [dashboard] ========================================
+[2026-05-30 06:26:34] [dashboard] Starting (pid=1730670)
+[2026-05-30 06:26:34] [dashboard] Starting (pid=1730670)
+[2026-05-30 06:26:34] [dashboard] [dashboard] main() started
+[2026-05-30 06:26:34] [dashboard] [dashboard] main() started
+[2026-05-30 06:26:34] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:26:34] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:26:34] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:26:34] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:26:34] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:26:34] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:26:34] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:26:34] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:26:34] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:26:34] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:26:34] [dashboard] [dashboard] title set
+[2026-05-30 06:26:34] [dashboard] [dashboard] title set
+[2026-05-30 06:26:34] [dashboard] [dashboard] geometry set
+[2026-05-30 06:26:34] [dashboard] [dashboard] geometry set
+[2026-05-30 06:26:34] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:26:34] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:26:34] [dashboard] [dashboard] resizable set
+[2026-05-30 06:26:34] [dashboard] [dashboard] resizable set
+[2026-05-30 06:26:34] [dashboard] [dashboard] config loaded
+[2026-05-30 06:26:34] [dashboard] [dashboard] config loaded
+[2026-05-30 06:26:34] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:26:34] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:26:34] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:26:34] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:26:34] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:26:34] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:26:34] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:26:39] [review_engine] narrate: cross-process stop (pid=1730728)
+[2026-05-30 06:26:39] [review_engine] narrate: cross-process stop (pid=1730728)
+[2026-05-30 06:26:39] [review_engine] narrate: stopped by request
+[2026-05-30 06:26:39] [review_engine] narrate: stopped by request
+[2026-05-30 06:26:39] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 06:26:39] [review_engine] narrate: stopped by request
+[2026-05-30 06:26:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:44] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:49] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:54] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:26:59] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:04] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:09] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:14] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:19] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:24] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:29] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:34] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:39] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:43] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:27:43] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:27:44] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:27:44] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:27:44] [review_engine] cancel_review called
+[2026-05-30 06:27:44] [review_engine] cancel_review called
+[2026-05-30 06:27:44] [review_engine] State file deleted
+[2026-05-30 06:27:44] [review_engine] State file deleted
+[2026-05-30 06:27:46] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:27:46] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 06:27:46] [tray] _review_finished called
+[2026-05-30 06:27:46] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:27:46] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:27:46] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:27:46] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:27:49] [tray] start_review called
+[2026-05-30 06:27:50] [tray] start_review: review date = 2026-05-30
+[2026-05-30 06:27:50] [review_engine] ==================================================
+[2026-05-30 06:27:50] [review_engine] initialize_review called
+[2026-05-30 06:27:50] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:27:50] [review_engine] Vault directories ensured for 2026-05-30
+[2026-05-30 06:27:50] [review_engine] pending_tasks: 'Meeting about the budget review for disa' — 1 day(s)
+[2026-05-30 06:27:50] [review_engine] pending_tasks: 'Prahri review' — 4 day(s)
+[2026-05-30 06:27:50] [review_engine] pending_tasks: 'board procurement review' — 4 day(s)
+[2026-05-30 06:27:50] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:27:50] [review_engine] Review initialized for 2026-05-30. Steps: 6. context_n=3
+[2026-05-30 06:27:50] [review_engine] context_brief: reading last 3 days before 2026-05-30
+[2026-05-30 06:27:50] [review_engine] context: loaded 2026-05-29 (846 chars)
+[2026-05-30 06:27:50] [review_engine] context: loaded 2026-05-28 (1148 chars)
+[2026-05-30 06:27:50] [review_engine] context: loaded 2026-05-27 (837 chars)
+[2026-05-30 06:27:50] [review_engine] context_brief: cache hit for 2026-05-30
+[2026-05-30 06:27:50] [tray] Dashboard subprocess launched
+[2026-05-30 06:27:50] [review_engine] State saved: step=0, awaiting=False
+[2026-05-30 06:27:50] [review_engine] context_brief: state updated with context_ready=True
+[2026-05-30 06:27:50] [review_engine] narrate: stopped by request
+[2026-05-30 06:27:50] [dashboard] ========================================
+[2026-05-30 06:27:50] [dashboard] ========================================
+[2026-05-30 06:27:50] [dashboard] Starting (pid=1731186)
+[2026-05-30 06:27:50] [dashboard] Starting (pid=1731186)
+[2026-05-30 06:27:50] [dashboard] [dashboard] main() started
+[2026-05-30 06:27:50] [dashboard] [dashboard] main() started
+[2026-05-30 06:27:50] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:27:50] [dashboard] [dashboard] CTk appearance set
+[2026-05-30 06:27:50] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:27:50] [dashboard] [dashboard] CTk window created
+[2026-05-30 06:27:50] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:27:50] [dashboard] [dashboard] WM_DELETE_WINDOW suppressed
+[2026-05-30 06:27:50] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:27:50] [dashboard] [dashboard] building ReviewDashboard
+[2026-05-30 06:27:50] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:27:50] [dashboard] [dashboard] __init__ start
+[2026-05-30 06:27:50] [dashboard] [dashboard] title set
+[2026-05-30 06:27:50] [dashboard] [dashboard] title set
+[2026-05-30 06:27:50] [dashboard] [dashboard] geometry set
+[2026-05-30 06:27:50] [dashboard] [dashboard] geometry set
+[2026-05-30 06:27:50] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:27:50] [dashboard] [dashboard] fg_color configured
+[2026-05-30 06:27:50] [dashboard] [dashboard] resizable set
+[2026-05-30 06:27:50] [dashboard] [dashboard] resizable set
+[2026-05-30 06:27:50] [dashboard] [dashboard] config loaded
+[2026-05-30 06:27:50] [dashboard] [dashboard] config loaded
+[2026-05-30 06:27:50] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:27:50] [dashboard] [dashboard] calling _build_ui
+[2026-05-30 06:27:50] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:27:50] [dashboard] [dashboard] _build_ui: header frame
+[2026-05-30 06:27:50] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:27:50] [dashboard] [dashboard] _build_ui: right panel
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: content_pane
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: ctx_scroll
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: tasks panel
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: left column
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: progress bar
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: CTkScrollableFrame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: step rows done, building buttons
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: btn_row1 frame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: record_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: next_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: btn_row2 frame
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: skip_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: redo_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: cancel_btn
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui: all buttons done
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:27:51] [dashboard] [dashboard] _build_ui done, scheduling first poll
+[2026-05-30 06:27:51] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:27:51] [dashboard] [dashboard] __init__ complete
+[2026-05-30 06:27:51] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:27:51] [dashboard] [dashboard] ReviewDashboard built, entering mainloop
+[2026-05-30 06:27:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:27:56] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:01] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:04] [review_engine] narrate: cross-process stop (pid=1731239)
+[2026-05-30 06:28:04] [review_engine] narrate: cross-process stop (pid=1731239)
+[2026-05-30 06:28:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:28:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:28:04] [review_engine] NOTIFY: 'Evening Review — Step 1/6' — 'Step 1/6: Any wellness or personal reflections? (Speak or Skip).'
+[2026-05-30 06:28:04] [review_engine] narrate: stopped by request
+[2026-05-30 06:28:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:06] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:11] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:16] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:21] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:26] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:31] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:35] [review_engine] skip_step: 0 → 1 (total=6)
+[2026-05-30 06:28:35] [review_engine] skip_step: 0 → 1 (total=6)
+[2026-05-30 06:28:38] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 06:28:38] [review_engine] State saved: step=1, awaiting=False
+[2026-05-30 06:28:38] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 06:28:38] [review_engine] NOTIFY: 'Evening Review — Step 2/6' — 'Step 2/6: Any movement, exercise, or physical activity today?'
+[2026-05-30 06:28:38] [review_engine] narrate: stopped by request
+[2026-05-30 06:28:38] [review_engine] narrate: stopped by request
+[2026-05-30 06:28:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:28:56] [tray] run_full_process started. is_in_review=True
+[2026-05-30 06:29:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:08] [review_engine] narrate: stopped by request
+[2026-05-30 06:29:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:10] [tray] Transcription done: len=90 preview='yes, going up and down stairs, doing nothing, just drinking water and everything'
+[2026-05-30 06:29:10] [tray] Routing: REVIEW MODE
+[2026-05-30 06:29:10] [tray] _handle_review_step: accumulating raw text
+[2026-05-30 06:29:10] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:29:10] [review_engine] accumulate_clip: clip 1 appended (90 chars)
+[2026-05-30 06:29:10] [tray] Accumulated clip 1 for step 'Movement'
+[2026-05-30 06:29:10] [review_engine] NOTIFY: 'Evening Review — Step 2/6 Recorded' — ''Movement' recorded (1 clip). Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard.'
+[2026-05-30 06:29:10] [review_engine] narrate: stopped by request
+[2026-05-30 06:29:12] [review_engine] narrate: stopped by request
+[2026-05-30 06:29:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:29:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:30:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:31:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:37] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:32:37] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:32:39] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:32:39] [review_engine] State saved: step=1, awaiting=True
+[2026-05-30 06:32:39] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 06:32:39] [review_engine] structure_and_advance: storing 'Movement' in interview_raw (1 clips)
+[2026-05-30 06:32:39] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 06:32:39] [review_engine] advance_step: 1 → 2 (total=6)
+[2026-05-30 06:32:39] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:32:39] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:32:39] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 06:32:39] [review_engine] NOTIFY: 'Evening Review — Step 3/6' — 'Step 3/6: Describe today's meetings — time, place, attendees, and what was decided.'
+[2026-05-30 06:32:39] [review_engine] narrate: stopped by request
+[2026-05-30 06:32:39] [review_engine] narrate: stopped by request
+[2026-05-30 06:32:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:41] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:32:41] [review_engine] State saved: step=2, awaiting=False
+[2026-05-30 06:32:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:32:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:33:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:50] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:34:55] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:00] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:05] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:10] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:15] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:20] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:25] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:30] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:35] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:40] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:45] [dashboard] [dashboard] heartbeat — alive
+[2026-05-30 06:35:46] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:35:46] [dashboard] [dashboard] _do_cancel called
+[2026-05-30 06:35:47] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:35:47] [dashboard] [dashboard] cancel confirmed by user
+[2026-05-30 06:35:47] [review_engine] cancel_review called
+[2026-05-30 06:35:47] [review_engine] cancel_review called
+[2026-05-30 06:35:47] [review_engine] State file deleted
+[2026-05-30 06:35:47] [review_engine] State file deleted
+[2026-05-30 06:35:47] [review_engine] narrate: stopped by request
+[2026-05-30 06:35:47] [review_engine] narrate: stopped by request
+[2026-05-30 06:35:48] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:35:48] [review_engine] NOTIFY: 'Evening Review' — 'Review cancelled. Returning to normal mode.'
+[2026-05-30 06:35:48] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:35:48] [dashboard] [dashboard] mainloop exited
+[2026-05-30 06:35:49] [review_engine] is_review_active → False (no state file)
+[2026-05-30 06:35:49] [tray] _watch_review_completion: state gone — review finished externally, resetting tray
+[2026-05-30 06:35:49] [tray] _review_finished called
+[2026-05-30 06:36:06] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:36:19] [tray] Transcription done: len=68 preview='I had to type in Hindi We are those who look special without showing'
+[2026-05-30 06:36:19] [tray] Routing: NORMAL MODE
+[2026-05-30 06:36:19] [tray] _run_normal_mode: refining
+[2026-05-30 06:36:21] [tray] _run_normal_mode: refined, len=65
+[2026-05-30 06:36:43] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:36:55] [tray] Transcription done: len=54 preview='We are those who look special even without being shown'
+[2026-05-30 06:36:55] [tray] Routing: NORMAL MODE
+[2026-05-30 06:36:55] [tray] _run_normal_mode: refining
+[2026-05-30 06:36:55] [tray] _run_normal_mode: refined, len=76
+[2026-05-30 06:39:20] [tray] exit_app called
+[2026-05-30 06:39:31] [tray] ==================================================
+[2026-05-30 06:39:31] [tray] VoiceAssistantTray starting
+[2026-05-30 06:39:31] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-30 06:39:35] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:39:58] [tray] Transcription done: len=67 preview='We are those who are not the way that we have seen without the way.'
+[2026-05-30 06:39:58] [tray] Routing: NORMAL MODE
+[2026-05-30 06:39:58] [tray] _run_normal_mode: refining
+[2026-05-30 06:39:58] [tray] _run_normal_mode: refined, len=64
+[2026-05-30 06:40:23] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:40:48] [tray] Transcription done: len=168 preview='We have some issue with our whisper model recording because whenever I am typing'
+[2026-05-30 06:40:48] [tray] Routing: NORMAL MODE
+[2026-05-30 06:40:48] [tray] _run_normal_mode: refining
+[2026-05-30 06:40:49] [tray] _run_normal_mode: refined, len=129
+[2026-05-30 06:44:39] [tray] exit_app called
+[2026-05-30 06:44:52] [tray] ==================================================
+[2026-05-30 06:44:52] [tray] VoiceAssistantTray starting
+[2026-05-30 06:44:52] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-05-30 06:45:23] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:45:35] [tray] Transcription done: len=43 preview='हम वो हैं जो बिना दिखावे के विखाज देते हैं।'
+[2026-05-30 06:45:35] [tray] Routing: NORMAL MODE
+[2026-05-30 06:45:35] [tray] _run_normal_mode: refining
+[2026-05-30 06:45:40] [tray] _run_normal_mode: refined, len=43
+[2026-05-30 06:45:59] [tray] run_full_process started. is_in_review=False
+[2026-05-30 06:46:10] [tray] Transcription done: len=45 preview='हम वो हैं जो बिना दिखावे के भी खास दिखते हैं।'
+[2026-05-30 06:46:10] [tray] Routing: NORMAL MODE
+[2026-05-30 06:46:10] [tray] _run_normal_mode: refining
+[2026-05-30 06:46:11] [tray] _run_normal_mode: refined, len=45

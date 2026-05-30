@@ -2208,7 +2208,9 @@ def send_step_notification(state, config, blocking_narration=False):
             and step.get("step_id") == config.get("carryforward_step_id", 3)):
         tasks = state.get("carryforward_tasks", [])
         if tasks:
-            task_list = "، ".join(tasks[:5])   # max 5 for narration, Hindi list separator
+            # tasks are dicts {"text": str, ...} or plain strings (legacy)
+            task_texts = [t["text"] if isinstance(t, dict) else t for t in tasks[:5]]
+            task_list = "، ".join(task_texts)   # max 5 for narration, Hindi list separator
             intro = f"कल के ये काम अभी बाकी हैं: {task_list}"
             narrate(intro, config, blocking=True)
 
