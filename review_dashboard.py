@@ -637,6 +637,21 @@ class ReviewDashboard:
             ACCENT, font=("Inter", 13), bold=True, pady=(8, 2))
         self._panel_add_label(text, SUBTLE, font=("Inter", 13), pady=(2, 8))
 
+    def _fit_textbox(self, tb, min_h=60, max_h=600):
+        """Resize a CTkTextbox to exactly fit its displayed content."""
+        def _do():
+            try:
+                tb.update_idletasks()
+                count = tb._textbox.count("1.0", "end", "displaylines")
+                n = int(count[0]) if count else 1
+                info = tb._textbox.dlineinfo("1.0")
+                line_h = info[3] if info else 22   # px per display line
+                h = max(min_h, min(max_h, n * line_h + 14))
+                tb.configure(height=h)
+            except Exception:
+                pass
+        self.root.after(150, _do)
+
     def _panel_scroll_bottom(self):
         """Scroll ctx_scroll to the bottom so newly appended content is visible."""
         self.root.after(150, lambda: self.ctx_scroll._parent_canvas.yview_moveto(1.0))
@@ -692,6 +707,7 @@ class ReviewDashboard:
             )
             tb.grid(row=0, column=0, sticky="ew", padx=(6, 2), pady=4)
             tb.insert("end", clip_text)
+            self._fit_textbox(tb)   # auto-expand height to fit content
 
             del_btn = ctk.CTkButton(
                 row_frame, text="x", width=24, height=24,
@@ -1050,7 +1066,7 @@ class ReviewDashboard:
             self._panel_add_label(
                 f"[ok] {section_name} — saved", GREEN, font=("Inter", 12), bold=True)
             for clip in captured_clips:
-                self._panel_add_label(clip, SUBTLE, font=("Inter", 13), pady=(2, 6))
+                self._panel_add_label(clip, SUBTLE, font=("Inter", 13), pady=(4, 8))
             self._panel_scroll_bottom()
 
         threading.Thread(

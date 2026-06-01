@@ -257,12 +257,26 @@ class VoiceEngine:
         self.stop_event.set()
 
     def type_text(self, text):
-        """Simulates keyboard typing to insert text at the current cursor position."""
+        """Simulates keyboard typing to insert text at the current cursor position.
+
+        On Wayland, pynput (Xlib) cannot send events to native Wayland windows.
+        Uses wtype (Wayland) or xdotool (X11/XWayland) when available, with
+        pynput as the last resort for environments without either tool.
+        """
         if not text:
             return
+        # Small delay so the user's original window regains focus after the
+        # tray/notification activity that happened during recording.
+        time.sleep(0.8)
         try:
-            # Small delay to ensure the user has switched focus if needed
-            time.sleep(0.5)
-            self.keyboard.type(text)
+            session = os.environ.get("XDG_SESSION_TYPE", "").lower()
+            if session == "wayland" and subprocess.run(
+                    ["which", "wtype"], capture_output=True).returncode == 0:
+                subprocess.run(["wtype", "--", text], check=False)
+            elif subprocess.run(
+                    ["which", "xdotool"], capture_output=True).returncode == 0:
+                subprocess.run(["xdotool", "type", "--clearmodifiers", "--", text], check=False)
+            else:
+                self.keyboard.type(text)
         except Exception as e:
             print(f"Error while typing: {e}")
