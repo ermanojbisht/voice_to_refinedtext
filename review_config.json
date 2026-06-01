@@ -134,8 +134,8 @@
     "saved_speak_more": "सेव हो गया। और बताना चाहें तो बोलें, या अगले चरण पर बढ़ें।"
   },
   "tts_engine": "piper",
-  "piper_model": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/en_US-ryan-high.onnx",
-  "piper_model_hi": "/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/models/hi_IN-priyamvada-medium.onnx",
+  "piper_model": "models/en_US-ryan-high.onnx",
+  "piper_model_hi": "models/hi_IN-priyamvada-medium.onnx",
   "per_step_context": true,
   "ollama_host": "http://localhost:11434",
   "structure_model": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest",

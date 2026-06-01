@@ -35,8 +35,8 @@ The local voice-to-text AI assistant setup is now complete and highly optimized.
 If the icon is visible but the menu doesn't open on click, ensure you have run the installer or manually installed `gir1.2-ayatanaappindicator3-0.1` and created the `gi` symlink in your `.venv`.
 
 **File Locations:**
-- Main Script: `/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/voice_to_ai_clipboard.py`
-- Settings GUI: `/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/config_gui.py`
-- Logs: `/media/manoj/datadisk_linux/pythonprojects/voice_to_refinedtext/log.json`
+- Main Script: `voice_to_ai_clipboard.py` (in repository root)
+- Settings GUI: `config_gui.py` (in repository root)
+- Logs: `log.json` (in repository root)
 
 **Note:** If the AI is still hallucinating or translating unexpectedly, you can adjust the "AI Temperature" in the Settings GUI to a lower value (e.g., 0.1).
