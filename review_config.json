@@ -100,13 +100,17 @@
       "refine": true,
       "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}",
       "narration_variants": [
-        "अच्छा दोस्त, कल के लिए आपकी क्या योजना है?",
-        "यार, कल सबसे पहले किस काम पर ध्यान देना है?",
-        "बताइए, कल आपकी सबसे ज़रूरी प्राथमिकताएँ क्या हैं?",
-        "कल के लिए कौन से काम सबसे अधिक ज़रूरी हैं, ज़रा बताइए",
-        "तो बताइए, कल सुबह सबसे पहले किस काम पर ध्यान देंगे?",
-        "What needs your attention first thing tomorrow?"
-      ],
+          "Alright friend, what's your plan for tomorrow?",
+          "What task do you need to focus on first tomorrow?",
+          "Tell me, what are your top priorities for tomorrow?",
+          "Which tasks are the most important for tomorrow?",
+          "So, what will you focus on first thing tomorrow morning?",
+          "What needs your attention first thing tomorrow?",
+          "What are the key things you want to accomplish tomorrow?",
+          "Which task is at the top of your list for tomorrow?",
+          "What should be your main focus when you start tomorrow?",
+          "What are the most urgent tasks you need to handle tomorrow?"
+        ]
       "skip_default": "- [ ] (no priorities noted)"
     },
     {
