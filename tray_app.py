@@ -157,6 +157,7 @@ class VoiceAssistantTray:
             pystray.MenuItem("Start Evening Review",   self.start_review,                   visible=_start_review_visible),
             pystray.MenuItem("🌅 Replay Morning Brief", self.replay_morning_brief,          visible=_has_morning_brief),
             pystray.MenuItem("Open Dashboard",         self.open_gui,                       visible=_not_in_review),
+            pystray.MenuItem("Audio to Ideas",          self.open_audio_to_idea,              visible=self._audio_to_idea_enabled),
             pystray.MenuItem("Settings",               self.open_settings,                  visible=_not_in_review),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit", self.exit_app)
@@ -652,6 +653,18 @@ class VoiceAssistantTray:
 
     def open_gui(self, icon=None, item=None):
         subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
+
+    def _audio_to_idea_enabled(self, item=None):
+        """Read only the optional module setting; keep tray startup model-free."""
+        try:
+            from audio_to_idea.config import load_settings
+            return load_settings().data["integration"]["enabled"]
+        except Exception:
+            return False
+
+    def open_audio_to_idea(self, icon=None, item=None):
+        """Use the tray interpreter and repo cwd even when launched by GNOME."""
+        subprocess.Popen([sys.executable, "-m", "audio_to_idea", "gui"], cwd=self.script_dir)
 
     def open_settings(self, icon=None, item=None):
         subprocess.Popen([sys.executable, os.path.join(self.script_dir, "config_gui.py")])

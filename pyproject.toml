@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audio-to-idea"
+version = "0.1.0"
+description = "Offline audio transcription and evidence-linked idea extraction"
+readme = "docs/audio_to_idea/usage.md"
+requires-python = ">=3.10"
+dependencies = [
+  "faster-whisper==1.2.1",
+  "ctranslate2>=4.0,<5",
+  "numpy>=1.26,<3",
+  "requests>=2.32",
+]
+
+[project.optional-dependencies]
+desktop = ["customtkinter>=5.2", "Pillow>=10"]
+test = ["pytest>=8"]
+
+[project.scripts]
+audio2idea = "audio_to_idea.cli:main"
+
+[project.gui-scripts]
+audio2idea-gui = "audio_to_idea.cli:gui_main"
+
+[tool.setuptools.packages.find]
+include = ["audio_to_idea*"]
+
+[tool.setuptools.package-data]
+audio_to_idea = ["example_profiles/*.json", "prompt_templates/*.txt"]

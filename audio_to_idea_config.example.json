@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "integration": {
+    "enabled": false
+  },
+  "ui": {
+    "appearance": "system"
+  },
+  "asr": {
+    "backend": "faster-whisper",
+    "model_id": "Systran/faster-whisper-large-v3",
+    "model_path": null,
+    "cache_root": null,
+    "revision": null,
+    "device": "auto",
+    "compute_type": "auto",
+    "cpu_threads": 4,
+    "language": "auto",
+    "word_timestamps": true,
+    "offline": true,
+    "allow_downloads": false
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "normalize": false,
+    "target_lufs": -20.0,
+    "true_peak_db": -2.0,
+    "chunk_seconds": 60.0,
+    "overlap_seconds": 1.5
+  },
+  "synthesis": {
+    "backend": "ollama",
+    "host": "http://localhost:11434",
+    "model": null,
+    "temperature": 0.1,
+    "timeout_seconds": 300,
+    "context_tokens": 8192,
+    "output_language": "source",
+    "context_profile": null,
+    "mode": "clean_paragraph",
+    "prompt_directory": null,
+    "prompt_file": null
+  },
+  "output": {
+    "directory": null,
+    "formats": [
+      "txt"
+    ],
+    "save_metadata": true,
+    "overwrite": false
+  },
+  "jobs": {
+    "workers": 1,
+    "gpu_busy_policy": "queue",
+    "release_asr_before_synthesis": true
+  },
+  "watch": {
+    "poll_seconds": 2.0,
+    "stable_seconds": 5.0,
+    "recursive": false
+  }
+}

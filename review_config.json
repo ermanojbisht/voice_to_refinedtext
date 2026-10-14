@@ -38,19 +38,14 @@
     {
       "step_id": 2,
       "section_name": "Movement",
-      "prompt_notification": "Step 2/6: Any movement, exercise, or physical activity today?",
+      "prompt_notification": "Step 2/6: Any movement today?",
       "section_fill": true,
       "isolate_file": false,
       "skippable": true,
       "refine": true,
-      "structure_prompt": "Summarise this movement or physical activity note in 1-2 plain sentences:\n{raw_text}",
+      "structure_prompt": "Summarise this movement note in 1-2 plain sentences:\n{raw_text}",
       "narration_variants": [
-        "मित्र, आज आपने कोई व्यायाम या शारीरिक गतिविधि की?",
-        "यार, आज आप शारीरिक रूप से कितने सक्रिय रहे?",
-        "बताइए दोस्त, आज कोई कसरत या चलना-फिरना हुआ?",
-        "आज की शारीरिक गतिविधि के बारे में कुछ बताइए",
-        "तो बताइए, आज आपने कोई व्यायाम या सक्रियता रखी?",
-        "Any movement, exercise, or physical activity today?"
+        "Any movement, out of office and home today?"
       ],
       "skip_default": "At office (no dedicated physical activity)"
     },
@@ -110,7 +105,7 @@
           "Which task is at the top of your list for tomorrow?",
           "What should be your main focus when you start tomorrow?",
           "What are the most urgent tasks you need to handle tomorrow?"
-        ]
+        ],
       "skip_default": "- [ ] (no priorities noted)"
     },
     {

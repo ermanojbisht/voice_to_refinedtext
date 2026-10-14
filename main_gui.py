@@ -7,6 +7,7 @@ import queue
 import os
 import subprocess
 import time
+import sys
 import numpy as np
 from engine import VoiceEngine
 
@@ -73,6 +74,20 @@ class VoiceAssistantGUI:
         ctk.CTkButton(footer, text="Settings", command=self.open_settings,
                   fg_color="#45475a", text_color=TEXT_COLOR, hover_color="#585b70",
                   corner_radius=8, height=35).pack(side=ctk.RIGHT)
+
+        # The optional module owns its settings and outputs; launching it does
+        # not construct another live recorder or load models in this window.
+        try:
+            from audio_to_idea.config import load_settings
+            enabled = load_settings().data["integration"]["enabled"]
+        except Exception:
+            enabled = False
+        if enabled:
+            button = ctk.CTkButton(footer, text="Audio to Ideas", command=self.open_audio_to_idea,
+                                  fg_color="#45475a", text_color=TEXT_COLOR, height=35)
+            button.pack(side=ctk.LEFT, padx=10)
+            from audio_to_idea.gui import Tooltip
+            Tooltip(button, "Process saved recordings into timestamped transcripts and ideas. Settings are separate.")
 
     def start_voice_process(self):
         self.is_recording = True
@@ -179,6 +194,9 @@ class VoiceAssistantGUI:
 
     def open_settings(self):
         subprocess.Popen(["python3", os.path.join(self.script_dir, "config_gui.py")])
+
+    def open_audio_to_idea(self):
+        subprocess.Popen([sys.executable, "-m", "audio_to_idea", "gui"], cwd=self.script_dir)
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("dark")

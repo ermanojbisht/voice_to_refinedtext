@@ -11,3 +11,12 @@ hi_IN-priyamvada-medium.onnx.json
 brief_cache.json
 review_debug.log
 review_log.json
+.understand-anything/
+.claude/
+# AudioToIdea machine settings, job state and build artifacts
+/audio_to_idea_config.json
+/audio_to_idea_prompts/
+.audio2idea/
+.pytest_cache/
+build/
+*.egg-info/

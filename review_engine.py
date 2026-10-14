@@ -2213,7 +2213,7 @@ def send_step_notification(state, config, blocking_narration=False):
             # tasks are dicts {"text": str, ...} or plain strings (legacy)
             task_texts = [t["text"] if isinstance(t, dict) else t for t in tasks[:5]]
             task_list = "، ".join(task_texts)   # max 5 for narration, Hindi list separator
-            intro = f"कल के ये काम अभी बाकी हैं: {task_list}"
+            intro = f"These tasks from yesterday are still pending: ...: {task_list}"
             narrate(intro, config, blocking=True)
 
     variants = step.get("narration_variants", [])

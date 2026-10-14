@@ -36007,3 +36007,16 @@ TypeError: sequence item 0: expected str instance, dict found
 [2026-05-30 06:46:10] [tray] Routing: NORMAL MODE
 [2026-05-30 06:46:10] [tray] _run_normal_mode: refining
 [2026-05-30 06:46:11] [tray] _run_normal_mode: refined, len=45
+[2026-10-13 23:28:09] [tray] ==================================================
+[2026-10-13 23:28:09] [tray] VoiceAssistantTray starting
+[2026-10-13 23:28:09] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-10-13 23:28:41] [tray] exit_app called
+[2026-10-13 23:48:21] [tray] ==================================================
+[2026-10-13 23:48:21] [tray] VoiceAssistantTray starting
+[2026-10-13 23:48:21] [tray] Tray application running. Ctrl+Alt+V or SIGUSR1 to record.
+[2026-10-13 23:49:38] [tray] exit_app called
+[2026-10-14 08:00:22] [review_engine] ==================================================
+[2026-10-14 08:00:22] [review_engine] morning_brief: starting
+[2026-10-14 08:00:22] [review_engine] morning_brief: no daily note for 2026-10-13: /home/manoj/learning_vault/My Daily Notes/2026/October/2026-10-13.md
+[2026-10-14 08:00:22] [review_engine] NOTIFY: '🌅 Morning Brief' — 'No priorities found from 2026-10-13. Do an evening review tonight!'
+[2026-10-14 08:00:22] [review_engine] morning_brief: no priorities found, notified user

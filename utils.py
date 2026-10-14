@@ -4,6 +4,7 @@ import re
 import logging
 import requests
 from langdetect import detect, DetectorFactory
+from audio_to_idea.resources import legacy_inference
 
 # Ensure consistent language detection
 DetectorFactory.seed = 0
@@ -194,6 +195,7 @@ def get_prompt_and_stops(script_dir, model_name, text, lang, mode="refine", conf
 
     return prompt, stop_tokens
 
+@legacy_inference
 def call_ollama(host, model, prompt, stop_tokens, temperature=0.1, timeout=120):
     """Sends a request to Ollama and handles timeouts/errors."""
     try:

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source_name": "input.wav",
+  "source_sha256": "83f9f805a22cfc21b03aba240066f7875c8c59a3bdbbe1202de633396bc21df8",
+  "duration": 8.704,
+  "revision": "1037408bd7ccce86965212e5c635174b5f492f657405a906b1537289354e2ee6",
+  "asr_model_id": "Systran/faster-whisper-large-v3",
+  "snapshot": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "languages": [
+    "en"
+  ],
+  "context_title": "Recording context",
+  "summary_generated": true,
+  "synthesis_mode": "clean_paragraph",
+  "synthesis_model": "qwen2.5:3b",
+  "prompt_sha256": "1d21bdbb0a70bec2d7f2c4912e8e6a3dd95d484c6be8025cfdc565075cbf68a9",
+  "processing_seconds": 0.376,
+  "warnings": []
+}

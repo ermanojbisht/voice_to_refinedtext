@@ -11,6 +11,7 @@ import datetime
 import json
 import time
 from pynput.keyboard import Controller
+from audio_to_idea.resources import legacy_inference, legacy_recording
 
 class VoiceEngine:
     """Central engine for recording, transcribing, and refining voice."""
@@ -37,6 +38,7 @@ class VoiceEngine:
                 self._whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
         return self._whisper_model
 
+    @legacy_recording
     def record(self, on_start=None, on_end=None, pre_record_notification=None):
         """Records audio with silence detection and manual stop support."""
         samplerate = self.config.get("SAMPLE_RATE", 16000)
@@ -96,6 +98,7 @@ class VoiceEngine:
     # Initial prompt that steers Whisper toward Devanagari script for Hindi audio.
     _HINDI_PROMPT  = "नमस्ते, यह हिंदी में है।"
 
+    @legacy_inference
     def transcribe(self, wav_path):
         """Converts audio file to raw text with language guard and hallucination filtering.
 

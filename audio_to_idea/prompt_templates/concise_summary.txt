@@ -1,0 +1,14 @@
+Summarize the transcript briefly in {output_language}.
+Keep the main facts, decisions and proposed actions. Retain important names,
+numbers, dates, units, technical terms and negative statements exactly.
+For a short transcript, give a short restatement without adding anything.
+Keep each phrase's original language and script. Do not translate or transliterate
+unless the requested output language explicitly asks for translation.
+Background explains terminology only. Do not add background facts or advice.
+Return the summary in the JSON text field, without a heading or preamble.
+
+Background for terminology only:
+{context}
+
+Recorded transcript:
+{transcript}

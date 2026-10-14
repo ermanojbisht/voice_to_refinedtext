@@ -4,6 +4,16 @@ A **100% local, privacy-first** voice-to-text assistant for Ubuntu. Speak in Eng
 
 Built on top of this core, the **Evening Review** feature turns daily voice recordings into structured Obsidian notes — running a guided, step-by-step reflection session every evening with full LLM structuring per step.
 
+**Audio to Ideas** adds saved-recording and folder processing through a separate GUI and CLI. **Clean paragraph** is the default, with optional Concise summary and Ideas and actions modes, editable prompt templates and Hindi/English/mixed-language preservation. It uses configurable cached Whisper models and local Ollama while retaining timestamped transcripts. See the [user guide](docs/audio_to_idea/usage.md) for setup, recovery, prompts and configuration on another PC.
+
+```bash
+python3 -m audio_to_idea gui
+python3 -m audio_to_idea doctor --discover --check-ollama
+python3 -m audio_to_idea process --input /path/to/recordings --output-dir /path/to/outputs
+```
+
+The module's settings live in `audio_to_idea_config.json`; the committed `audio_to_idea_config.example.json` is portable. Existing recording and Evening Review settings remain separate. Optional launch entries appear in the tray and main window when module integration is enabled. See the [developer guide](docs/audio_to_idea/developer_guide.md) for architecture, prompt/output contracts, safe extension and test commands; [verification](docs/audio_to_idea/verification.md) records actual results and open model-quality checks.
+
 ---
 
 ## Features
@@ -480,6 +490,13 @@ voice_to_refinedtext/
 | [`docs/setup_summary.md`](docs/setup_summary.md) | Quick-start checklist — what the installer does and how to test it |
 | [`docs/refactor/plan.md`](docs/refactor/plan.md) | Active refactoring plan — architecture decisions, phases, what changed and why |
 | [`docs/refactor/progress.md`](docs/refactor/progress.md) | Refactoring task progress tracker |
+| [`docs/audio_to_idea/plan.md`](docs/audio_to_idea/plan.md) | AudioToIdea integration architecture, portable configuration, model compatibility, and phased delivery plan |
+| [`docs/audio_to_idea/implementation_steps.md`](docs/audio_to_idea/implementation_steps.md) | Ordered AudioToIdea implementation tasks and verification gates |
+| [`docs/audio_to_idea/progress_tracker.md`](docs/audio_to_idea/progress_tracker.md) | AudioToIdea progress, release checklist, findings, and evidence log |
+| [`docs/audio_to_idea/test_matrix.md`](docs/audio_to_idea/test_matrix.md) | AudioToIdea acceptance checks and existing-app regression requirements |
+| [`docs/audio_to_idea/usage.md`](docs/audio_to_idea/usage.md) | AudioToIdea GUI/CLI user guide, portable model configuration, output recovery, and troubleshooting |
+| [`docs/audio_to_idea/developer_guide.md`](docs/audio_to_idea/developer_guide.md) | Implemented architecture, processing/template/cache contracts, theme maintenance, legacy isolation, tests and packaging |
+| [`docs/audio_to_idea/verification.md`](docs/audio_to_idea/verification.md) | Executed tests, model/CPU packaging evidence, preservation checks, and remaining manual qualification |
 | [`docs/idea.md`](docs/idea.md) | Original project vision, architecture diagram, planned features |
 
 ---
