@@ -1,42 +1,42 @@
-The local voice-to-text AI assistant setup is now complete and highly optimized.
+# Setup Summary
 
-**Summary of what has been done:**
+## What this project contains
 
-1.  **Dependencies Installed:** `faster-whisper`, `sounddevice`, `scipy`, `requests`, `xclip`, and `langdetect` have been installed.
-2.  **Advanced Python Script (`voice_to_ai_clipboard.py`):**
-    *   **Auto-Stop Recording:** No longer fixed to 10 seconds. It automatically stops when it detects silence.
-    *   **Language-Locked Prompts:** Uses `langdetect` to identify English vs. Hindi and applies specific AI prompts to prevent unwanted translation.
-    *   **Sound Feedback:** Plays distinctive sounds for Start, End, and Completion of the process.
-    *   **Ollama Integration:** Supports configurable host (local or server) and model settings via `config.json`.
-3.  **Configuration Manager (`config_gui.py`):**
-    *   A GUI tool to easily change Whisper models, Ollama host/model, silence sensitivity, and AI temperature.
-4.  **Global Hotkey Setup:**
-    *   `xbindkeys` is configured to trigger the assistant anywhere in Ubuntu using `Control+Alt+v`.
+This repository currently includes two distinct Python applications:
 
-5. **Tray Icon Manager (`tray_app.py`):**
-    *   A background resident that provides visual status (Recording/Processing) and manages the `Ctrl+Alt+V` hotkey.
-    *   **Clickable Menu Fix**: Optimized for Ubuntu/Wayland by requiring `gir1.2-ayatanaappindicator3-0.1` and symlinking system `gi` to the virtual environment.
-    *   **Robust Termination**: Uses signal handlers and `pynput.keyboard.Listener` for clean exit without errors.
+- **AI Voice Refiner / Evening Review**: the existing tray app and companion scripts. Dependencies are listed in `requirements.txt`; Ubuntu-specific convenience setup is in `install.sh`.
+- **Audio to Ideas**: a separate GUI/CLI package in `audio_to_idea/`. Its packaging metadata is in `pyproject.toml`; see [its user guide](audio_to_idea/usage.md).
 
-5. **Piper TTS Integration:**
-    *   Added support for **Piper** (neural, local TTS) for much more natural voice narration in Evening Review.
-    *   Manual setup required: `pip install piper-tts` and downloading `.onnx` models to the `models/` folder.
+The dependency lists are separate and are not interchangeable.
 
-**How to use the system:**
+## Current environment support
 
-1.  **Run the Tray App (Recommended):** Use `.venv/bin/python tray_app.py`. This gives you a persistent icon and hotkey.
-2.  **Adjust Settings (Optional):** Run `.venv/bin/python config_gui.py` to select your preferred models.
-3.  **Ensure Ollama is running:** Make sure your Ollama server is active.
-4.  **Press the Hotkey:** Press `Control+Alt+v` anywhere.
-5.  **Speak:** You will hear a 'start' sound. The script will automatically stop after a few seconds of silence.
-6.  **Paste:** The refined text is automatically copied to your clipboard.
+Ubuntu desktop is the target for the existing tray app. The README and setup guide record historical testing on Ubuntu 22.04 and 24.04. Ubuntu 26.04 has been brought up manually with a local venv, but that recovery has not yet been turned into a repeatable, release-tested setup. Other distributions, Windows, and macOS are not yet qualified.
 
-**Troubleshooting Tray Icons:**
-If the icon is visible but the menu doesn't open on click, ensure you have run the installer or manually installed `gir1.2-ayatanaappindicator3-0.1` and created the `gi` symlink in your `.venv`.
+Audio capture, clipboard access, tray icons, and global shortcuts depend on the OS and desktop session. The repository also does not yet have a complete CI matrix proving compatibility across Python versions.
 
-**File Locations:**
-- Main Script: `voice_to_ai_clipboard.py` (in repository root)
-- Settings GUI: `config_gui.py` (in repository root)
-- Logs: `log.json` (in repository root)
+## Ubuntu convenience install
 
-**Note:** If the AI is still hallucinating or translating unexpectedly, you can adjust the "AI Temperature" in the Settings GUI to a lower value (e.g., 0.1).
+Review `install.sh` before running it. It uses `apt`, may install Ollama, pulls models, creates a venv, links Ubuntu's system `gi` module, and configures an X11 hotkey. It is not a generic installer or a venv-only repair tool.
+
+```bash
+./install.sh
+bash install_desktop.sh
+```
+
+The desktop launcher points to `.venv/bin/python`. Create a separate venv for each machine, operating system, and Python version; do not copy `.venv` between environments.
+
+## Python dependency guidance
+
+`requirements.txt` contains older exact pins and may not install on newer Python versions. Use only a Python/dependency combination verified for the selected app. `pyproject.toml` currently describes Audio to Ideas, not the tray app. Before claiming broader compatibility, consolidate and clarify dependency declarations and add CI checks for the declared Python versions.
+
+On Ubuntu 26.04, the working tray-app setup uses Python 3.14 in a local venv with newer compatible dependencies and system-site packages for Ubuntu-provided modules. This documents one successful machine recovery; it is not yet a supported all-environments recipe.
+
+## Basic checks
+
+```bash
+.venv/bin/python -c "import faster_whisper, numpy, scipy, sounddevice, pystray, pynput; print('imports OK')"
+.venv/bin/python tray_app.py
+```
+
+Confirm microphone recording, transcription, local Ollama refinement, clipboard output, tray menu interaction, and the relevant hotkey in the target desktop session. For Wayland, follow the [Wayland Setup section in the README](../README.md#wayland-setup).

@@ -1,6 +1,6 @@
 # AI Voice Refiner
 
-A **100% local, privacy-first** voice-to-text assistant for Ubuntu. Speak in English or Hindi — the system transcribes with Whisper, refines with a local LLM via Ollama, and delivers polished text to your clipboard. No cloud, no subscriptions, no data leaving your machine.
+A **local, privacy-first** voice-to-text assistant, currently designed for Ubuntu desktop. Speak in English or Hindi — the system transcribes with Whisper, refines with a local LLM via Ollama, and delivers polished text to your clipboard. Audio transcription and LLM refinement can run locally; optional integrations such as Telegram require network access.
 
 Built on top of this core, the **Evening Review** feature turns daily voice recordings into structured Obsidian notes — running a guided, step-by-step reflection session every evening with full LLM structuring per step.
 
@@ -101,18 +101,30 @@ The module's settings live in `audio_to_idea_config.json`; the committed `audio_
 
 ## Quick Start
 
-### 1. Install
+### 1. Choose the application
+
+This repository currently contains two Python applications with different dependency sets:
+
+- **AI Voice Refiner / Evening Review**: the existing tray app and its companion scripts (`tray_app.py`, `engine.py`, `review_dashboard.py`). Its dependencies are listed in `requirements.txt`; the Ubuntu installer is `install.sh`.
+- **Audio to Ideas**: a newer, separate GUI/CLI package in `audio_to_idea/`, with metadata in `pyproject.toml` and its own [user guide](docs/audio_to_idea/usage.md).
+
+Do not assume that installing one dependency set installs or validates the other.
+
+### 2. Set up the existing Ubuntu tray app
+
+The maintained setup path currently targets Ubuntu desktop. Review `install.sh` before running it: it uses `apt`, may install Ollama, downloads Ollama models, and configures an X11 hotkey. It is not a cross-platform installer and is not a minimal venv-repair command.
 
 ```bash
 git clone <repo-url>
 cd voice_to_refinedtext
-chmod +x install.sh
 ./install.sh
 ```
 
-The installer handles system packages, Python venv, Ollama, AI models, and the global hotkey automatically.
+The script creates a project-local `.venv` and installs `requirements.txt`. It also configures Ubuntu-specific tray and desktop integrations. On Wayland, follow the [Wayland Setup](#wayland-setup) instructions instead of relying on `xbindkeys`.
 
-### 2. Install desktop launchers (optional)
+For a machine where the system Python is newer than the versions previously tested, do not assume the pinned requirements install unchanged. Use the Python version and dependency set documented as tested for the release. A venv is tied to its Python interpreter and operating system; recreate it on another machine rather than copying `.venv`. See [Environment support and troubleshooting](#environment-support-and-troubleshooting).
+
+### 3. Install desktop launchers (optional)
 
 ```bash
 bash install_desktop.sh
@@ -120,7 +132,7 @@ bash install_desktop.sh
 
 Adds **AI Voice Refiner** and **Evening Review** to the GNOME app drawer. Run once after installation.
 
-### 3. Piper TTS Setup (Recommended)
+### 4. Piper TTS Setup (Recommended)
 
 For natural-sounding voice narration in Evening Review:
 
@@ -136,7 +148,7 @@ wget -P models "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en
 
 Then switch **TTS Engine** to `piper` in **Settings → Evening Review**.
 
-### 4. Telegram Notifications (Optional)
+### 5. Telegram Notifications (Optional)
 
 1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → copy the **bot token**
 2. Message [@userinfobot](https://t.me/userinfobot) → copy your **chat ID**
@@ -144,7 +156,7 @@ Then switch **TTS Engine** to `piper` in **Settings → Evening Review**.
 
 Once configured, review completion and morning briefs are sent to your phone automatically.
 
-### 5. Morning Priority Briefing (Optional)
+### 6. Morning Priority Briefing (Optional)
 
 ```bash
 bash install_morning_brief.sh
@@ -152,7 +164,7 @@ bash install_morning_brief.sh
 
 Installs a systemd user timer that runs `morning_brief.py` at the time set in **Settings → Notifications → Brief Time**. Reads yesterday's Tomorrow's Priorities and narrates them aloud + sends Telegram. Re-run after changing the time.
 
-### 6. Voice Wake-Word Control (Optional)
+### 7. Voice Wake-Word Control (Optional)
 
 Enable hands-free narration control during Evening Review:
 
@@ -168,7 +180,7 @@ While TTS is speaking:
 
 Alternatively use keyboard hotkeys at any time: `Ctrl+Alt+S` (stop) · `Ctrl+Alt+R` (replay).
 
-### 7. Evening Review Reminder (Optional)
+### 8. Evening Review Reminder (Optional)
 
 ```bash
 bash install_evening_reminder.sh
@@ -176,16 +188,16 @@ bash install_evening_reminder.sh
 
 Installs a systemd user timer that fires at the time set in **Settings → Notifications → Evening Review Reminder**. If no review was completed that day, sends a desktop notification and (if configured) a Telegram message. Re-run after changing the reminder time.
 
-### 8. Start the tray
+### 9. Start the tray
 
 ```bash
-python3 tray_app.py
+.venv/bin/python tray_app.py
 # or from the GNOME app drawer: search "Voice Refiner"
 ```
 
 A dot appears in your system tray. Right-click for the full menu.
 
-### 9. Record
+### 10. Record
 
 - **X11**: Press `Ctrl+Alt+V` anywhere
 - **Wayland**: Configure a GNOME Custom Shortcut (see [Wayland Setup](#wayland-setup))
@@ -193,7 +205,7 @@ A dot appears in your system tray. Right-click for the full menu.
 
 Speak. Pause. The refined text appears in your clipboard.
 
-### 10. Evening Review
+### 11. Evening Review
 
 Right-click tray → **Start Evening Review**. The dashboard opens and guides you through each step with voice narration.
 
@@ -505,20 +517,32 @@ voice_to_refinedtext/
 
 | Requirement | Details |
 |---|---|
-| OS | Ubuntu 20.04+ (tested on 22.04 / 24.04) |
+| OS | Ubuntu desktop is the current target. Historical testing is documented for 22.04 / 24.04; 26.04 was manually brought up using a local venv. Other distributions and operating systems are not yet qualified. |
 | RAM | 8 GB minimum, 16 GB recommended |
 | Disk | ~5 GB for models |
 | Microphone | Any USB or built-in mic |
-| Python | 3.10+ |
+| Python | Use a version verified for the chosen app and dependency set. `pyproject.toml` applies to Audio to Ideas; `requirements.txt` applies to the tray app. The repository does not yet have a complete cross-version CI support matrix. |
 | Key packages | `espeak-ng`, `pulseaudio-utils`, `xclip`, `python3-tk` (base for customtkinter) |
-| Tray support | `gir1.2-ayatanaappindicator3-0.1` + `gi` symlink in venv |
+| Tray support | Ubuntu/GNOME integration currently uses system GObject introspection (`python3-gi`) and Ayatana AppIndicator; setup is distribution-specific. |
 
-Install all system dependencies in one command:
+On Ubuntu, these are the system packages expected by the current tray-app setup (the `install.sh` script installs them). Package names and desktop integrations differ on other systems:
 
 ```bash
 sudo apt install -y python3-pip python3-venv python3-tk xclip pulseaudio-utils \
     espeak-ng python3-gi gir1.2-ayatanaappindicator3-0.1
 ```
+
+---
+
+## Environment support and troubleshooting
+
+The project does not yet claim support for every operating system or Python version. The existing tray app depends on native audio, clipboard, tray, and hotkey integrations; those parts are operating-system and desktop-session specific. Ubuntu is the current target. Windows, macOS, and non-Ubuntu Linux distributions need separate setup instructions and testing before they can be called supported.
+
+There are two independent Python dependency definitions today: `requirements.txt` for the tray app and `pyproject.toml` for Audio to Ideas. Their dependency lists are not interchangeable. In particular, older exact pins in `requirements.txt` may not install on newer Python releases. Prefer a clean venv using a Python version and dependency set verified for the app; do not copy a venv between machines or operating systems.
+
+On Ubuntu 26.04, the tray app was made to run in a local `.venv` with Python 3.14 and newer compatible packages, while exposing Ubuntu's system Python modules through `--system-site-packages`. This is a machine-specific recovery, not yet a reproducible, tested installation recipe for all systems. A future release should consolidate dependency declarations, define supported Python versions, and verify them in CI before advertising broader compatibility.
+
+`install.sh` is an Ubuntu convenience script with side effects: it uses `apt`, may install Ollama, pulls models, links system `gi` into the venv, and configures an X11 hotkey. Review it before running. It is not a generic installer or a safe way to repair only an existing venv.
 
 ---
 

@@ -1,13 +1,15 @@
 # Voice-to-Refined Text AI Assistant — Setup Guide
 
-This guide covers setting up the fully local, offline-capable voice-to-text AI assistant on Ubuntu, including the **Evening Review** feature that records structured daily notes into an Obsidian vault.
+This guide covers the existing **AI Voice Refiner tray app** and **Evening Review** on Ubuntu. The separate `audio_to_idea/` GUI/CLI package has its own dependency metadata and [user guide](audio_to_idea/usage.md); do not use its instructions as a substitute for setting up the tray app.
+
+The project is Ubuntu-targeted. The repository does not yet define or test a complete cross-platform/Python-version support matrix. Audio devices, clipboard access, tray icons, and global shortcuts depend on the operating system and desktop session. Treat other Linux distributions, Windows, and macOS as unqualified until tested.
 
 ---
 
 ## 1. System Requirements
 
 ### Operating System
-- Ubuntu 20.04 or newer (tested on 22.04 / 24.04)
+- Ubuntu desktop is the current target. Historical testing is documented for Ubuntu 22.04 / 24.04; Ubuntu 26.04 has been manually recovered with a local Python 3.14 venv, but that is not yet a repeatable release-tested setup.
 
 ### Hardware
 - Microphone for audio input
@@ -18,7 +20,7 @@ This guide covers setting up the fully local, offline-capable voice-to-text AI a
 
 | Package | Purpose |
 |---|---|
-| `python3`, `python3-pip`, `python3-venv` | Python runtime |
+| `python3`, `python3-pip`, `python3-venv` | Python runtime; choose a version verified with the tray-app dependency set |
 | `python3-tk` | Base tkinter required by customtkinter |
 | `xclip` | Clipboard management |
 | `pulseaudio-utils` | `paplay` sound feedback (start/end chimes) |
@@ -30,15 +32,14 @@ This guide covers setting up the fully local, offline-capable voice-to-text AI a
 
 ---
 
-## 2. Installation (Automatic)
+## 2. Installation (Ubuntu convenience script)
+
+`install.sh` is specific to Ubuntu and performs system-level and user-level setup. Review the script before running it. It is not a generic cross-platform installer and should not be used merely to repair a broken venv.
 
 ```bash
 cd voice_to_refinedtext
-chmod +x install.sh
 ./install.sh
 ```
-
-The installer handles system packages, Python virtual environment, Ollama models, and hotkey configuration.
 
 > **What `install.sh` does:**
 > - Installs all system packages (including `espeak-ng`)
@@ -46,6 +47,8 @@ The installer handles system packages, Python virtual environment, Ollama models
 > - Creates `.venv` and installs Python dependencies
 > - Symlinks the system `gi` library into the venv (required for pystray on GNOME)
 > - Configures the `Ctrl+Alt+V` hotkey via `xbindkeys`
+
+The script installs the versions currently listed in `requirements.txt`; those pins are not guaranteed to work with every Python release. `requirements.txt` is for the existing tray app. Audio to Ideas has separate dependencies in `pyproject.toml`. Until the dependency sets are consolidated and tested in CI, use a known-good Python/dependency combination for each app.
 
 ---
 
@@ -109,9 +112,9 @@ gtk-launch ai-evening-review
 Open **Startup Applications** → **Add**:
 
 - **Name**: AI Voice Refiner
-- **Command**: `/usr/bin/python3 /absolute/path/to/project/tray_app.py`
+- **Command**: `/absolute/path/to/project/.venv/bin/python /absolute/path/to/project/tray_app.py`
 
-Or use the GNOME app drawer launcher (installed above) as the startup command.
+Or use the GNOME app drawer launcher (installed above) as the startup command. The generated launcher uses the project `.venv`; recreate that environment locally on each machine rather than copying `.venv`.
 
 ---
 
