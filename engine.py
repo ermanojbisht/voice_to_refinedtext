@@ -167,6 +167,10 @@ class VoiceEngine:
             self._asr_provider.load()
         return self._asr_provider
 
+    @asr_provider.setter
+    def asr_provider(self, value):
+        self._asr_provider = value
+
     @legacy_recording
     def record(self, on_start=None, on_end=None, pre_record_notification=None, on_audio_chunk=None):
         """Records audio with pre-roll buffer, neural VAD, and manual stop support."""
@@ -229,6 +233,64 @@ class VoiceEngine:
             except Exception:
                 pass
 
+        # 3. Audio Loading, Duration Check & Pause-Guided Chunker Guard
+        pcm = None
+        duration_s = 0.0
+        if isinstance(wav_path, str) and os.path.isfile(wav_path):
+            import scipy.signal as signal
+            sr, data = wav.read(wav_path)
+            if data.dtype == np.int16:
+                pcm = data.astype(np.float32) / 32768.0
+            else:
+                pcm = data.astype(np.float32)
+            if len(pcm.shape) > 1:
+                pcm = pcm.mean(axis=1)
+            if sr != 16000 and len(pcm) > 0:
+                pcm = signal.resample(pcm, int(len(pcm) * 16000 / sr))
+            duration_s = len(pcm) / 16000.0
+        elif isinstance(wav_path, np.ndarray):
+            pcm = wav_path.astype(np.float32)
+            if len(pcm.shape) > 1:
+                pcm = pcm.mean(axis=1)
+            duration_s = len(pcm) / 16000.0
+
+        pause_chunking_enabled = self.config.get("PAUSE_GUIDED_CHUNKING", True)
+        chunk_max_s = float(self.config.get("CHUNK_MAX_SECONDS", 40.0))
+
+        if pcm is not None and pause_chunking_enabled and duration_s > chunk_max_s:
+            from audio_toolkit.chunker import PauseGuidedChunker
+            chunker = PauseGuidedChunker(
+                target_chunk_s=float(self.config.get("CHUNK_TARGET_SECONDS", 30.0)),
+                min_chunk_s=float(self.config.get("CHUNK_MIN_SECONDS", 8.0)),
+                max_chunk_s=chunk_max_s,
+                min_pause_ms=int(self.config.get("CHUNK_MIN_PAUSE_MS", 250)),
+            )
+            chunks = chunker.chunk_audio(pcm)
+            if len(chunks) > 1:
+                parts = []
+                for c in chunks:
+                    t = self._transcribe_single(c.pcm)
+                    if t and t.strip():
+                        parts.append(t.strip())
+                raw_text = " ".join(parts)
+            else:
+                raw_text = self._transcribe_single(pcm, wav_path=wav_path)
+        else:
+            raw_text = self._transcribe_single(pcm if pcm is not None else wav_path, wav_path=wav_path)
+
+        # PWD Uttarakhand Terminology normalization (if enabled)
+        features = self.config.get("FEATURES", {})
+        if features.get("pwd_terminology_corrector", True):
+            try:
+                from pwd_helper.normalizer import normalize_pwd_terms
+                raw_text = normalize_pwd_terms(raw_text)
+            except Exception:
+                pass
+
+        return raw_text
+
+    def _transcribe_single(self, audio_target, wav_path=None):
+        """Transcribes a single chunk or short audio piece using the active ASR backend."""
         lang_mode = self.config.get("LANGUAGE_MODE", "bilingual")
 
         if not self.config.get("ASR_ENGINE") or self._whisper_model is not None:
@@ -243,22 +305,8 @@ class VoiceEngine:
                 forced_lang = None
                 initial_prompt = self._BILINGUAL_PROMPT
 
-            transcribe_target = wav_path
-            if os.path.isfile(wav_path):
-                import scipy.signal as signal
-                sr, data = wav.read(wav_path)
-                if data.dtype == np.int16:
-                    pcm = data.astype(np.float32) / 32768.0
-                else:
-                    pcm = data.astype(np.float32)
-                if len(pcm.shape) > 1:
-                    pcm = pcm.mean(axis=1)
-                if sr != 16000 and len(pcm) > 0:
-                    pcm = signal.resample(pcm, int(len(pcm) * 16000 / sr))
-                transcribe_target = pcm
-
             segments, info = self.whisper_model.transcribe(
-                transcribe_target,
+                audio_target,
                 language=forced_lang,
                 initial_prompt=initial_prompt,
                 condition_on_previous_text=False,
@@ -269,7 +317,7 @@ class VoiceEngine:
             if forced_lang is None and info.language in self._HINDI_FAMILY:
                 # Re-transcribe with explicit Hindi + Devanagari prompt for clean output.
                 segments, info = self.whisper_model.transcribe(
-                    transcribe_target,
+                    audio_target,
                     language="hi",
                     initial_prompt=self._HINDI_PROMPT,
                     condition_on_previous_text=False,
@@ -279,7 +327,7 @@ class VoiceEngine:
             elif forced_lang is None and info.language not in self._ALLOWED_LANGS:
                 # Unrelated mis-detection → fall back to English.
                 segments, info = self.whisper_model.transcribe(
-                    transcribe_target,
+                    audio_target,
                     language="en",
                     condition_on_previous_text=False,
                     no_speech_threshold=0.6,
@@ -297,27 +345,14 @@ class VoiceEngine:
                 if sum(1 for c in text if c.isalpha()) == 0:
                     continue
                 parts.append(text)
-            raw_text = " ".join(parts)
+            return " ".join(parts)
         else:
             # Modular ASR provider path (Nemotron, Whisper-GGML, Handy-CLI)
             actual_wav_path = wav_path
-            pcm = np.zeros(16000, dtype=np.float32)
-            if os.path.isfile(wav_path):
-                import scipy.signal as signal
-                sr, data = wav.read(wav_path)
-                if data.dtype == np.int16:
-                    pcm = data.astype(np.float32) / 32768.0
-                else:
-                    pcm = data.astype(np.float32)
-                if len(pcm.shape) > 1:
-                    pcm = pcm.mean(axis=1)
-
-                if sr != 16000 and len(pcm) > 0:
-                    target_len = int(len(pcm) * 16000 / sr)
-                    pcm = signal.resample(pcm, target_len)
-                    resampled_wav = os.path.join(self.script_dir, "input_16k_temp.wav")
-                    wav.write(resampled_wav, 16000, (np.clip(pcm, -1.0, 1.0) * 32767).astype(np.int16))
-                    actual_wav_path = resampled_wav
+            if isinstance(audio_target, np.ndarray):
+                pcm = audio_target
+            else:
+                pcm = np.zeros(16000, dtype=np.float32)
 
             # Resolve ASR language and prompt from active preset if configured
             active_preset_key = self.get_active_preset()
@@ -349,18 +384,7 @@ class VoiceEngine:
                 language=asr_lang,
                 prompt=prompt_text,
             )
-            raw_text = result.text
-
-        # PWD Uttarakhand Terminology normalization (if enabled)
-        features = self.config.get("FEATURES", {})
-        if features.get("pwd_terminology_corrector", True):
-            try:
-                from pwd_helper.normalizer import normalize_pwd_terms
-                raw_text = normalize_pwd_terms(raw_text)
-            except Exception:
-                pass
-
-        return raw_text
+            return result.text
 
     def refine(self, text, mode=None, goal=None):
         """Sends text to Ollama for refinement/translation based on refinement goal."""

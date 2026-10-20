@@ -53,6 +53,8 @@ def test_api_config(running_server):
         assert "PASTE_KEY_COMBO" in data["main"]
         assert "SHORTCUT_ACTIVATION" in data["main"]
         assert "HOLD_THRESHOLD_MS" in data["main"]
+        assert "PAUSE_GUIDED_CHUNKING" in data["main"]
+        assert "CHUNK_TARGET_SECONDS" in data["main"]
 
 
 def test_api_models(running_server):

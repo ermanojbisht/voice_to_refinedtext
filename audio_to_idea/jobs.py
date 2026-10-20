@@ -129,7 +129,13 @@ class JobService:
                 with tempfile.TemporaryDirectory(prefix='.audio2idea-') as temp:
                     prepared, duration = prepare(source, temp, cfg['audio'], cancel)
                     if cfg['audio'].get('pause_guided', False):
-                        windows = list(pause_guided_chunks(prepared, target_seconds=cfg['audio'].get('chunk_seconds', 30.0)))
+                        windows = list(pause_guided_chunks(
+                            prepared,
+                            target_seconds=cfg['audio'].get('chunk_seconds'),
+                            min_chunk_seconds=cfg['audio'].get('min_chunk_seconds'),
+                            max_chunk_seconds=cfg['audio'].get('max_chunk_seconds'),
+                            min_pause_ms=cfg['audio'].get('min_pause_ms'),
+                        ))
                     else:
                         windows = list(chunks(duration, cfg['audio']['chunk_seconds'], cfg['audio']['overlap_seconds']))
                     raw = []

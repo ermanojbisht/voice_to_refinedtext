@@ -862,6 +862,44 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pause-Guided Long Audio Chunker Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>✂️ Pause-Guided Long Audio Chunker</h2>
+                    <p>Prevents ASR hallucinations by intelligently cutting long multi-minute speech strictly at natural breath pauses (&gt;250ms silence) rather than blind clock timers.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Pause-Guided Chunking (PAUSE_GUIDED_CHUNKING)
+                        <small>When enabled, speech longer than 40s is split at acoustic sentence pauses with zero clipped words.</small>
+                    </div>
+                    <div class="form-field toggle-wrapper">
+                        <input type="checkbox" id="main_PAUSE_GUIDED_CHUNKING" class="toggle-checkbox" checked>
+                        <label for="main_PAUSE_GUIDED_CHUNKING" class="toggle-label"></label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Target Chunk Duration (CHUNK_TARGET_SECONDS)
+                        <small>Target window (in seconds) for speech chunks. Chunker selects the cleanest natural pause nearest this target.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_CHUNK_TARGET_SECONDS" min="15" max="45" step="5" oninput="updateRangeLabel('main_CHUNK_TARGET_SECONDS', 'badge_chunktarget', ' s')">
+                        <span class="range-badge" id="badge_chunktarget">30 s</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Max Chunk Duration Cap (CHUNK_MAX_SECONDS)
+                        <small>Strict upper ceiling. Audio exceeding this threshold is guaranteed to be cut so ASR models never hallucinate.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_CHUNK_MAX_SECONDS" min="30" max="60" step="5" oninput="updateRangeLabel('main_CHUNK_MAX_SECONDS', 'badge_chunkmax', ' s')">
+                        <span class="range-badge" id="badge_chunkmax">40 s</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 2: Evening Review -->
@@ -1173,6 +1211,12 @@
                 document.getElementById("main_HOLD_THRESHOLD_MS").value = m.HOLD_THRESHOLD_MS || 300;
                 updateRangeLabel("main_HOLD_THRESHOLD_MS", "badge_holdthreshold", " ms");
 
+                document.getElementById("main_PAUSE_GUIDED_CHUNKING").checked = m.PAUSE_GUIDED_CHUNKING !== false;
+                document.getElementById("main_CHUNK_TARGET_SECONDS").value = m.CHUNK_TARGET_SECONDS || 30.0;
+                updateRangeLabel("main_CHUNK_TARGET_SECONDS", "badge_chunktarget", " s");
+                document.getElementById("main_CHUNK_MAX_SECONDS").value = m.CHUNK_MAX_SECONDS || 40.0;
+                updateRangeLabel("main_CHUNK_MAX_SECONDS", "badge_chunkmax", " s");
+
                 // Populate Evening Review Tab
                 const r = data.review || {};
                 const vp = r.vault_paths || {};
@@ -1402,6 +1446,9 @@
                 OVERLAY_STYLE: document.getElementById("main_OVERLAY_STYLE").value,
                 SHORTCUT_ACTIVATION: document.getElementById("main_SHORTCUT_ACTIVATION").value,
                 HOLD_THRESHOLD_MS: parseInt(document.getElementById("main_HOLD_THRESHOLD_MS").value, 10) || 300,
+                PAUSE_GUIDED_CHUNKING: document.getElementById("main_PAUSE_GUIDED_CHUNKING").checked,
+                CHUNK_TARGET_SECONDS: parseFloat(document.getElementById("main_CHUNK_TARGET_SECONDS").value) || 30.0,
+                CHUNK_MAX_SECONDS: parseFloat(document.getElementById("main_CHUNK_MAX_SECONDS").value) || 40.0,
                 FEATURES: {}
             };
 

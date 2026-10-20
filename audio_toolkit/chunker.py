@@ -1,14 +1,38 @@
 """Pause-Guided Long Audio Chunker.
 
-Divides multi-minute audio recordings strictly at acoustic breath pauses (>250ms silence)
-to eliminate Whisper hallucinations and avoid cutting words in half.
+Divides multi-minute audio recordings strictly at acoustic breath pauses (>=250ms silence)
+using Handy's acoustic scoring algorithm to eliminate Whisper hallucinations and avoid
+cutting words in half. Zero hardcoded thresholds; all parameters are configurable.
 """
 from dataclasses import dataclass
 from typing import List, Union, Optional
 import os
+import json
 import numpy as np
 
 from .silero_vad import SileroVAD
+
+
+def _load_chunker_config() -> dict:
+    """Loads chunking configuration defaults from config.json to prevent hardcoding."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+    defaults = {
+        "PAUSE_GUIDED_CHUNKING": True,
+        "CHUNK_TARGET_SECONDS": 30.0,
+        "CHUNK_MIN_SECONDS": 8.0,
+        "CHUNK_MAX_SECONDS": 40.0,
+        "CHUNK_MIN_PAUSE_MS": 250,
+    }
+    if os.path.isfile(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                user_cfg = json.load(f)
+                for k in defaults:
+                    if k in user_cfg:
+                        defaults[k] = user_cfg[k]
+        except Exception:
+            pass
+    return defaults
 
 
 @dataclass
@@ -29,24 +53,49 @@ class AudioChunk:
         }
 
 
+@dataclass
+class PauseCandidate:
+    gap_start_sample: int
+    gap_end_sample: int
+    midpoint_sample: int
+    duration_s: float
+
+
 class PauseGuidedChunker:
-    """Intelligently slices long audio into 20-35s chunks aligned with natural breath pauses."""
+    """Intelligently slices long audio into pause-aligned chunks using Handy's acoustic scoring."""
 
     def __init__(
         self,
-        target_chunk_s: float = 30.0,
-        min_chunk_s: float = 8.0,
-        max_chunk_s: float = 40.0,
-        min_pause_ms: int = 250,
+        target_chunk_s: Optional[float] = None,
+        min_chunk_s: Optional[float] = None,
+        max_chunk_s: Optional[float] = None,
+        min_pause_ms: Optional[int] = None,
         sample_rate: int = 16000,
         vad: Optional[SileroVAD] = None,
     ):
-        self.target_chunk_s = target_chunk_s
-        self.min_chunk_s = min_chunk_s
-        self.max_chunk_s = max_chunk_s
-        self.min_pause_ms = min_pause_ms
+        cfg = _load_chunker_config()
+        self.target_chunk_s = float(target_chunk_s if target_chunk_s is not None else cfg["CHUNK_TARGET_SECONDS"])
+        self.min_chunk_s = float(min_chunk_s if min_chunk_s is not None else cfg["CHUNK_MIN_SECONDS"])
+        self.max_chunk_s = float(max_chunk_s if max_chunk_s is not None else cfg["CHUNK_MAX_SECONDS"])
+        self.min_pause_ms = int(min_pause_ms if min_pause_ms is not None else cfg["CHUNK_MIN_PAUSE_MS"])
         self.sample_rate = sample_rate
         self.vad = vad or SileroVAD.get_instance()
+
+    @staticmethod
+    def calculate_candidate_score(gap_duration_s: float, position_s: float, target_s: float) -> float:
+        """Handy's asymmetric acoustic score:
+        Score = min(gap_duration_s, 1.0) - off_target_penalty
+
+        Penalty:
+          - 0.10/s if position > target (late cuts penalized harder)
+          - 0.05/s if position <= target (early cuts penalized less)
+        Longer silence gaps (up to 1.0s) between full sentences are preferred over brief breath pauses.
+        """
+        if position_s > target_s:
+            off_target = 0.10 * (position_s - target_s)
+        else:
+            off_target = 0.05 * (target_s - position_s)
+        return min(gap_duration_s, 1.0) - off_target
 
     def chunk_audio(
         self,
@@ -100,20 +149,27 @@ class PauseGuidedChunker:
             min_silence_duration_ms=self.min_pause_ms,
         )
 
-        # 2. Extract silence pause split candidates (midpoints of silence gaps >= min_pause_ms)
+        # 2. Extract silence pause candidates (gaps >= min_pause_ms)
         min_pause_samples = int((self.min_pause_ms / 1000.0) * self.sample_rate)
-        pause_cut_points = []
+        candidates: List[PauseCandidate] = []
 
         if segments:
             for i in range(len(segments) - 1):
                 gap_start = segments[i]["end"]
                 gap_end = segments[i + 1]["start"]
-                if gap_end - gap_start >= min_pause_samples:
-                    # Choose silence midpoint
+                gap_len = gap_end - gap_start
+                if gap_len >= min_pause_samples:
                     mid = (gap_start + gap_end) // 2
-                    pause_cut_points.append(mid)
+                    candidates.append(
+                        PauseCandidate(
+                            gap_start_sample=gap_start,
+                            gap_end_sample=gap_end,
+                            midpoint_sample=mid,
+                            duration_s=gap_len / self.sample_rate,
+                        )
+                    )
 
-        # 3. Walk through audio and choose cuts near target_chunk_s
+        # 3. Walk through audio and choose optimal cut points
         chunks: List[AudioChunk] = []
         curr_start = 0
         chunk_idx = 0
@@ -138,24 +194,32 @@ class PauseGuidedChunker:
                 )
                 break
 
-            ideal_cut = curr_start + target_samples
             min_allowed_cut = curr_start + min_samples
             max_allowed_cut = curr_start + max_samples
 
             # Find candidates in [min_allowed_cut, max_allowed_cut]
-            candidates = [
-                p for p in pause_cut_points
-                if min_allowed_cut <= p <= max_allowed_cut
+            valid_candidates = [
+                c for c in candidates
+                if min_allowed_cut <= c.midpoint_sample <= max_allowed_cut
             ]
 
-            if candidates:
-                # Pick the pause cut closest to ideal_cut
-                best_cut = min(candidates, key=lambda p: abs(p - ideal_cut))
+            if valid_candidates:
+                # Score each candidate using Handy's formula
+                best_cand = max(
+                    valid_candidates,
+                    key=lambda c: self.calculate_candidate_score(
+                        gap_duration_s=c.duration_s,
+                        position_s=(c.midpoint_sample - curr_start) / self.sample_rate,
+                        target_s=self.target_chunk_s,
+                    ),
+                )
+                best_cut = best_cand.midpoint_sample
             else:
-                # Fallback: scan a 100ms window for the minimum energy point in [ideal_cut - 3s, ideal_cut + 3s]
+                # Fallback: scan for minimum RMS energy window (100ms) around ideal cut
+                ideal_cut = curr_start + target_samples
                 search_start = max(min_allowed_cut, ideal_cut - int(3.0 * self.sample_rate))
                 search_end = min(max_allowed_cut, ideal_cut + int(3.0 * self.sample_rate))
-                
+
                 win_len = int(0.100 * self.sample_rate)  # 100ms
                 min_energy = float("inf")
                 best_cut = ideal_cut

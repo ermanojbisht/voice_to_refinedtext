@@ -2,8 +2,8 @@
     "GLOBAL_HOTKEY": "Ctrl+Space",
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
-    "ACTIVE_ASR_PRESET": "instant_english",
-    "ACTIVE_REFINEMENT_GOAL": "official_english",
+    "ACTIVE_ASR_PRESET": "roman_hinglish",
+    "ACTIVE_REFINEMENT_GOAL": "concise_summary",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
@@ -32,6 +32,11 @@
     "SHORTCUT_ACTIVATION": "hold_or_toggle",
     "HOLD_THRESHOLD_MS": 300,
     "RELEASE_GRACE_MS": 50,
+    "PAUSE_GUIDED_CHUNKING": true,
+    "CHUNK_TARGET_SECONDS": 30.0,
+    "CHUNK_MAX_SECONDS": 40.0,
+    "CHUNK_MIN_SECONDS": 8.0,
+    "CHUNK_MIN_PAUSE_MS": 250,
     "FEATURES": {
         "start_end_sounds": true,
         "clipboard_output": true,
@@ -144,8 +149,8 @@
     },
     "WHISPER_MODEL": "large-v3-turbo",
     "ASR_ENGINE": "transcribe_cpp",
-    "ACTIVE_MODEL_PROFILE": "instant_english",
-    "LANGUAGE_MODE": "pure_english",
-    "MODE": "translate",
+    "ACTIVE_MODEL_PROFILE": "roman_hinglish",
+    "LANGUAGE_MODE": "auto",
+    "MODE": "refine",
     "CACHE_RETENTION_DAYS": 7
 }

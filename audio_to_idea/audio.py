@@ -85,7 +85,7 @@ def chunks(duration, seconds=60.0, overlap=1.5):
         index += 1
 
 
-def pause_guided_chunks(prepared_wav_path, target_seconds=30.0, min_chunk_seconds=8.0, max_chunk_seconds=40.0, min_pause_ms=250):
+def pause_guided_chunks(prepared_wav_path, target_seconds=None, min_chunk_seconds=None, max_chunk_seconds=None, min_pause_ms=None):
     """Generates audio_to_idea.audio.Chunk objects aligned with natural breath pauses using PauseGuidedChunker."""
     from audio_toolkit.chunker import PauseGuidedChunker
     chunker = PauseGuidedChunker(
