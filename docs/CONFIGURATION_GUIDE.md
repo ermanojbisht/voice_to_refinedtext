@@ -390,17 +390,24 @@ python pwd_cli.py --listen --pipe | git commit -F -
 python pwd_cli.py --listen --pipe > site_notes.md
 ```
 
-#### 2. Shell Voice Typing Alias (`scripts/terminal_voice.sh`):
-Source the optional helper script in your terminal to speak shell commands:
-```bash
-# Source helper script (or add to ~/.bashrc or ~/.zshrc)
-source scripts/terminal_voice.sh
+#### 2. Shell Voice Typing Aliases & Zsh Integration (`scripts/terminal_voice.sh`):
+The repository provides modular shell integration for Bash and Zsh (`~/.zsh/aliases.zsh` and `~/.zsh/functions.zsh`):
 
-# Type 'v' to dictate and copy/print text
-v
+```zsh
+# Available from ANY directory on your machine:
+v         # 1-letter shortcut: speaks and dictates with live Rich Terminal HUD
+voice     # Full alias for 'python pwd_cli.py --listen'
+v-doc     # Runs the 24-point self-healing system doctor diagnostics
 
-# In interactive Bash, press Ctrl+G to speak and inject text directly onto the active prompt
+# In-Prompt Voice Injection:
+Ctrl+G    # Press Ctrl+G at your active prompt, speak a command (e.g. "git status"),
+          # and the text is automatically injected directly onto your command line!
 ```
+
+##### How the Shortcuts Work Under the Hood:
+- **Zero Directory Dependency**: Always invokes the project's virtual environment interpreter (`.venv/bin/python`), guaranteeing all dependencies (`rich`, `transcribe_cpp`, `faster-whisper`, `scipy`) are loaded even if you are in your home folder (`~`) or `/var/www/`.
+- **ZLE Prompt Widget**: In Zsh, `Ctrl+G` hooks directly into the Zsh Line Editor (ZLE), appending transcribed speech directly into `$LBUFFER` and calling `zle reset-prompt`.
+- **Automatic Clipboard Copy**: Any dictated text is automatically copied to the system clipboard in addition to terminal display.
 
 #### 3. Transparent ON vs. OFF Tradeoff:
 - **`CLI_RICH_HUD: true` (ON)**: Visual microphone assurance with animated volume VU meter, clear status transitions (`RECORDING` $\rightarrow$ `TRANSCRIBING` $\rightarrow$ `DONE`), and Catppuccin color-coded panels. Automatically diverts HUD to `stderr` when piping so stdout receives only pure text.

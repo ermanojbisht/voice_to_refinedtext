@@ -981,17 +981,24 @@ python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span cl
 python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span class="w"> </span>--pipe<span class="w"> </span>&gt;<span class="w"> </span>site_notes.md
 </code></pre></div>
 
-<h4 id="2-shell-voice-typing-alias-scriptsterminal_voicesh">2. Shell Voice Typing Alias (<code>scripts/terminal_voice.sh</code>):</h4>
-<p>Source the optional helper script in your terminal to speak shell commands:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Source helper script (or add to ~/.bashrc or ~/.zshrc)</span>
-<span class="nb">source</span><span class="w"> </span>scripts/terminal_voice.sh
+<h4 id="2-shell-voice-typing-aliases-zsh-integration-scriptsterminal_voicesh">2. Shell Voice Typing Aliases &amp; Zsh Integration (<code>scripts/terminal_voice.sh</code>):</h4>
+<p>The repository provides modular shell integration for Bash and Zsh (<code>~/.zsh/aliases.zsh</code> and <code>~/.zsh/functions.zsh</code>):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Available from ANY directory on your machine:</span>
+v<span class="w">         </span><span class="c1"># 1-letter shortcut: speaks and dictates with live Rich Terminal HUD</span>
+voice<span class="w">     </span><span class="c1"># Full alias for &#39;python pwd_cli.py --listen&#39;</span>
+v-doc<span class="w">     </span><span class="c1"># Runs the 24-point self-healing system doctor diagnostics</span>
 
-<span class="c1"># Type &#39;v&#39; to dictate and copy/print text</span>
-v
-
-<span class="c1"># In interactive Bash, press Ctrl+G to speak and inject text directly onto the active prompt</span>
+<span class="c1"># In-Prompt Voice Injection:</span>
+Ctrl+G<span class="w">    </span><span class="c1"># Press Ctrl+G at your active prompt, speak a command (e.g. &quot;git status&quot;),</span>
+<span class="w">          </span><span class="c1"># and the text is automatically injected directly onto your command line!</span>
 </code></pre></div>
 
+<h5 id="how-the-shortcuts-work-under-the-hood">How the Shortcuts Work Under the Hood:</h5>
+<ul>
+<li><strong>Zero Directory Dependency</strong>: Always invokes the project's virtual environment interpreter (<code>.venv/bin/python</code>), guaranteeing all dependencies (<code>rich</code>, <code>transcribe_cpp</code>, <code>faster-whisper</code>, <code>scipy</code>) are loaded even if you are in your home folder (<code>~</code>) or <code>/var/www/</code>.</li>
+<li><strong>ZLE Prompt Widget</strong>: In Zsh, <code>Ctrl+G</code> hooks directly into the Zsh Line Editor (ZLE), appending transcribed speech directly into <code>$LBUFFER</code> and calling <code>zle reset-prompt</code>.</li>
+<li><strong>Automatic Clipboard Copy</strong>: Any dictated text is automatically copied to the system clipboard in addition to terminal display.</li>
+</ul>
 <h4 id="3-transparent-on-vs-off-tradeoff">3. Transparent ON vs. OFF Tradeoff:</h4>
 <ul>
 <li><strong><code>CLI_RICH_HUD: true</code> (ON)</strong>: Visual microphone assurance with animated volume VU meter, clear status transitions (<code>RECORDING</code> $\rightarrow$ <code>TRANSCRIBING</code> $\rightarrow$ <code>DONE</code>), and Catppuccin color-coded panels. Automatically diverts HUD to <code>stderr</code> when piping so stdout receives only pure text.</li>
@@ -1212,7 +1219,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:36:42
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:51:26
             </div>
         </div>
     </div>
