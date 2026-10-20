@@ -165,6 +165,15 @@ class ASRFactory:
         active_profile_key = asr_cfg.get("active_profile")
         profiles = asr_cfg.get("model_profiles", {})
         models_dir = settings.get("MODELS_DIR") or asr_cfg.get("models_dir")
+        if not models_dir:
+            try:
+                import json
+                main_cfg_path = os.path.join(PROJECT_ROOT, "config.json")
+                if os.path.isfile(main_cfg_path):
+                    with open(main_cfg_path, "r", encoding="utf-8") as f:
+                        models_dir = json.load(f).get("MODELS_DIR")
+            except Exception:
+                pass
 
         profile = profiles.get(active_profile_key, {}) if active_profile_key else {}
 

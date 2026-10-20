@@ -123,38 +123,46 @@ Copy and paste the preset matching your hardware into `config.json`.
 
 When transferring this repository to another PC or drive where paths differ:
 
-1. **The `MODELS_DIR` Configuration Key**:
-   Set `"MODELS_DIR"` in `config.json` to the folder where your GGUF/bin models are saved on that computer:
+1. **The Single Source of Truth (`MODELS_DIR`)**:
+   `ASR_PRESETS` in `config.json` stores purely portable model filenames (e.g., `"model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf"` and `"model": "Whisper-Hindi2Hinglish-Apex-Q8.bin"`).
+   You only need to configure the base directory once via `"MODELS_DIR"` in `config.json`:
    ```json
    "MODELS_DIR": "/home/username/models"
    ```
-   Or use a project-relative path:
+   Or on Windows:
+   ```json
+   "MODELS_DIR": "C:\\AI_Models\\handy"
+   ```
+   Or relative to this repository:
    ```json
    "MODELS_DIR": "./models"
    ```
 
-2. **Zero-Configuration `./models/` Drop-In**:
-   If you copy your model files directly into `<project_root>/models/`, the system automatically discovers and loads them without requiring any configuration edits!
+2. **Web Settings GUI (Zero JSON Editing)**:
+   Open the settings dashboard at `http://127.0.0.1:8765/settings`. Under the **Core Pipeline & Storage** section, you will find the **📁 Models Base Directory (MODELS_DIR)** field. Changing the path here and clicking *Save Configuration* instantly updates `config.json` and hot-reloads the active ASR backend across both the real-time dictation engine and the Audio-to-Idea batch processor.
 
-3. **Environment Variable Override (`$MODELS_DIR`)**:
-   You can also set the location system-wide via environment variables in your terminal or `~/.bashrc`:
+3. **Zero-Configuration `./models/` Drop-In**:
+   If you copy your model files directly into `<project_root>/models/`, the system automatically discovers and loads them without requiring any configuration edits on any PC!
+
+4. **Environment Variable Override (`$MODELS_DIR`)**:
+   You can also set the location system-wide via environment variables in your terminal, `.env`, or shell profile:
    ```bash
    export MODELS_DIR="/path/to/my/models"
    # or
    export VOICE_MODELS_DIR="/path/to/my/models"
    ```
 
-4. **Multi-Tier Fallback Discovery Hierarchy**:
-   If a configured model path cannot be found at its primary location, the ASR factory automatically searches the following locations in order:
-   1. Explicit `"MODELS_DIR"` in `config.json`
+5. **Multi-Tier Fallback Discovery Hierarchy**:
+   When resolving any model filename, the ASR factory inspects the following tiers in order:
+   1. Explicit `"MODELS_DIR"` configured in `config.json`
    2. Environment variables: `$MODELS_DIR`, `$VOICE_MODELS_DIR`, `$HANDY_MODELS_DIR`
    3. Repository local folder: `<project_root>/models/<filename>`
    4. User standard data folder: `~/.local/share/voice_to_refinedtext/models/<filename>`
    5. User cache folder: `~/.cache/voice_to_refinedtext/models/<filename>`
    6. Primary development path: `/media/manoj/F1/models-handy/<filename>`
 
-5. **Hugging Face Cache Portability (`audio_to_idea`)**:
-   If `cache_root` in `audio_to_idea_config.json` points to an external drive that is unplugged or absent on the current PC, the system automatically and silently falls back to standard `~/.cache/huggingface/hub` instead of halting.
+6. **Unified Discovery Across Real-time & Batch Pipelines**:
+   Both `engine.py` (real-time voice dictation) and `audio_to_idea` (batch audio file transcription and synthesis) share this exact same discovery logic. Even if `audio_to_idea` is invoked without explicit arguments, it automatically inherits `MODELS_DIR` from `config.json`.
 
 ---
 

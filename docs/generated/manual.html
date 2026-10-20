@@ -101,7 +101,7 @@
             scroll-behavior: smooth;
         }
         .content-container {
-            max-width: 950px;
+            max-width: 1120px;
             margin: 0 auto;
         }
         /* Chapter Card Container */
@@ -368,21 +368,29 @@
 <p>When transferring this repository to another PC or drive where paths differ:</p>
 <ol>
 <li>
-<p><strong>The <code>MODELS_DIR</code> Configuration Key</strong>:
-   Set <code>"MODELS_DIR"</code> in <code>config.json</code> to the folder where your GGUF/bin models are saved on that computer:
+<p><strong>The Single Source of Truth (<code>MODELS_DIR</code>)</strong>:
+   <code>ASR_PRESETS</code> in <code>config.json</code> stores purely portable model filenames (e.g., <code>"model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf"</code> and <code>"model": "Whisper-Hindi2Hinglish-Apex-Q8.bin"</code>).
+   You only need to configure the base directory once via <code>"MODELS_DIR"</code> in <code>config.json</code>:
    <code>json
    "MODELS_DIR": "/home/username/models"</code>
-   Or use a project-relative path:
+   Or on Windows:
+   <code>json
+   "MODELS_DIR": "C:\\AI_Models\\handy"</code>
+   Or relative to this repository:
    <code>json
    "MODELS_DIR": "./models"</code></p>
 </li>
 <li>
+<p><strong>Web Settings GUI (Zero JSON Editing)</strong>:
+   Open the settings dashboard at <code>http://127.0.0.1:8765/settings</code>. Under the <strong>Core Pipeline &amp; Storage</strong> section, you will find the <strong>📁 Models Base Directory (MODELS_DIR)</strong> field. Changing the path here and clicking <em>Save Configuration</em> instantly updates <code>config.json</code> and hot-reloads the active ASR backend across both the real-time dictation engine and the Audio-to-Idea batch processor.</p>
+</li>
+<li>
 <p><strong>Zero-Configuration <code>./models/</code> Drop-In</strong>:
-   If you copy your model files directly into <code>&lt;project_root&gt;/models/</code>, the system automatically discovers and loads them without requiring any configuration edits!</p>
+   If you copy your model files directly into <code>&lt;project_root&gt;/models/</code>, the system automatically discovers and loads them without requiring any configuration edits on any PC!</p>
 </li>
 <li>
 <p><strong>Environment Variable Override (<code>$MODELS_DIR</code>)</strong>:
-   You can also set the location system-wide via environment variables in your terminal or <code>~/.bashrc</code>:
+   You can also set the location system-wide via environment variables in your terminal, <code>.env</code>, or shell profile:
    <code>bash
    export MODELS_DIR="/path/to/my/models"
    # or
@@ -390,9 +398,9 @@
 </li>
 <li>
 <p><strong>Multi-Tier Fallback Discovery Hierarchy</strong>:
-   If a configured model path cannot be found at its primary location, the ASR factory automatically searches the following locations in order:</p>
+   When resolving any model filename, the ASR factory inspects the following tiers in order:</p>
 </li>
-<li>Explicit <code>"MODELS_DIR"</code> in <code>config.json</code></li>
+<li>Explicit <code>"MODELS_DIR"</code> configured in <code>config.json</code></li>
 <li>Environment variables: <code>$MODELS_DIR</code>, <code>$VOICE_MODELS_DIR</code>, <code>$HANDY_MODELS_DIR</code></li>
 <li>Repository local folder: <code>&lt;project_root&gt;/models/&lt;filename&gt;</code></li>
 <li>User standard data folder: <code>~/.local/share/voice_to_refinedtext/models/&lt;filename&gt;</code></li>
@@ -401,8 +409,8 @@
 <p>Primary development path: <code>/media/manoj/F1/models-handy/&lt;filename&gt;</code></p>
 </li>
 <li>
-<p><strong>Hugging Face Cache Portability (<code>audio_to_idea</code>)</strong>:
-   If <code>cache_root</code> in <code>audio_to_idea_config.json</code> points to an external drive that is unplugged or absent on the current PC, the system automatically and silently falls back to standard <code>~/.cache/huggingface/hub</code> instead of halting.</p>
+<p><strong>Unified Discovery Across Real-time &amp; Batch Pipelines</strong>:
+   Both <code>engine.py</code> (real-time voice dictation) and <code>audio_to_idea</code> (batch audio file transcription and synthesis) share this exact same discovery logic. Even if <code>audio_to_idea</code> is invoked without explicit arguments, it automatically inherits <code>MODELS_DIR</code> from <code>config.json</code>.</p>
 </li>
 </ol>
 <hr />
@@ -987,7 +995,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 20:24:31
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 20:52:12
             </div>
         </div>
     </div>

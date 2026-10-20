@@ -319,7 +319,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             scroll-behavior: smooth;
         }}
         .content-container {{
-            max-width: 950px;
+            max-width: 1120px;
             margin: 0 auto;
         }}
         /* Chapter Card Container */

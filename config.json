@@ -3,7 +3,7 @@
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
     "MODELS_DIR": "/media/manoj/F1/models-handy",
-    "ACTIVE_ASR_PRESET": "instant_english",
+    "ACTIVE_ASR_PRESET": "instant_hindi",
     "ACTIVE_REFINEMENT_GOAL": "official_english",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
@@ -58,7 +58,7 @@
         "instant_english": {
             "label": "⚡ Instant Pure English (Nemotron)",
             "backend": "transcribe_cpp",
-            "model": "/media/manoj/F1/models-handy/nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            "model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
             "device": "auto",
             "asr_language": "en",
             "description": "Ultra-fast (<0.8s). Strictly for English speech. Do not use for Hindi audio."
@@ -66,7 +66,7 @@
         "instant_hindi": {
             "label": "⚡ Instant Pure Hindi (Nemotron)",
             "backend": "transcribe_cpp",
-            "model": "/media/manoj/F1/models-handy/nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            "model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
             "device": "auto",
             "asr_language": "hi",
             "description": "Ultra-fast (<0.8s). Strictly for pure Devanagari Hindi speech. Do not use for English audio."
@@ -74,7 +74,7 @@
         "roman_hinglish": {
             "label": "💬 Roman Hinglish Notes (Apex)",
             "backend": "transcribe_cpp",
-            "model": "/media/manoj/F1/models-handy/Whisper-Hindi2Hinglish-Apex-Q8.bin",
+            "model": "Whisper-Hindi2Hinglish-Apex-Q8.bin",
             "device": "auto",
             "asr_language": null,
             "description": "Fast (<0.7s). Transcribes Hindi/Hinglish speech into Roman Latin script (WhatsApp/Slack style)."
@@ -150,7 +150,7 @@
     },
     "WHISPER_MODEL": "large-v3-turbo",
     "ASR_ENGINE": "transcribe_cpp",
-    "ACTIVE_MODEL_PROFILE": "instant_english",
+    "ACTIVE_MODEL_PROFILE": "instant_hindi",
     "LANGUAGE_MODE": "pure_english",
     "MODE": "translate",
     "CACHE_RETENTION_DAYS": 7

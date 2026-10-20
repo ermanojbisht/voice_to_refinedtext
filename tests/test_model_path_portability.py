@@ -59,3 +59,24 @@ def test_cache_root_falls_back_to_hf_home_when_not_explicitly_configured(monkeyp
     resolved_root = cache_root(asr_cfg)
 
     assert str(fake_hf_home / "hub") in str(resolved_root)
+
+
+def test_resolve_relative_model_filename_from_config_presets(tmp_path):
+    """Relative filename in ASR_PRESETS resolves cleanly via MODELS_DIR."""
+    models_dir = tmp_path / "custom_models"
+    models_dir.mkdir()
+    nemotron_file = models_dir / "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf"
+    nemotron_file.write_text("gguf dummy")
+
+    cfg = {
+        "MODELS_DIR": str(models_dir),
+        "ACTIVE_ASR_PRESET": "instant_english",
+        "ASR_PRESETS": {
+            "instant_english": {
+                "backend": "transcribe_cpp",
+                "model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            }
+        },
+    }
+    prov = ASRFactory.from_engine_config(cfg)
+    assert prov.model_path == str(nemotron_file.resolve())
