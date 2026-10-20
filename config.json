@@ -38,13 +38,17 @@
     "CHUNK_MAX_SECONDS": 40,
     "CHUNK_MIN_SECONDS": 8.0,
     "CHUNK_MIN_PAUSE_MS": 250,
+    "ENABLE_FILLER_REMOVAL": true,
+    "COLLAPSE_STUTTERS": true,
+    "CUSTOM_FILLER_WORDS": [],
     "FEATURES": {
         "start_end_sounds": true,
         "clipboard_output": true,
         "markdown_output": true,
         "direct_typing": true,
         "evening_review": true,
-        "pwd_terminology_corrector": true
+        "pwd_terminology_corrector": true,
+        "filler_word_removal": true
     },
     "ASR_PRESETS": {
         "smart_bilingual": {

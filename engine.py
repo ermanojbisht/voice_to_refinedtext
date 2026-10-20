@@ -171,6 +171,16 @@ class VoiceEngine:
     def asr_provider(self, value):
         self._asr_provider = value
 
+    @property
+    def filler_remover(self):
+        """Lazy loads the microsecond in-memory filler word and stutter remover."""
+        if getattr(self, "_filler_remover", None) is None:
+            from pwd_helper.filler import FillerWordRemover
+            custom = self.config.get("CUSTOM_FILLER_WORDS", [])
+            collapse = self.config.get("COLLAPSE_STUTTERS", True)
+            self._filler_remover = FillerWordRemover(custom_fillers=custom, collapse_stutters_enabled=collapse)
+        return self._filler_remover
+
     @legacy_recording
     def record(self, on_start=None, on_end=None, pre_record_notification=None, on_audio_chunk=None):
         """Records audio with pre-roll buffer, neural VAD, and manual stop support."""
@@ -278,8 +288,15 @@ class VoiceEngine:
         else:
             raw_text = self._transcribe_single(pcm if pcm is not None else wav_path, wav_path=wav_path)
 
-        # PWD Uttarakhand Terminology normalization (if enabled)
+        # Microsecond In-Memory Filler Word & Stutter Removal (if enabled)
         features = self.config.get("FEATURES", {})
+        if self.config.get("ENABLE_FILLER_REMOVAL", True) and features.get("filler_word_removal", True):
+            try:
+                raw_text = self.filler_remover.clean(raw_text, enabled=True)
+            except Exception:
+                pass
+
+        # PWD Uttarakhand Terminology normalization (if enabled)
         if features.get("pwd_terminology_corrector", True):
             try:
                 from pwd_helper.normalizer import normalize_pwd_terms

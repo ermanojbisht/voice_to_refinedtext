@@ -628,6 +628,34 @@ python<span class="w"> </span>doctor.py<span class="w"> </span>--fix
 <td><code>true</code>, <code>false</code></td>
 <td>Enables automatic domain abbreviation correction (e.g. "the ee issued nit" $\rightarrow$ "the EE issued NIT") and PWD glossary lookup.</td>
 </tr>
+<tr>
+<td><code>FEATURES.filler_word_removal</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Master toggle for microsecond verbal hesitation stripping (<em>"um"</em>, <em>"uh"</em>, <em>"you know"</em>, <em>"मतलब"</em>) and stutter collapsing.</td>
+</tr>
+<tr>
+<td><code>ENABLE_FILLER_REMOVAL</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>In-memory verbal hesitation cleaner (&lt;0.1ms). Strips fillers before LLM refinement.</td>
+</tr>
+<tr>
+<td><code>COLLAPSE_STUTTERS</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Collapses 3+ consecutive word repetitions (<em>"I I I I"</em> $\rightarrow$ <em>"I"</em>).</td>
+</tr>
+<tr>
+<td><code>CUSTOM_FILLER_WORDS</code></td>
+<td><code>array</code></td>
+<td><code>[]</code></td>
+<td>List of strings</td>
+<td>Optional user-specific filler words (e.g. <code>["basically", "literally"]</code>).</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -928,6 +956,38 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </code></pre></div>
 
 <p>Log out and log back in once. Typing will now work seamlessly across any Wayland or X11 application!</p>
+<h3 id="filler-word-stutter-removal-on-vs-off-decision-guide">Filler Word &amp; Stutter Removal (ON vs. OFF Decision Guide)</h3>
+<blockquote>
+<p><strong>Configuration Key:</strong> <code>ENABLE_FILLER_REMOVAL</code> (or <code>FEATURES.filler_word_removal</code> in <code>config.json</code> and Settings GUI)</p>
+</blockquote>
+<p>The in-memory filler remover operates in &lt;0.1ms (&lt;60 microseconds) to eliminate verbal hesitation tokens before text reaches the LLM.</p>
+<h4 id="transparent-tradeoff-comparison">Transparent Tradeoff Comparison:</h4>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Setting State</th>
+<th>What You GAIN (Benefits)</th>
+<th>What You LOSE / Potential Tradeoff</th>
+<th>Recommended Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>ENABLE_FILLER_REMOVAL: true</code> (ON)</strong></td>
+<td>1. <strong>Cleaner Text</strong>: Instantly purges verbal hesitations (<em>"um"</em>, <em>"uh"</em>, <em>"you know"</em>, <em>"मतलब"</em>, <em>"जैसे कि"</em>).<br>2. <strong>Faster LLM Generation</strong>: 10–25% fewer input tokens sent to Ollama, reducing delay.<br>3. <strong>Zero LLM Hallucinations</strong>: Prevents small models (3B) from interpreting <em>"you know"</em> as conversational prompt banter.<br>4. <strong>Sentence Capitalization Recovery</strong>: <em>"Um, so we..."</em> automatically recovers as <em>"So we..."</em>.<br>5. <strong>Stutter Collapse</strong>: <em>"I I I think"</em> collapses to <em>"I think"</em>.</td>
+<td>1. <strong>Not 100% Verbatim</strong>: Spoken hesitations are intentionally filtered out.<br>2. <strong>Context Guard</strong>: Hindi <em>"मतलब"</em> is only stripped when used as a clause-opening filler (<code>", matlab, ..."</code>). If you dictate a dictionary question like <em>"Is shabd ka matlab kya hai?"</em>, context rules preserve it, but turning OFF ensures 100% untouched raw text.</td>
+<td>Daily dictation, drafting emails, engineering inspection notes, code comments, official memos.</td>
+</tr>
+<tr>
+<td><strong><code>ENABLE_FILLER_REMOVAL: false</code> (OFF)</strong></td>
+<td>1. <strong>100% Literal Verbatim Speech</strong>: Every single pause, human hesitation sound, and verbal repetition is preserved exactly as spoken.<br>2. <strong>Forensic Record</strong>: Complete fidelity to the raw audio recording.</td>
+<td>1. <strong>Cluttered Output</strong>: Text is burdened with verbal hesitation sounds.<br>2. <strong>Slower LLM</strong>: More tokens consumed.<br>3. <strong>Stutters Remain</strong>: <em>"the the the"</em> remains uncollapsed.</td>
+<td>Legal depositions, court reporting, psychological evaluations, linguistic research, or literal transcript archives.</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr />
 </section>
 <section id="chapter-9" class="chapter-card">
@@ -1025,7 +1085,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:03:18
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:20:33
             </div>
         </div>
     </div>

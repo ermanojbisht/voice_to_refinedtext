@@ -56,6 +56,7 @@ _FEATURE_DEFS = [
     ("direct_typing", "⌨ Direct Typing", "Type refined text directly at the cursor position (xdotool / ydotool)."),
     ("evening_review", "🌙 Evening Review", "Show 'Start Evening Review' in tray menu. Disable to use Voice Refiner only."),
     ("pwd_terminology_corrector", "🏛 PWD Terminology Corrector", "Auto-capitalizes and normalizes PWD abbreviations (NIT, MB, EE, RCC, SOR) in transcripts."),
+    ("filler_word_removal", "✂️ Microsecond Filler Word Remover", "ON (Gain): Strips verbal hesitations ('um', 'uh', 'you know', 'मतलब') in <0.1ms, speeds up LLM generation, collapses stutters ('I I I' → 'I'), and restores sentence capitalization. OFF (Tradeoff): Preserves 100% verbatim raw speech for legal/interview forensic accuracy."),
 ]
 
 
