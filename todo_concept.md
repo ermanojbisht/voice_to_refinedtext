@@ -183,19 +183,9 @@ The following categorized tracks represent our concrete implementation plan. Eac
 
 ### Track B: GUI & Animated Visuals
 
-#### [TODO-B1] Floating Minimal Pill Overlay Widget
+#### [TODO-B1] [DONE] Floating Minimal Pill Overlay Widget
 * **Objective**: Provide a non-intrusive, always-on-top desktop pill showing live voice state without needing full window open.
-* **Technical Design**:
-  - Lightweight transparent Tkinter / PyQt window (`-topmost`, `-type splash`).
-  - Positions at screen top-center or bottom-right.
-  - Displays dynamic state icons:
-    - `🎙 Idle` (dim blue)
-    - `👂 Listening... [Waveform]` (pulsing red)
-    - `🧠 Thinking...` (spinning lavender)
-    - `✨ Pasted` (green check)
-  - Auto-hides 1.5 seconds after pasting.
-* **Target Files**: `overlay_gui.py` (new), `tray_app.py`, `config_gui.py`
-* **Complexity**: Medium | **Impact**: Very High (modern, polished desktop feel)
+* **Status**: Complete (`audio_toolkit/overlay.py` with zero-focus Tkinter pill, real-time 7-bar audio equalizer, configurable positions 'top'/'bottom'/'bottom_right', configurable styles 'wave'/'stagnant'/'hidden').
 
 #### [TODO-B2] Real-Time Live Audio Waveform Canvas in Main GUI
 * **Objective**: Replace static status icons with a fluid, reacting audio waveform during recording.
@@ -246,33 +236,17 @@ The following categorized tracks represent our concrete implementation plan. Eac
 
 ### Track D: Desktop & System Integration
 
-#### [TODO-D1] Clipboard Save & Restore Auto-Pasting
+#### [TODO-D1] [DONE] Clipboard Save & Restore Auto-Pasting
 * **Objective**: Auto-paste refined text into the active window upon recording completion, while preserving the user's existing clipboard history.
-* **Technical Design**:
-  - Save current clipboard text via `pyperclip` or `wl-paste` / `xclip`.
-  - Copy refined text to clipboard.
-  - Emit paste key event (`Ctrl+V` or `Ctrl+Shift+V` if terminal) via `ydotool` / `xdotool`.
-  - Wait 100ms, then restore the saved original clipboard content.
-* **Target Files**: `engine.py`, `utils.py`, `config.json`
-* **Complexity**: Low-Medium | **Impact**: Very High (workflow convenience)
+* **Status**: Complete (`audio_toolkit/clipboard.py` with dual CLIPBOARD + PRIMARY buffer support, spaced ydotool keycodes `-d 20`).
 
-#### [TODO-D2] Hold-or-Toggle Hotkey Mode with Linux X11 Auto-Repeat Suppression
+#### [TODO-D2] [DONE] Hold-or-Toggle Hotkey Mode with Linux Evdev & Auto-Repeat Suppression
 * **Objective**: Support both Push-to-Talk (hold key) and Tap-to-Record (tap key) seamlessly on Linux.
-* **Technical Design**:
-  - Implement 50ms `RELEASE_GRACE` debounce to ignore Linux X11 synthetic key repeats.
-  - If held > 300ms, release immediately stops recording. If released < 300ms, stays recording until tapped again.
-* **Target Files**: `tray_app.py`, `engine.py`
-* **Complexity**: Medium | **Impact**: High (ergonomics)
+* **Status**: Complete (`audio_toolkit/hotkey_coordinator.py` state machine, `audio_toolkit/evdev_listener.py` hardware kernel listener for Wayland/X11, 50ms release grace, 800ms signal debounce).
 
-#### [TODO-D3] Background Eager Pre-Warm Daemon Thread
+#### [TODO-D3] [DONE] Background Eager Pre-Warm Daemon Thread
 * **Objective**: Eliminate the 33-second first-audio delay on application startup.
-* **Technical Design**:
-  - On tray startup, spawn a low-priority daemon thread.
-  - Passes 0.1s of silence through `transcribe_cpp` to compile Vulkan shaders.
-  - Pings Ollama with a 1-token prompt with configured `OLLAMA_KEEP_ALIVE`.
-  - When user presses hotkey, system is already hot and responds in < 0.5s.
-* **Target Files**: `tray_app.py`, `engine.py`
-* **Complexity**: Low | **Impact**: High (eliminates cold start)
+* **Status**: Complete (`tray_app.py` `_background_prewarm` pre-compiles Vulkan shaders and loads Ollama weights into VRAM on launch).
 
 ---
 
