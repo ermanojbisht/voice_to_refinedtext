@@ -126,6 +126,29 @@ class VoiceAssistantTray:
         self.hotkey_modifiers, self.hotkey_trigger = utils.parse_hotkey(raw_hk)
         _tlog(f"Global hotkey configured: {self.hotkey_display}")
 
+        if not hasattr(self, "coordinator"):
+            from audio_toolkit import HotkeyCoordinator
+            self.coordinator = HotkeyCoordinator(
+                mode=self.engine.config.get("SHORTCUT_ACTIVATION", "hold_or_toggle"),
+                hold_threshold_ms=int(self.engine.config.get("HOLD_THRESHOLD_MS", 300)),
+                release_grace_ms=int(self.engine.config.get("RELEASE_GRACE_MS", 50)),
+                on_effect=self._handle_coordinator_effect,
+            )
+        else:
+            self.coordinator.set_mode(self.engine.config.get("SHORTCUT_ACTIVATION", "hold_or_toggle"))
+            self.coordinator.set_hold_threshold_ms(int(self.engine.config.get("HOLD_THRESHOLD_MS", 300)))
+            self.coordinator.set_release_grace_ms(int(self.engine.config.get("RELEASE_GRACE_MS", 50)))
+
+    def _handle_coordinator_effect(self, effect):
+        from audio_toolkit.hotkey_coordinator import CoordinatorEffect
+        _tlog(f"Coordinator effect received: {effect}")
+        if effect == CoordinatorEffect.START_RECORDING:
+            if not self.is_recording:
+                threading.Thread(target=self.run_full_process, daemon=True).start()
+        elif effect == CoordinatorEffect.STOP_RECORDING:
+            if self.is_recording:
+                self.engine.stop_recording()
+
     def _sync_config_from_disk(self):
         """Checks if config.json changed on disk and reloads it, updating title and menu."""
         current_mtime = self._get_config_mtime()
@@ -313,9 +336,15 @@ class VoiceAssistantTray:
 
         # 2. Configurable Global Recording Hotkey
         if utils.matches_hotkey(self.pressed_keys, key, self.hotkey_modifiers, self.hotkey_trigger):
-            self.toggle_recording()
+            if hasattr(self, "coordinator"):
+                self.coordinator.on_hotkey_down()
+            else:
+                self.toggle_recording()
 
     def on_release(self, key):
+        if hasattr(self, "coordinator"):
+            if utils.is_hotkey_release(key, self.hotkey_modifiers, self.hotkey_trigger):
+                self.coordinator.on_hotkey_up()
         self.pressed_keys.discard(key)
 
     # ── Icon helpers ──────────────────────────────────────────────────────────
@@ -416,10 +445,13 @@ class VoiceAssistantTray:
     # ── Recording ─────────────────────────────────────────────────────────────
 
     def toggle_recording(self):
-        if not self.is_recording:
-            threading.Thread(target=self.run_full_process, daemon=True).start()
-        elif self.is_recording:
-            self.engine.stop_recording()
+        if hasattr(self, "coordinator"):
+            self.coordinator.on_external_trigger()
+        else:
+            if not self.is_recording:
+                threading.Thread(target=self.run_full_process, daemon=True).start()
+            elif self.is_recording:
+                self.engine.stop_recording()
 
     def _notify(self, title, message, icon="dialog-information", urgency="normal", timeout=4000):
         try:
@@ -501,6 +533,9 @@ class VoiceAssistantTray:
             self._notify("Voice Refiner — Error", str(e)[:120])
             self.is_recording = False
             self.update_icon("review" if self.is_in_review else "idle")
+        finally:
+            if hasattr(self, "coordinator"):
+                self.coordinator.notify_pipeline_finished()
 
     def _check_audio_quality(self, wav_path):
         """Return False (and warn) if the WAV RMS is below half the silence threshold."""

@@ -5,6 +5,7 @@ from .recorder import StreamRecorder
 from .chunker import PauseGuidedChunker
 from .clipboard import ClipboardManager, get_clipboard_manager, is_wayland
 from .overlay import RecordingOverlay, get_recording_overlay
+from .hotkey_coordinator import HotkeyCoordinator, ShortcutActivation, CoordinatorEffect
 
 __all__ = [
     "CircularAudioBuffer",
@@ -16,4 +17,7 @@ __all__ = [
     "is_wayland",
     "RecordingOverlay",
     "get_recording_overlay",
+    "HotkeyCoordinator",
+    "ShortcutActivation",
+    "CoordinatorEffect",
 ]

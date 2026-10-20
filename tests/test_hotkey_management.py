@@ -88,3 +88,17 @@ def test_refiner_and_review_services_expose_hotkey():
     state = rev_svc.get_state()
     assert "global_hotkey" in state
     assert state["global_hotkey"] in ("Ctrl+Space", "Ctrl+Alt+V")
+
+
+def test_is_hotkey_release():
+    from pynput import keyboard
+    mods, trigger = utils.parse_hotkey("Ctrl+Space")
+
+    # Space release -> True
+    assert utils.is_hotkey_release(keyboard.Key.space, mods, trigger) is True
+    # Ctrl release -> True
+    assert utils.is_hotkey_release(keyboard.Key.ctrl_l, mods, trigger) is True
+    # Alt release -> False (not in Ctrl+Space)
+    assert utils.is_hotkey_release(keyboard.Key.alt, mods, trigger) is False
+    # Letter key release -> False
+    assert utils.is_hotkey_release(keyboard.KeyCode(char="a"), mods, trigger) is False

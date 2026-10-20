@@ -831,6 +831,37 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Unified Hotkey & Walkie-Talkie Activation Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🎙️ Unified Hotkey & Walkie-Talkie Activation</h2>
+                    <p>Both quick-tap (continuous recording) and press-and-hold (Walkie-Talkie push-to-talk) use your single configured <code>GLOBAL_HOTKEY</code>.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Hotkey Activation Style (SHORTCUT_ACTIVATION)
+                        <small>How the shortcut key responds to physical taps vs holds.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_SHORTCUT_ACTIVATION">
+                            <option value="hold_or_toggle">⚡ Hold-or-Toggle (Walkie-Talkie & Tap) [Recommended]</option>
+                            <option value="toggle">🔁 Toggle Only (Classic tap to start, tap to stop)</option>
+                            <option value="push_to_talk">📻 Push-to-Talk Only (Hold key while speaking)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Walkie-Talkie Hold Threshold (HOLD_THRESHOLD_MS)
+                        <small>Presses longer than this threshold act as Walkie-Talkie (release stops recording). Quick taps shorter than this threshold lock recording continuously.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_HOLD_THRESHOLD_MS" min="150" max="800" step="25" oninput="updateRangeLabel('main_HOLD_THRESHOLD_MS', 'badge_holdthreshold', ' ms')">
+                        <span class="range-badge" id="badge_holdthreshold">300 ms</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 2: Evening Review -->
@@ -1138,6 +1169,9 @@
                 document.getElementById("main_TYPING_TOOL").value = m.TYPING_TOOL || "auto";
                 document.getElementById("main_OVERLAY_POSITION").value = m.OVERLAY_POSITION || "top";
                 document.getElementById("main_OVERLAY_STYLE").value = m.OVERLAY_STYLE || "wave";
+                document.getElementById("main_SHORTCUT_ACTIVATION").value = m.SHORTCUT_ACTIVATION || "hold_or_toggle";
+                document.getElementById("main_HOLD_THRESHOLD_MS").value = m.HOLD_THRESHOLD_MS || 300;
+                updateRangeLabel("main_HOLD_THRESHOLD_MS", "badge_holdthreshold", " ms");
 
                 // Populate Evening Review Tab
                 const r = data.review || {};
@@ -1366,6 +1400,8 @@
                 TYPING_TOOL: document.getElementById("main_TYPING_TOOL").value,
                 OVERLAY_POSITION: document.getElementById("main_OVERLAY_POSITION").value,
                 OVERLAY_STYLE: document.getElementById("main_OVERLAY_STYLE").value,
+                SHORTCUT_ACTIVATION: document.getElementById("main_SHORTCUT_ACTIVATION").value,
+                HOLD_THRESHOLD_MS: parseInt(document.getElementById("main_HOLD_THRESHOLD_MS").value, 10) || 300,
                 FEATURES: {}
             };
 

@@ -646,6 +646,39 @@ def matches_hotkey(pressed_keys: Set[Any], current_key: Any, required_modifiers:
     return True
 
 
+def is_hotkey_release(released_key: Any, required_modifiers: Set[str], trigger_key: Any) -> bool:
+    """Checks whether the released key is the trigger key or a modifier of the target hotkey."""
+    try:
+        from pynput import keyboard
+    except ImportError:
+        return False
+
+    # Check trigger key
+    if isinstance(trigger_key, keyboard.Key):
+        if released_key == trigger_key:
+            return True
+    elif isinstance(trigger_key, str):
+        c = getattr(released_key, "char", None)
+        if c and c.lower() == trigger_key.lower():
+            return True
+    else:
+        if released_key == trigger_key:
+            return True
+
+    # Check modifier groups
+    mod_groups = {
+        "ctrl": (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r),
+        "alt": (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r),
+        "shift": (keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r),
+        "super": (keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r),
+    }
+    for mod_name in required_modifiers:
+        if released_key in mod_groups.get(mod_name, ()):
+            return True
+
+    return False
+
+
 def sync_system_hotkey(hotkey_str: str) -> bool:
     """
     If running under GNOME, automatically updates the 'VoiceToAI' custom keybinding
