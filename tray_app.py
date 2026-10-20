@@ -17,7 +17,7 @@ import math
 import utils as _utils
 utils = _utils
 
-_AUDIO_QUALITY_RATIO = 0.5   # WAV RMS must be >= SILENCE_THRESHOLD * this ratio
+_AUDIO_QUALITY_RATIO = 0.25  # Audio RMS quality gate (lowered so normal speaking voice is not rejected)
 
 # Module-level logger — file handler added in VoiceAssistantTray.__init__()
 _logger = _utils.get_logger("tray")
@@ -361,17 +361,19 @@ class VoiceAssistantTray:
                                  args=(self._get_active_config(),), daemon=True).start()
                 return
 
-        # 2. Configurable Global Recording Hotkey
-        if utils.matches_hotkey(self.pressed_keys, key, self.hotkey_modifiers, self.hotkey_trigger):
-            if hasattr(self, "coordinator"):
-                self.coordinator.on_hotkey_down()
-            else:
-                self.toggle_recording()
+        # 2. Configurable Global Recording Hotkey (only used if hardware evdev is not active)
+        if not getattr(self, "_evdev_listener", None):
+            if utils.matches_hotkey(self.pressed_keys, key, self.hotkey_modifiers, self.hotkey_trigger):
+                if hasattr(self, "coordinator"):
+                    self.coordinator.on_hotkey_down()
+                else:
+                    self.toggle_recording()
 
     def on_release(self, key):
-        if hasattr(self, "coordinator"):
-            if utils.is_hotkey_release(key, self.hotkey_modifiers, self.hotkey_trigger):
-                self.coordinator.on_hotkey_up()
+        if not getattr(self, "_evdev_listener", None):
+            if hasattr(self, "coordinator"):
+                if utils.is_hotkey_release(key, self.hotkey_modifiers, self.hotkey_trigger):
+                    self.coordinator.on_hotkey_up()
         self.pressed_keys.discard(key)
 
     # ── Icon helpers ──────────────────────────────────────────────────────────
@@ -1128,12 +1130,19 @@ class VoiceAssistantTray:
         import os as _os
         _os._exit(0)
 
+    def handle_sigusr1(self):
+        """Handles GNOME shortcut SIGUSR1 trigger."""
+        if getattr(self, "_evdev_listener", None):
+            _tlog("handle_sigusr1: evdev hardware listener is active — ignoring GNOME shell duplicate signal")
+            return
+        self.toggle_recording()
+
     # ── Entry point ───────────────────────────────────────────────────────────
 
     def run(self):
         signal.signal(signal.SIGINT,  lambda sig, frame: self.exit_app())
         signal.signal(signal.SIGTERM, lambda sig, frame: self.exit_app())
-        signal.signal(signal.SIGUSR1, lambda sig, frame: self.toggle_recording())
+        signal.signal(signal.SIGUSR1, lambda sig, frame: self.handle_sigusr1())
 
         try:
             self.listener.start()

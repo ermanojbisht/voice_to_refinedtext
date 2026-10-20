@@ -130,6 +130,7 @@ class HotkeyCoordinator:
                 if self.is_locked or self.mode == ShortcutActivation.TOGGLE:
                     self.stage = CoordinatorStage.PROCESSING
                     effect = CoordinatorEffect.STOP_RECORDING
+                    logger.info("Coordinator: STOP_RECORDING dispatched by on_hotkey_down (is_locked=%s, mode=%s)", self.is_locked, self.mode)
                     self._dispatch(effect)
                     return effect
                 else:
