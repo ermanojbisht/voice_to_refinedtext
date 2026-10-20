@@ -546,6 +546,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        📁 Models Base Directory (MODELS_DIR)
+                        <small>Location of local GGUF/bin models. On another PC, update this path or copy models to project <code>./models/</code>.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="main_MODELS_DIR" placeholder="/media/manoj/F1/models-handy or ./models" style="width: 320px;">
+                    </div>
+                </div>
             </div>
 
             <!-- Stage 2: LLM Refinement Goal -->
@@ -1178,6 +1187,7 @@
                 const m = data.main || {};
                 document.getElementById("main_GLOBAL_HOTKEY").value = data.global_hotkey || m.GLOBAL_HOTKEY || "Ctrl+Space";
                 document.getElementById("main_WHISPER_FALLBACK_MODEL").value = data.whisper_fallback_model || m.WHISPER_FALLBACK_MODEL || m.WHISPER_MODEL || "large-v3-turbo";
+                document.getElementById("main_MODELS_DIR").value = m.MODELS_DIR || "";
                 document.getElementById("main_OLLAMA_KEEP_ALIVE").value = m.OLLAMA_KEEP_ALIVE || "60m";
 
                 document.getElementById("main_SILENCE_THRESHOLD").value = m.SILENCE_THRESHOLD || 300;
@@ -1420,6 +1430,7 @@
                 MODE: curGoalInfo.translate ? "translate" : "refine",
                 WHISPER_FALLBACK_MODEL: fallbackModel,
                 WHISPER_MODEL: fallbackModel,
+                MODELS_DIR: document.getElementById("main_MODELS_DIR").value.trim(),
                 OLLAMA_MODELS: {
                     en: document.getElementById("main_OLLAMA_MODELS_en").value,
                     hi: document.getElementById("main_OLLAMA_MODELS_hi").value

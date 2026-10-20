@@ -10,6 +10,31 @@ def normalized(text):
     return re.sub(r'[^\w]', '', text, flags=re.UNICODE).casefold()
 
 
+def join_words(words_list):
+    """Reconstructs text from word tokens safely.
+    
+    Handles both Whisper-style tokens (which may include leading spaces) and
+    standard words / GGML tokens (which do not have leading spaces). Also prevents
+    unwanted spaces before common punctuation marks.
+    """
+    if not words_list:
+        return ""
+    parts = []
+    trailing_punct = {".", ",", "!", "?", ";", ":", ")", "]", "}", "%", "”", "’", "।", "॥"}
+    leading_punct = {"(", "[", "{", "“", "‘", "$", "#", "@"}
+    for i, w in enumerate(words_list):
+        wt = (w.get("text") or "") if isinstance(w, dict) else getattr(w, "text", "")
+        if not wt:
+            continue
+        if i > 0 and parts:
+            prev = parts[-1]
+            if not wt.startswith(" ") and not prev.endswith(" "):
+                if wt not in trailing_punct and prev not in leading_punct:
+                    parts.append(" ")
+        parts.append(wt)
+    return "".join(parts).strip()
+
+
 def merge_chunks(results, duration):
     segments, words, warnings = [], [], []
     for chunk in results:
@@ -53,7 +78,7 @@ def merge_chunks(results, duration):
             grouped.append({'key': key, 'start': word['start'], 'end': word['end'], 'words': [word]})
     for group in grouped:
         segments.append({'start': group['start'], 'end': group['end'],
-                         'text': ''.join(w['text'] for w in group['words']).strip(),
+                         'text': join_words(group['words']),
                          'words': [{k: v for k, v in w.items() if k not in {'chunk', 'group'}} for w in group['words']]})
     segments.sort(key=lambda s: (s['start'], s['end']))
     for i, seg in enumerate(segments, 1):

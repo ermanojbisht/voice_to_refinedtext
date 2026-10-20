@@ -9,7 +9,10 @@ from .storage import read_json
 
 def cache_root(asr):
     env = os.environ
-    return Path(asr.get('cache_root') or env.get('HF_HUB_CACHE') or env.get('HUGGINGFACE_HUB_CACHE')
+    configured = asr.get('cache_root')
+    if configured:
+        return Path(configured).expanduser()
+    return Path(env.get('HF_HUB_CACHE') or env.get('HUGGINGFACE_HUB_CACHE')
                 or (Path(env.get('HF_HOME', Path.home() / '.cache/huggingface')) / 'hub')).expanduser()
 
 

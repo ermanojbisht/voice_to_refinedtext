@@ -135,9 +135,60 @@ class TranscribeCppProvider(BaseASRProvider):
 
         latency_ms = (time.perf_counter() - t0) * 1000.0
 
-        # Construct segments & approximate proportional word timestamps
+        # Construct segments & word timestamps
         segments: List[ASRSegment] = []
-        if full_text:
+        raw_segs = getattr(raw_res, "segments", None) or ()
+        raw_words = getattr(raw_res, "words", None) or ()
+
+        if raw_segs:
+            words_by_seg: Dict[int, List[ASRWord]] = {}
+            if raw_words:
+                for w in raw_words:
+                    s_idx = getattr(w, "seg_index", 0)
+                    if s_idx < 0 or s_idx >= len(raw_segs):
+                        s_idx = 0
+                    w_text = getattr(w, "text", "")
+                    w_start = round(getattr(w, "t0_ms", 0) / 1000.0, 3)
+                    w_end = round(getattr(w, "t1_ms", 0) / 1000.0, 3)
+                    words_by_seg.setdefault(s_idx, []).append(
+                        ASRWord(
+                            text=w_text,
+                            start=w_start,
+                            end=w_end,
+                            probability=getattr(w, "p", 0.99),
+                        )
+                    )
+
+            for idx, seg in enumerate(raw_segs, 1):
+                s_text = getattr(seg, "text", "").strip() or full_text
+                s_start = round(getattr(seg, "t0_ms", 0) / 1000.0, 3)
+                s_end = round(getattr(seg, "t1_ms", 0) / 1000.0, 3)
+                seg_words = words_by_seg.get(idx - 1, [])
+                if not seg_words and s_text:
+                    tokens = s_text.split()
+                    dur = max(s_end - s_start, 0.001)
+                    tpw = dur / max(len(tokens), 1)
+                    for i, tok in enumerate(tokens):
+                        seg_words.append(
+                            ASRWord(
+                                text=tok,
+                                start=round(s_start + i * tpw, 3),
+                                end=round(min(s_end, s_start + (i + 1) * tpw), 3),
+                                probability=0.99,
+                            )
+                        )
+                segments.append(
+                    ASRSegment(
+                        id=f"S{idx:05d}",
+                        text=s_text,
+                        start=s_start,
+                        end=s_end,
+                        words=seg_words,
+                        avg_logprob=-0.1,
+                        no_speech_prob=0.0,
+                    )
+                )
+        elif full_text:
             words_list: List[ASRWord] = []
             tokens = full_text.split()
             if tokens and duration_s > 0:

@@ -361,6 +361,51 @@
 </code></pre></div>
 
 <hr />
+<h3 id="14-multi-pc-deployment-portable-model-directory-setup">1.4 Multi-PC Deployment &amp; Portable Model Directory Setup</h3>
+<blockquote>
+<p><strong>Goal:</strong> Run seamlessly across multiple computers (Home PC, Office Desktop, Laptop) without broken drive paths.</p>
+</blockquote>
+<p>When transferring this repository to another PC or drive where paths differ:</p>
+<ol>
+<li>
+<p><strong>The <code>MODELS_DIR</code> Configuration Key</strong>:
+   Set <code>"MODELS_DIR"</code> in <code>config.json</code> to the folder where your GGUF/bin models are saved on that computer:
+   <code>json
+   "MODELS_DIR": "/home/username/models"</code>
+   Or use a project-relative path:
+   <code>json
+   "MODELS_DIR": "./models"</code></p>
+</li>
+<li>
+<p><strong>Zero-Configuration <code>./models/</code> Drop-In</strong>:
+   If you copy your model files directly into <code>&lt;project_root&gt;/models/</code>, the system automatically discovers and loads them without requiring any configuration edits!</p>
+</li>
+<li>
+<p><strong>Environment Variable Override (<code>$MODELS_DIR</code>)</strong>:
+   You can also set the location system-wide via environment variables in your terminal or <code>~/.bashrc</code>:
+   <code>bash
+   export MODELS_DIR="/path/to/my/models"
+   # or
+   export VOICE_MODELS_DIR="/path/to/my/models"</code></p>
+</li>
+<li>
+<p><strong>Multi-Tier Fallback Discovery Hierarchy</strong>:
+   If a configured model path cannot be found at its primary location, the ASR factory automatically searches the following locations in order:</p>
+</li>
+<li>Explicit <code>"MODELS_DIR"</code> in <code>config.json</code></li>
+<li>Environment variables: <code>$MODELS_DIR</code>, <code>$VOICE_MODELS_DIR</code>, <code>$HANDY_MODELS_DIR</code></li>
+<li>Repository local folder: <code>&lt;project_root&gt;/models/&lt;filename&gt;</code></li>
+<li>User standard data folder: <code>~/.local/share/voice_to_refinedtext/models/&lt;filename&gt;</code></li>
+<li>User cache folder: <code>~/.cache/voice_to_refinedtext/models/&lt;filename&gt;</code></li>
+<li>
+<p>Primary development path: <code>/media/manoj/F1/models-handy/&lt;filename&gt;</code></p>
+</li>
+<li>
+<p><strong>Hugging Face Cache Portability (<code>audio_to_idea</code>)</strong>:
+   If <code>cache_root</code> in <code>audio_to_idea_config.json</code> points to an external drive that is unplugged or absent on the current PC, the system automatically and silently falls back to standard <code>~/.cache/huggingface/hub</code> instead of halting.</p>
+</li>
+</ol>
+<hr />
 </section>
 <section id="chapter-2" class="chapter-card">
 <div class="chapter-badge">⚙️ Chapter 2</div>
@@ -383,6 +428,34 @@
 <td><code>8765</code></td>
 <td><code>1024</code> – <code>65535</code></td>
 <td>Local TCP loopback port for the Glassmorphic Settings Web App and REST API daemon. Can also be overridden via the <code>VOICE_REFINER_SETTINGS_PORT</code> environment variable.</td>
+</tr>
+<tr>
+<td><code>MODELS_DIR</code></td>
+<td><code>string</code></td>
+<td><code>"/media/manoj/F1/models-handy"</code></td>
+<td>Path string</td>
+<td>Base directory where local GGUF/bin ASR models reside. Set to <code>./models</code> or custom folder on another PC.</td>
+</tr>
+<tr>
+<td><code>PAUSE_GUIDED_CHUNKING</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Enables Handy acoustic breath-guided chunking for recordings $&gt;40$s to eliminate Whisper hallucinations.</td>
+</tr>
+<tr>
+<td><code>CHUNK_TARGET_SECONDS</code></td>
+<td><code>float</code></td>
+<td><code>30.0</code></td>
+<td><code>15.0</code> – <code>45.0</code></td>
+<td>Target chunk length for breath-aligned acoustic splits.</td>
+</tr>
+<tr>
+<td><code>CHUNK_MAX_SECONDS</code></td>
+<td><code>float</code></td>
+<td><code>40.0</code></td>
+<td><code>30.0</code> – <code>60.0</code></td>
+<td>Maximum recording duration before acoustic splitting is enforced.</td>
 </tr>
 <tr>
 <td><code>ASR_ENGINE</code></td>
@@ -785,9 +858,10 @@ python3<span class="w"> </span>-m<span class="w"> </span>uvicorn<span class="w">
 <section id="chapter-7" class="chapter-card">
 <div class="chapter-badge">🔧 Chapter 7</div>
 <h2 id="7-how-to-adjust-settings">7. How to Adjust Settings</h2>
-<h3 id="method-1-graphical-settings-window-recommended">Method 1: Graphical Settings Window (Recommended)</h3>
-<p>Right-click the tray icon and select <strong>Settings</strong> (or run <code>python3 config_gui.py</code>).
-- <strong>Voice Refiner Tab</strong>: Switch ASR profiles, change Ollama models, set Keep-Alive VRAM timers, and adjust silence thresholds.
+<h3 id="method-1-web-settings-desktop-gui-recommended">Method 1: Web Settings &amp; Desktop GUI (Recommended)</h3>
+<p>Open your browser to <code>http://127.0.0.1:8765</code> or right-click the tray icon and select <strong>Settings</strong>:
+- <strong>Voice Refiner Tab</strong>: Switch ASR presets, set the base Models Directory (<code>MODELS_DIR</code>) for cross-PC portability, configure Whisper Fallback, adjust Ollama models and Keep-Alive VRAM timers, and tune Pause-Guided chunking sliders.
+- <strong>Auto-Paste &amp; Desktop Tab</strong>: Select clipboard paste methods (<code>clipboard_restore</code>, <code>clipboard_only</code>, <code>direct_typing</code>) and fine-tune typing delays.
 - <strong>Evening Review Tab</strong>: Configure Obsidian vault paths, TTS voices, and context lookbacks.
 - <strong>Notifications Tab</strong>: Set up Telegram bot credentials and morning briefing timers.
 - <strong>Features Tab</strong>: Toggle individual capabilities on or off, including PWD Terminology Corrector.</p>
@@ -913,7 +987,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-19 16:58:30
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 20:24:31
             </div>
         </div>
     </div>

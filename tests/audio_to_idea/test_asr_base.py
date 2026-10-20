@@ -136,3 +136,38 @@ def test_asr_factory_from_settings():
     assert isinstance(prov, FasterWhisperProvider)
     assert prov.model_path_or_id == "Systran/faster-whisper-tiny"
     assert prov.requested_device == "cpu"
+
+
+def test_merging_join_words_preserves_spaces_whisper_and_transcribe_cpp():
+    from audio_to_idea.merging import join_words, merge_chunks
+
+    # Whisper-style (words have leading spaces)
+    whisper_words = [{"text": " This"}, {"text": " consideration"}, {"text": " I"}, {"text": " believe"}]
+    assert join_words(whisper_words) == "This consideration I believe"
+
+    # Nemotron / transcribe_cpp style (standard words without leading spaces)
+    nemotron_words = [{"text": "This"}, {"text": "consideration"}, {"text": "I"}, {"text": "believe"}]
+    assert join_words(nemotron_words) == "This consideration I believe"
+
+    # Full merge_chunks simulation with transcribe_cpp segment output
+    chunk = {
+        "index": 0,
+        "start": 0.0,
+        "end": 10.0,
+        "segments": [{
+            "id": "S00001",
+            "text": "This consideration I believe",
+            "start": 0.0,
+            "end": 10.0,
+            "words": [
+                {"text": "This", "start": 0.0, "end": 0.5},
+                {"text": "consideration", "start": 0.5, "end": 1.5},
+                {"text": "I", "start": 1.5, "end": 2.0},
+                {"text": "believe", "start": 2.0, "end": 2.8},
+            ],
+        }],
+    }
+    segs, _ = merge_chunks([chunk], 10.0)
+    assert len(segs) == 1
+    assert segs[0]["text"] == "This consideration I believe"
+    assert " " in segs[0]["text"]

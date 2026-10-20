@@ -118,11 +118,55 @@ Copy and paste the preset matching your hardware into `config.json`.
 
 ---
 
+### 1.4 Multi-PC Deployment & Portable Model Directory Setup
+> **Goal:** Run seamlessly across multiple computers (Home PC, Office Desktop, Laptop) without broken drive paths.
+
+When transferring this repository to another PC or drive where paths differ:
+
+1. **The `MODELS_DIR` Configuration Key**:
+   Set `"MODELS_DIR"` in `config.json` to the folder where your GGUF/bin models are saved on that computer:
+   ```json
+   "MODELS_DIR": "/home/username/models"
+   ```
+   Or use a project-relative path:
+   ```json
+   "MODELS_DIR": "./models"
+   ```
+
+2. **Zero-Configuration `./models/` Drop-In**:
+   If you copy your model files directly into `<project_root>/models/`, the system automatically discovers and loads them without requiring any configuration edits!
+
+3. **Environment Variable Override (`$MODELS_DIR`)**:
+   You can also set the location system-wide via environment variables in your terminal or `~/.bashrc`:
+   ```bash
+   export MODELS_DIR="/path/to/my/models"
+   # or
+   export VOICE_MODELS_DIR="/path/to/my/models"
+   ```
+
+4. **Multi-Tier Fallback Discovery Hierarchy**:
+   If a configured model path cannot be found at its primary location, the ASR factory automatically searches the following locations in order:
+   1. Explicit `"MODELS_DIR"` in `config.json`
+   2. Environment variables: `$MODELS_DIR`, `$VOICE_MODELS_DIR`, `$HANDY_MODELS_DIR`
+   3. Repository local folder: `<project_root>/models/<filename>`
+   4. User standard data folder: `~/.local/share/voice_to_refinedtext/models/<filename>`
+   5. User cache folder: `~/.cache/voice_to_refinedtext/models/<filename>`
+   6. Primary development path: `/media/manoj/F1/models-handy/<filename>`
+
+5. **Hugging Face Cache Portability (`audio_to_idea`)**:
+   If `cache_root` in `audio_to_idea_config.json` points to an external drive that is unplugged or absent on the current PC, the system automatically and silently falls back to standard `~/.cache/huggingface/hub` instead of halting.
+
+---
+
 ## 2. Core Voice Refiner (`config.json`) Reference
 
 | Configuration Key | Type | Default | Valid Options | Description & Performance Impact |
 |---|---|---|---|---|
 | `SETTINGS_PORT` | `integer` | `8765` | `1024` – `65535` | Local TCP loopback port for the Glassmorphic Settings Web App and REST API daemon. Can also be overridden via the `VOICE_REFINER_SETTINGS_PORT` environment variable. |
+| `MODELS_DIR` | `string` | `"/media/manoj/F1/models-handy"` | Path string | Base directory where local GGUF/bin ASR models reside. Set to `./models` or custom folder on another PC. |
+| `PAUSE_GUIDED_CHUNKING` | `boolean` | `true` | `true`, `false` | Enables Handy acoustic breath-guided chunking for recordings $>40$s to eliminate Whisper hallucinations. |
+| `CHUNK_TARGET_SECONDS` | `float` | `30.0` | `15.0` – `45.0` | Target chunk length for breath-aligned acoustic splits. |
+| `CHUNK_MAX_SECONDS` | `float` | `40.0` | `30.0` – `60.0` | Maximum recording duration before acoustic splitting is enforced. |
 | `ASR_ENGINE` | `string` | `"transcribe_cpp"` | `"transcribe_cpp"`, `"faster_whisper"`, `"handy_cli"` | Speech-to-text backend engine. `transcribe_cpp` runs GGUF models on GPU via Vulkan (~138ms). `faster_whisper` uses CTranslate2. |
 | `ACTIVE_MODEL_PROFILE` | `string` | `"nemotron_fast"` | Any key in `MODEL_PROFILES` | Active model preset. Switchable in real-time from the tray menu or settings GUI. |
 | `MODEL_PROFILES` | `object` | *(see below)* | Dictionary of profile objects | Defines named model paths, formats, and hardware targets. |
@@ -267,9 +311,10 @@ The system tray dynamically renders crisp 64x64 vector icons in real-time on a d
 
 ## 7. How to Adjust Settings
 
-### Method 1: Graphical Settings Window (Recommended)
-Right-click the tray icon and select **Settings** (or run `python3 config_gui.py`).
-- **Voice Refiner Tab**: Switch ASR profiles, change Ollama models, set Keep-Alive VRAM timers, and adjust silence thresholds.
+### Method 1: Web Settings & Desktop GUI (Recommended)
+Open your browser to `http://127.0.0.1:8765` or right-click the tray icon and select **Settings**:
+- **Voice Refiner Tab**: Switch ASR presets, set the base Models Directory (`MODELS_DIR`) for cross-PC portability, configure Whisper Fallback, adjust Ollama models and Keep-Alive VRAM timers, and tune Pause-Guided chunking sliders.
+- **Auto-Paste & Desktop Tab**: Select clipboard paste methods (`clipboard_restore`, `clipboard_only`, `direct_typing`) and fine-tune typing delays.
 - **Evening Review Tab**: Configure Obsidian vault paths, TTS voices, and context lookbacks.
 - **Notifications Tab**: Set up Telegram bot credentials and morning briefing timers.
 - **Features Tab**: Toggle individual capabilities on or off, including PWD Terminology Corrector.

@@ -55,6 +55,7 @@ def test_api_config(running_server):
         assert "HOLD_THRESHOLD_MS" in data["main"]
         assert "PAUSE_GUIDED_CHUNKING" in data["main"]
         assert "CHUNK_TARGET_SECONDS" in data["main"]
+        assert "MODELS_DIR" in data["main"]
 
 
 def test_api_models(running_server):

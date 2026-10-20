@@ -2,6 +2,7 @@
     "GLOBAL_HOTKEY": "Ctrl+Space",
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
+    "MODELS_DIR": "/media/manoj/F1/models-handy",
     "ACTIVE_ASR_PRESET": "instant_english",
     "ACTIVE_REFINEMENT_GOAL": "official_english",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
