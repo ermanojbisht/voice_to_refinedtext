@@ -1,20 +1,14 @@
-# Core Voice & Audio
-faster-whisper==1.2.1
-ctranslate2>=4.0.0
-av>=10.0.0
-sounddevice==0.4.6
-scipy==1.11.4
-numpy==1.26.2
-
-# AI & API
-requests>=2.32.0
-ollama>=0.4.4
-langdetect==1.0.9
-
-# UI & Background (Tray, Hotkeys, Modern Widgets)
-pystray==0.19.5
-Pillow>=10.0.0
-pynput==1.8.1
-python-xlib>=0.29
-customtkinter>=5.2.0
-darkdetect>=0.8.0
+# ==============================================================================
+# AI Voice Refiner & Audio-to-Idea — Unified Dependency Specification
+# ==============================================================================
+# Modern packaging standards (PEP 517 / PEP 621) are now managed via pyproject.toml
+# to ensure zero-breakage cross-compatibility on Ubuntu 22.04 LTS (Python 3.10)
+# through Ubuntu 26.04 (Python 3.14).
+#
+# Recommended Installation:
+#   pip install -e ".[all]"
+#
+# Legacy Installation (backwards-compatible shim):
+#   pip install -r requirements.txt
+# ==============================================================================
+-e .[all]

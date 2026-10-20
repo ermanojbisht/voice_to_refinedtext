@@ -1155,6 +1155,11 @@ class VoiceAssistantTray:
             self.exit_app()
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the system tray voice assistant."""
     app = VoiceAssistantTray()
     app.run()
+
+
+if __name__ == "__main__":
+    main()

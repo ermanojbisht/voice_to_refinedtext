@@ -444,6 +444,37 @@ python<span class="w"> </span>doctor.py<span class="w"> </span>--fix
 <h4 id="gui-integration">GUI Integration:</h4>
 <p>You can also run the doctor directly from the Web Settings GUI (<code>http://127.0.0.1:8765/settings</code>) by clicking the <strong>🏥 System Doctor</strong> button in the top navigation bar. It renders live status chips (<code>PASS</code>, <code>WARN</code>, <code>FAIL</code>) and provides copy-pasteable one-liner fixes for any warning.</p>
 <hr />
+<h3 id="16-unified-pep-621-package-installation-ubuntu-2204-through-2604">1.6 Unified PEP 621 Package Installation (Ubuntu 22.04 through 26.04)</h3>
+<blockquote>
+<p><strong>Goal:</strong> Single standardized package configuration (<code>pyproject.toml</code>) that installs identically across Ubuntu 22.04 LTS (Python 3.10), Ubuntu 24.04 LTS (Python 3.12), and Ubuntu 26.04 (Python 3.14) without maintaining separate OS files.</p>
+</blockquote>
+<h4 id="host-system-prerequisites-apt">Host System Prerequisites (APT):</h4>
+<p>On both Ubuntu 22.04 and Ubuntu 26.04, install the required audio, media, and Wayland system libraries:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3-dev<span class="w"> </span>ffmpeg<span class="w"> </span>libvulkan1<span class="w"> </span>wl-clipboard
+</code></pre></div>
+
+<h4 id="python-environment-setup-installation-tiers">Python Environment Setup &amp; Installation Tiers:</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. Create and activate standard virtual environment</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># 2. Recommended: Install complete assistant with GPU ASR, GUI, and batch tools</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all]&quot;</span>
+
+<span class="c1"># Alternatively: Minimal headless terminal installation</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+
+<span class="c1"># Backwards-compatible legacy syntax (uses PEP 621 shim)</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div>
+
+<h4 id="native-shell-cli-commands">Native Shell CLI Commands:</h4>
+<p>Once installed, the project provides direct console scripts accessible anywhere in your terminal environment:
+- <strong><code>voice-refiner</code></strong>: Starts the system tray daemon, VAD microphone listener, and global hotkeys.
+- <strong><code>voice-doctor</code></strong>: Executes the self-healing 24-check environment diagnostics.
+- <strong><code>audio2idea</code></strong>: Launches the CLI batch audio file transcriber and evidence synthesizer.
+- <strong><code>audio2idea-gui</code></strong>: Opens the dedicated CustomTkinter audio-to-idea application.</p>
+<hr />
 </section>
 <section id="chapter-2" class="chapter-card">
 <div class="chapter-badge">⚙️ Chapter 2</div>
@@ -1148,7 +1179,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:56:04
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:12:35
             </div>
         </div>
     </div>

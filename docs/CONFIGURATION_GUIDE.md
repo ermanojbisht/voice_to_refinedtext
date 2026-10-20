@@ -198,6 +198,40 @@ You can also run the doctor directly from the Web Settings GUI (`http://127.0.0.
 
 ---
 
+### 1.6 Unified PEP 621 Package Installation (Ubuntu 22.04 through 26.04)
+> **Goal:** Single standardized package configuration (`pyproject.toml`) that installs identically across Ubuntu 22.04 LTS (Python 3.10), Ubuntu 24.04 LTS (Python 3.12), and Ubuntu 26.04 (Python 3.14) without maintaining separate OS files.
+
+#### Host System Prerequisites (APT):
+On both Ubuntu 22.04 and Ubuntu 26.04, install the required audio, media, and Wayland system libraries:
+```bash
+sudo apt update && sudo apt install -y python3-dev ffmpeg libvulkan1 wl-clipboard
+```
+
+#### Python Environment Setup & Installation Tiers:
+```bash
+# 1. Create and activate standard virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2. Recommended: Install complete assistant with GPU ASR, GUI, and batch tools
+pip install -e ".[all]"
+
+# Alternatively: Minimal headless terminal installation
+pip install -e .
+
+# Backwards-compatible legacy syntax (uses PEP 621 shim)
+pip install -r requirements.txt
+```
+
+#### Native Shell CLI Commands:
+Once installed, the project provides direct console scripts accessible anywhere in your terminal environment:
+- **`voice-refiner`**: Starts the system tray daemon, VAD microphone listener, and global hotkeys.
+- **`voice-doctor`**: Executes the self-healing 24-check environment diagnostics.
+- **`audio2idea`**: Launches the CLI batch audio file transcriber and evidence synthesizer.
+- **`audio2idea-gui`**: Opens the dedicated CustomTkinter audio-to-idea application.
+
+---
+
 ## 2. Core Voice Refiner (`config.json`) Reference
 
 | Configuration Key | Type | Default | Valid Options | Description & Performance Impact |
