@@ -964,6 +964,39 @@ python3<span class="w"> </span>-m<span class="w"> </span>uvicorn<span class="w">
 <li><code>GET /api/search?q=tender</code>: Returns all matching abbreviations.</li>
 <li><code>GET /api/abbreviations</code>: Returns complete terminology database.</li>
 </ul>
+<h3 id="54-live-rich-terminal-dictation-hud-shell-voice-alias">5.4 Live Rich Terminal Dictation HUD &amp; Shell Voice Alias</h3>
+<blockquote>
+<p><strong>Goal:</strong> High-productivity voice dictation directly inside Bash, Zsh, or Tmux without opening extra GUI windows or browsers. Completely isolated from the background system tray daemon and desktop hotkeys.</p>
+</blockquote>
+<h4 id="1-live-terminal-dictation-listen">1. Live Terminal Dictation (<code>--listen</code>):</h4>
+<p>Speak into the microphone and view an animated real-time VU audio meter and pipeline status:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Speak and print refined text (also copies to clipboard)</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen
+
+<span class="c1"># Disable visual HUD (minimal plain-text output)</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span class="w"> </span>--no-hud
+
+<span class="c1"># Pipe refined text directly into git, grep, or a file</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span class="w"> </span>--pipe<span class="w"> </span><span class="p">|</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>-
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span class="w"> </span>--pipe<span class="w"> </span>&gt;<span class="w"> </span>site_notes.md
+</code></pre></div>
+
+<h4 id="2-shell-voice-typing-alias-scriptsterminal_voicesh">2. Shell Voice Typing Alias (<code>scripts/terminal_voice.sh</code>):</h4>
+<p>Source the optional helper script in your terminal to speak shell commands:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Source helper script (or add to ~/.bashrc or ~/.zshrc)</span>
+<span class="nb">source</span><span class="w"> </span>scripts/terminal_voice.sh
+
+<span class="c1"># Type &#39;v&#39; to dictate and copy/print text</span>
+v
+
+<span class="c1"># In interactive Bash, press Ctrl+G to speak and inject text directly onto the active prompt</span>
+</code></pre></div>
+
+<h4 id="3-transparent-on-vs-off-tradeoff">3. Transparent ON vs. OFF Tradeoff:</h4>
+<ul>
+<li><strong><code>CLI_RICH_HUD: true</code> (ON)</strong>: Visual microphone assurance with animated volume VU meter, clear status transitions (<code>RECORDING</code> $\rightarrow$ <code>TRANSCRIBING</code> $\rightarrow$ <code>DONE</code>), and Catppuccin color-coded panels. Automatically diverts HUD to <code>stderr</code> when piping so stdout receives only pure text.</li>
+<li><strong><code>CLI_RICH_HUD: false</code> (OFF)</strong>: Minimal unstyled text output for headless servers or automated cron scripts.</li>
+</ul>
 <hr />
 </section>
 <section id="chapter-6" class="chapter-card">
@@ -1179,7 +1212,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:12:35
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:36:42
             </div>
         </div>
     </div>

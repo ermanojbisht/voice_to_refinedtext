@@ -52,6 +52,7 @@
         "GitHub",
         "DevOps"
     ],
+    "CLI_RICH_HUD": true,
     "FEATURES": {
         "start_end_sounds": true,
         "clipboard_output": true,
@@ -60,7 +61,8 @@
         "evening_review": true,
         "pwd_terminology_corrector": true,
         "filler_word_removal": true,
-        "fuzzy_custom_words": true
+        "fuzzy_custom_words": true,
+        "terminal_rich_hud": true
     },
     "ASR_PRESETS": {
         "smart_bilingual": {

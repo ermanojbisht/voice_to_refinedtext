@@ -94,36 +94,70 @@ def run_one_shot(query: str, mode: str = "auto", copy: bool = False, expand: boo
             print("  (Copied translation to clipboard)")
 
 
-def run_voice_input(mode: str = "auto", copy: bool = True):
+def run_voice_input(mode: str = "auto", copy: bool = True, use_hud: bool = True, pipe: bool = False):
     """Captures microphone speech, transcribes, and runs PWD lookup/translation."""
-    print("🎙 Initializing microphone...")
     try:
         from engine import VoiceEngine
         engine = VoiceEngine(SCRIPT_DIR)
-        print("🎙 Listening... Speak naturally in English, Hindi, or mixed PWD terms.")
-        wav_path = engine.record()
-        print("🧠 Transcribing speech...")
+
+        # Retrieve active preset & refinement goal metadata for HUD
+        preset_key = engine.get_active_preset()
+        preset_cfg = engine.config.get("ASR_PRESETS", {}).get(preset_key, {})
+        preset_label = preset_cfg.get("label", preset_key)
+
+        goal_key = engine.config.get("ACTIVE_REFINEMENT_GOAL", "clean_bilingual")
+        goal_cfg = engine.config.get("REFINEMENT_GOALS", {}).get(goal_key, {})
+        goal_label = goal_cfg.get("label", goal_key)
+
+        # Check if HUD is enabled in config and CLI flags
+        hud_enabled = use_hud and engine.config.get("CLI_RICH_HUD", True)
+        from pwd_helper.terminal_hud import TerminalHUD
+        hud = TerminalHUD(
+            enabled=hud_enabled,
+            pipe_mode=pipe,
+            preset_label=preset_label,
+            goal_label=goal_label,
+        )
+
+        hud.start_listening()
+        wav_path = engine.record(on_audio_chunk=lambda chunk, energy=None: hud.update_audio(chunk, energy))
+
+        hud.set_state("TRANSCRIBING")
         raw_text = engine.transcribe(wav_path)
+
         if not raw_text.strip():
-            print("  ⚠️ No speech detected.")
+            hud.set_state("DONE", detail="No speech detected.")
+            hud.close()
+            if not pipe:
+                print("⚠️ No speech detected.", file=sys.stderr if pipe else sys.stdout)
             return
 
-        print(f"  Recognized: \"{raw_text}\"")
-        res = process_input(raw_text, mode=mode)
-        if res["type"] == "abbreviation":
-            out = f"  [{res['category']}] {res['input']} = {res['meaning']}"
-            print(out)
-            if copy:
-                copy_to_clipboard(f"{res['input']} — {res['meaning']}")
-                print("  📋 Copied to clipboard!")
+        hud.set_state("REFINING")
+        if mode == "raw":
+            final_text = raw_text
         else:
-            out = f"  Hindi ({res['method']}): {res['translation']}"
-            print(out)
-            if copy:
-                copy_to_clipboard(res["translation"])
+            res = process_input(raw_text, mode=mode)
+            if res["type"] == "abbreviation":
+                final_text = f"[{res['category']}] {res['input']} = {res['meaning']}"
+            else:
+                final_text = res.get("translation", raw_text)
+
+        hud.finish(final_text)
+
+        # Output to stdout
+        if pipe:
+            sys.stdout.write(final_text + "\n")
+            sys.stdout.flush()
+        else:
+            print(f"Recognized: {final_text}")
+
+        if copy:
+            copy_to_clipboard(final_text)
+            if not pipe:
                 print("  📋 Copied to clipboard!")
+
     except Exception as exc:
-        print(f"  ❌ Voice processing error: {exc}")
+        print(f"❌ Voice processing error: {exc}", file=sys.stderr)
 
 
 def run_repl(initial_mode: str = "auto"):
@@ -215,17 +249,29 @@ def main():
     parser = argparse.ArgumentParser(description="PWD Uttarakhand Language Helper & Terminology Tool")
     parser.add_argument("query", nargs="*", help="Optional abbreviation or sentence for one-shot lookup")
     parser.add_argument("-c", "--copy", action="store_true", help="Copy result to clipboard")
-    parser.add_argument("-m", "--mode", choices=["auto", "offline", "online"], default="auto", help="Translation mode")
-    parser.add_argument("-v", "--voice", action="store_true", help="Trigger microphone voice input")
+    parser.add_argument(
+        "-m",
+        "--mode",
+        choices=["raw", "auto", "offline", "online"],
+        default=None,
+        help="Mode: raw (clean speech dictation), auto/offline/online (translate to Hindi)",
+    )
+    parser.add_argument("-v", "--voice", "-l", "--listen", action="store_true", help="Trigger microphone voice input")
+    parser.add_argument("-p", "--pipe", action="store_true", help="Output raw refined text only (suitable for UNIX pipes)")
+    parser.add_argument("--hud", dest="hud", action="store_true", default=None, help="Force enable Rich terminal HUD")
+    parser.add_argument("--no-hud", dest="hud", action="store_false", help="Disable Rich HUD (plain text output)")
     args = parser.parse_args()
 
+    use_hud = True if args.hud is None else args.hud
+    active_mode = args.mode if args.mode is not None else ("raw" if args.voice else "auto")
+
     if args.voice:
-        run_voice_input(mode=args.mode, copy=True)
+        run_voice_input(mode=active_mode, copy=not args.pipe, use_hud=use_hud, pipe=args.pipe)
     elif args.query:
         query_str = " ".join(args.query)
-        run_one_shot(query_str, mode=args.mode, copy=args.copy)
+        run_one_shot(query_str, mode=active_mode, copy=args.copy)
     else:
-        run_repl(initial_mode=args.mode)
+        run_repl(initial_mode=active_mode)
 
 
 if __name__ == "__main__":

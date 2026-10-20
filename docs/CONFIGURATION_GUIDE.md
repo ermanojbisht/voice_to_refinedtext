@@ -373,6 +373,39 @@ python3 -m uvicorn pwd_helper.api:app --host 0.0.0.0 --port 8000
   - `GET /api/search?q=tender`: Returns all matching abbreviations.
   - `GET /api/abbreviations`: Returns complete terminology database.
 
+### 5.4 Live Rich Terminal Dictation HUD & Shell Voice Alias
+> **Goal:** High-productivity voice dictation directly inside Bash, Zsh, or Tmux without opening extra GUI windows or browsers. Completely isolated from the background system tray daemon and desktop hotkeys.
+
+#### 1. Live Terminal Dictation (`--listen`):
+Speak into the microphone and view an animated real-time VU audio meter and pipeline status:
+```bash
+# Speak and print refined text (also copies to clipboard)
+python pwd_cli.py --listen
+
+# Disable visual HUD (minimal plain-text output)
+python pwd_cli.py --listen --no-hud
+
+# Pipe refined text directly into git, grep, or a file
+python pwd_cli.py --listen --pipe | git commit -F -
+python pwd_cli.py --listen --pipe > site_notes.md
+```
+
+#### 2. Shell Voice Typing Alias (`scripts/terminal_voice.sh`):
+Source the optional helper script in your terminal to speak shell commands:
+```bash
+# Source helper script (or add to ~/.bashrc or ~/.zshrc)
+source scripts/terminal_voice.sh
+
+# Type 'v' to dictate and copy/print text
+v
+
+# In interactive Bash, press Ctrl+G to speak and inject text directly onto the active prompt
+```
+
+#### 3. Transparent ON vs. OFF Tradeoff:
+- **`CLI_RICH_HUD: true` (ON)**: Visual microphone assurance with animated volume VU meter, clear status transitions (`RECORDING` $\rightarrow$ `TRANSCRIBING` $\rightarrow$ `DONE`), and Catppuccin color-coded panels. Automatically diverts HUD to `stderr` when piping so stdout receives only pure text.
+- **`CLI_RICH_HUD: false` (OFF)**: Minimal unstyled text output for headless servers or automated cron scripts.
+
 ---
 
 ## 6. Next-Level Animated Visuals & System Tray
