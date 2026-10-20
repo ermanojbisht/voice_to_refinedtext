@@ -26,11 +26,13 @@ class Transcriber:
             return
 
         asr = self.settings.get("asr", {})
-        backend = asr.get("backend", "faster-whisper")
+        backend = asr.get("backend", "faster-whisper").lower().replace("-", "_")
 
         try:
-            # If explicit model_info with a resolved path was supplied for faster-whisper, use it
-            if backend == "faster-whisper" and self.model_info.get("path"):
+            # If explicit model_info with a resolved directory was supplied for faster-whisper, use it
+            from pathlib import Path
+            model_dir = self.model_info.get("path")
+            if backend == "faster_whisper" and model_dir and Path(model_dir).is_dir():
                 from .asr.faster_whisper import FasterWhisperProvider
                 self.provider = FasterWhisperProvider(
                     model_path_or_id=self.model_info["path"],

@@ -2,8 +2,8 @@
     "GLOBAL_HOTKEY": "Ctrl+Space",
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
-    "ACTIVE_ASR_PRESET": "smart_bilingual",
-    "ACTIVE_REFINEMENT_GOAL": "official_hindi",
+    "ACTIVE_ASR_PRESET": "instant_english",
+    "ACTIVE_REFINEMENT_GOAL": "official_english",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
@@ -149,8 +149,8 @@
     },
     "WHISPER_MODEL": "large-v3-turbo",
     "ASR_ENGINE": "transcribe_cpp",
-    "ACTIVE_MODEL_PROFILE": "smart_bilingual",
-    "LANGUAGE_MODE": "pure_hindi",
+    "ACTIVE_MODEL_PROFILE": "instant_english",
+    "LANGUAGE_MODE": "pure_english",
     "MODE": "translate",
     "CACHE_RETENTION_DAYS": 7
 }

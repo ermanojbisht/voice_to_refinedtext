@@ -379,14 +379,17 @@ class AudioIdeaWebService:
                 p = presets[active_preset_key]
                 cfg["asr"]["active_profile"] = active_preset_key
                 cfg["active_preset"] = active_preset_key
-                cfg["asr"]["backend"] = p.get("backend", "faster_whisper")
-                if p.get("backend") == "faster_whisper":
+                backend_str = p.get("backend", "faster_whisper")
+                cfg["asr"]["backend"] = backend_str
+                if backend_str in ("faster_whisper", "faster-whisper"):
                     model_val = p.get("model", "large-v3-turbo")
                     if model_val in ("large-v3-turbo", "turbo"):
                         cfg["asr"]["model_id"] = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
                     else:
                         cfg["asr"]["model_id"] = model_val
+                    cfg["asr"]["model_path"] = None
                 else:
+                    cfg["asr"]["model_path"] = p.get("model", "")
                     cfg["asr"]["model_id"] = p.get("model", "")
                 if p.get("asr_language"):
                     cfg["asr"]["language"] = p["asr_language"]

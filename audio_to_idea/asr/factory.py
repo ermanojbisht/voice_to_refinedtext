@@ -94,23 +94,27 @@ class ASRFactory:
     def from_settings(settings: Dict[str, Any]) -> BaseASRProvider:
         """Build provider for AudioToIdea batch processor from settings dictionary."""
         asr_cfg = settings.get("asr", {})
-        backend = asr_cfg.get("backend", "faster-whisper").lower()
+        backend = asr_cfg.get("backend", "faster-whisper").lower().replace("-", "_")
         active_profile_key = asr_cfg.get("active_profile")
         profiles = asr_cfg.get("model_profiles", {})
 
         profile = profiles.get(active_profile_key, {}) if active_profile_key else {}
 
-        if backend == "transcribe-cpp" or profile.get("backend") == "transcribe_cpp":
-            model_path = profile.get("path") or asr_cfg.get("model_path") or DEFAULT_NEMOTRON_PATH
+        if backend == "transcribe_cpp" or profile.get("backend") == "transcribe_cpp":
+            model_path = profile.get("path") or asr_cfg.get("model_path") or asr_cfg.get("model_id") or DEFAULT_NEMOTRON_PATH
+            family = profile.get("family")
+            if not family:
+                m_str = str(model_path).lower()
+                family = "whisper" if ("apex" in m_str or "whisper" in m_str) else "nemotron"
             provider = TranscribeCppProvider(
                 model_path=model_path,
-                family=profile.get("family", "nemotron"),
+                family=family,
                 device=asr_cfg.get("device", "auto"),
             )
             if provider.is_available():
                 return provider
 
-        if backend == "handy-cli" or profile.get("backend") == "handy_cli":
+        if backend == "handy_cli" or profile.get("backend") == "handy_cli":
             provider = HandyCliProvider(model_id=profile.get("model_id"))
             if provider.is_available():
                 return provider

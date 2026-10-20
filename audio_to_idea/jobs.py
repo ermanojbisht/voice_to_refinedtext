@@ -109,12 +109,28 @@ class JobService:
             check_cancel(cancel)
             template = self.snapshot_prompt() if summary else None
             profile_data = load_profile(profile or cfg['synthesis']['context_profile'], context)
-            model_info = resolve_model(cfg['asr'])
             source_identity = file_hash(source)
-            weights = Path(model_info['path']) / 'model.bin'
-            model_identity = {'path': model_info['path'], 'size': weights.stat().st_size,
-                              'mtime_ns': weights.stat().st_mtime_ns,
-                              'config_hash': file_hash(Path(model_info['path']) / 'config.json')}
+
+            backend_type = str(cfg['asr'].get('backend', 'faster-whisper')).lower().replace('-', '_')
+            if backend_type in ('transcribe_cpp', 'handy_cli'):
+                model_target = Path(cfg['asr'].get('model_path') or cfg['asr'].get('model_id') or '')
+                if model_target.is_file():
+                    model_identity = {
+                        'path': str(model_target),
+                        'size': model_target.stat().st_size,
+                        'mtime_ns': model_target.stat().st_mtime_ns,
+                        'config_hash': file_hash(model_target),
+                    }
+                    model_info = {'path': str(model_target), 'problems': [], 'compatible': True}
+                else:
+                    model_identity = {'backend': backend_type, 'path': str(model_target)}
+                    model_info = {'path': str(model_target), 'problems': [], 'compatible': True}
+            else:
+                model_info = resolve_model(cfg['asr'])
+                weights = Path(model_info['path']) / 'model.bin'
+                model_identity = {'path': model_info['path'], 'size': weights.stat().st_size,
+                                  'mtime_ns': weights.stat().st_mtime_ns,
+                                  'config_hash': file_hash(Path(model_info['path']) / 'config.json')}
             # Bump pipeline_version if chunk/merge interpretation changes so old
             # transcripts cannot silently represent a different ASR algorithm.
             asr_key = fingerprint({'pipeline_version': 1, 'source': source_identity, 'model': model_identity, 'asr': cfg['asr'],
