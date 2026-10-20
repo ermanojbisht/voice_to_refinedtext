@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import os
 import subprocess
 import threading
+import datetime
+import json
+import time
+from typing import Optional, Dict, Any, List, Set, Tuple
+
 import numpy as np
 import sounddevice as sd
 import scipy.io.wavfile as wav
 from faster_whisper import WhisperModel
 import utils
-import datetime
-import json
-import time
 from pynput.keyboard import Controller
 from audio_to_idea.resources import legacy_inference, legacy_recording
 
