@@ -193,6 +193,10 @@ class HotkeyCoordinator:
                 self._dispatch(effect)
                 return effect
             elif self.stage == CoordinatorStage.RECORDING:
+                # Guard against desktop key-repeat signals (e.g. GNOME media-keys repeat on hold)
+                if self.pressed_at is not None and (t - self.pressed_at) < 0.80:
+                    logger.debug("External trigger ignored: auto-repeat guard within 800ms of start")
+                    return CoordinatorEffect.NO_OP
                 self.stage = CoordinatorStage.PROCESSING
                 self.is_locked = False
                 effect = CoordinatorEffect.STOP_RECORDING

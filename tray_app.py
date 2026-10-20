@@ -93,6 +93,10 @@ class VoiceAssistantTray:
         elif result == "expired":
             _tlog("Stale review session expired on startup")
 
+        # Hardware evdev listener for Wayland physical Walkie-Talkie
+        self._evdev_listener = None
+        self._init_evdev_listener()
+
         # Voice wake-word listener (opt-in via voice_control: true in review_config.json)
         # Initialized after check_startup_state so self.review_config is already set.
         self._wake_listener = None
@@ -157,6 +161,8 @@ class VoiceAssistantTray:
             _tlog(f"config.json modification detected on disk (mtime={current_mtime}) — updating tray app")
             self.engine.reload_config()
             self._setup_hotkey()
+            if getattr(self, "_evdev_listener", None):
+                self._evdev_listener.update_hotkey(self.engine.config.get("GLOBAL_HOTKEY", "Ctrl+Space"))
             self._update_tray_title()
             self._refresh_menu()
             try:
@@ -235,6 +241,27 @@ class VoiceAssistantTray:
             _tlog("voice_control: voice_control module not found — skipping")
         except Exception as exc:
             _tlog(f"voice_control: init failed — {exc}")
+
+    def _init_evdev_listener(self):
+        """Initializes kernel-level evdev physical keyboard listener if available."""
+        try:
+            from audio_toolkit import EvdevHotkeyListener
+            if EvdevHotkeyListener.is_available():
+                raw_hk = self.engine.config.get("GLOBAL_HOTKEY", "Ctrl+Space")
+                self._evdev_listener = EvdevHotkeyListener(
+                    hotkey_str=raw_hk,
+                    on_press=lambda: self.coordinator.on_hotkey_down(),
+                    on_release=lambda: self.coordinator.on_hotkey_up(),
+                )
+                if self._evdev_listener.start():
+                    _tlog(f"Evdev hardware listener active for {raw_hk} (true Wayland Walkie-Talkie enabled)")
+                else:
+                    self._evdev_listener = None
+            else:
+                _tlog("Evdev hardware listener not available (using standard user-space fallback)")
+        except Exception as exc:
+            _tlog(f"Evdev listener initialization notice: {exc}")
+            self._evdev_listener = None
 
     # ── Menu ──────────────────────────────────────────────────────────────────
 
@@ -1089,6 +1116,8 @@ class VoiceAssistantTray:
     def exit_app(self, icon=None, item=None):
         _tlog("exit_app called")
         self.running = False
+        if getattr(self, "_evdev_listener", None):
+            self._evdev_listener.stop()
         if self._wake_listener:
             self._wake_listener.stop()
         if self.listener:

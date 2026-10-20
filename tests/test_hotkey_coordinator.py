@@ -157,19 +157,26 @@ def test_push_to_talk_mode_stops_on_any_release():
 
 
 def test_external_trigger_toggle():
-    """External triggers (SIGUSR1 / CLI) toggle recording cleanly without grace delay."""
+    """External triggers (SIGUSR1 / CLI) toggle recording cleanly with repeat guard."""
     effects = []
     coordinator = HotkeyCoordinator(
         mode="hold_or_toggle",
         on_effect=lambda eff: effects.append(eff),
     )
 
-    eff1 = coordinator.on_external_trigger()
+    t0 = 100.0
+    eff1 = coordinator.on_external_trigger(now=t0)
     assert eff1 == CoordinatorEffect.START_RECORDING
     assert coordinator.stage == CoordinatorStage.RECORDING
     assert coordinator.is_locked is True
 
-    eff2 = coordinator.on_external_trigger()
+    # Immediate repeat at 250ms (GNOME auto-repeat) is ignored
+    eff_repeat = coordinator.on_external_trigger(now=t0 + 0.25)
+    assert eff_repeat == CoordinatorEffect.NO_OP
+    assert coordinator.stage == CoordinatorStage.RECORDING
+
+    # Legitimate second tap after 1.0s stops recording
+    eff2 = coordinator.on_external_trigger(now=t0 + 1.2)
     assert eff2 == CoordinatorEffect.STOP_RECORDING
     assert coordinator.stage == CoordinatorStage.PROCESSING
 
