@@ -227,9 +227,13 @@ You can also run the doctor directly from the Web Settings GUI (`http://127.0.0.
 | `FEATURES.evening_review` | `boolean` | `true` | `true`, `false` | Displays the **Start Evening Review** option in the tray menu. |
 | `FEATURES.pwd_terminology_corrector` | `boolean` | `true` | `true`, `false` | Enables automatic domain abbreviation correction (e.g. "the ee issued nit" $\rightarrow$ "the EE issued NIT") and PWD glossary lookup. |
 | `FEATURES.filler_word_removal` | `boolean` | `true` | `true`, `false` | Master toggle for microsecond verbal hesitation stripping (*"um"*, *"uh"*, *"you know"*, *"मतलब"*) and stutter collapsing. |
+| `FEATURES.fuzzy_custom_words` | `boolean` | `true` | `true`, `false` | Master toggle for in-memory fuzzy n-gram custom word and acronym replacement. |
 | `ENABLE_FILLER_REMOVAL` | `boolean` | `true` | `true`, `false` | In-memory verbal hesitation cleaner (<0.1ms). Strips fillers before LLM refinement. |
 | `COLLAPSE_STUTTERS` | `boolean` | `true` | `true`, `false` | Collapses 3+ consecutive word repetitions (*"I I I I"* $\rightarrow$ *"I"*). |
 | `CUSTOM_FILLER_WORDS` | `array` | `[]` | List of strings | Optional user-specific filler words (e.g. `["basically", "literally"]`). |
+| `ENABLE_FUZZY_CUSTOM_WORDS` | `boolean` | `true` | `true`, `false` | Sub-millisecond sliding n-gram custom word corrector (<1ms) based on Handy Rust text.rs. |
+| `FUZZY_MATCH_THRESHOLD` | `number` | `0.35` | `0.1` to `0.6` | Maximum distance threshold (default 0.35). Lower = stricter; higher = looser. |
+| `CUSTOM_WORDS` | `array` | `[...]` | List of strings | User dictionary terms to automatically correct (e.g. `["ChatGPT", "OpenAI", "Claude", "MacBook Pro", "ChargeBee"]`). |
 
 ---
 
@@ -402,6 +406,22 @@ The in-memory filler remover operates in <0.1ms (<60 microseconds) to eliminate 
 |---|---|---|---|
 | **`ENABLE_FILLER_REMOVAL: true` (ON)** | 1. **Cleaner Text**: Instantly purges verbal hesitations (*"um"*, *"uh"*, *"you know"*, *"मतलब"*, *"जैसे कि"*).<br>2. **Faster LLM Generation**: 10–25% fewer input tokens sent to Ollama, reducing delay.<br>3. **Zero LLM Hallucinations**: Prevents small models (3B) from interpreting *"you know"* as conversational prompt banter.<br>4. **Sentence Capitalization Recovery**: *"Um, so we..."* automatically recovers as *"So we..."*.<br>5. **Stutter Collapse**: *"I I I think"* collapses to *"I think"*. | 1. **Not 100% Verbatim**: Spoken hesitations are intentionally filtered out.<br>2. **Context Guard**: Hindi *"मतलब"* is only stripped when used as a clause-opening filler (`", matlab, ..."`). If you dictate a dictionary question like *"Is shabd ka matlab kya hai?"*, context rules preserve it, but turning OFF ensures 100% untouched raw text. | Daily dictation, drafting emails, engineering inspection notes, code comments, official memos. |
 | **`ENABLE_FILLER_REMOVAL: false` (OFF)** | 1. **100% Literal Verbatim Speech**: Every single pause, human hesitation sound, and verbal repetition is preserved exactly as spoken.<br>2. **Forensic Record**: Complete fidelity to the raw audio recording. | 1. **Cluttered Output**: Text is burdened with verbal hesitation sounds.<br>2. **Slower LLM**: More tokens consumed.<br>3. **Stutters Remain**: *"the the the"* remains uncollapsed. | Legal depositions, court reporting, psychological evaluations, linguistic research, or literal transcript archives. |
+
+### Fuzzy N-Gram Domain Dictionary (ON vs. OFF Decision Guide)
+> **Configuration Key:** `ENABLE_FUZZY_CUSTOM_WORDS` (or `FEATURES.fuzzy_custom_words` in `config.json` and Settings GUI)
+> **Threshold Key:** `FUZZY_MATCH_THRESHOLD` (default: `0.35`)
+> **Custom Words Key:** `CUSTOM_WORDS` (list of strings)
+
+Based on Handy's Rust `text.rs` architecture, the in-memory Fuzzy N-Gram engine runs immediately after raw speech recognition in $<1\text{ ms}$. It uses a multi-token sliding window ($N \in \{1, 2, 3, 4\}$), American Soundex phonetic boosting, normalized Levenshtein distance, a 25% length difference guard, and short-term exact safeguards.
+
+#### Transparent Tradeoff Comparison:
+
+| Setting State | What You GAIN (Benefits) | What You LOSE / Potential Tradeoff | Recommended Use Case |
+|---|---|---|---|
+| **`ENABLE_FUZZY_CUSTOM_WORDS: true` (ON)** | 1. **Repairs Split Acronyms**: Fixes multi-word speech token splits (*"Chat G P T"* $\rightarrow$ *"ChatGPT"*, *"Charge B"* $\rightarrow$ *"ChargeBee"*, *"Open AI"* $\rightarrow$ *"OpenAI"*, *"Mac Book Pro"* $\rightarrow$ *"MacBook Pro"*, *"D P R"* $\rightarrow$ *"DPR"*, *"P M G S Y"* $\rightarrow$ *"PMGSY"*).<br>2. **Phonetic Near-Miss Correction**: Accented speech (*"culvert winding"* $\rightarrow$ *"culvert widening"*, *"arthwork"* $\rightarrow$ *"earthwork"*, *"R and D"* $\rightarrow$ *"R&D"*) matches domain terms instantly.<br>3. **Zero LLM Latency**: Runs entirely in-memory in $<1\text{ ms}$ before clipboard paste.<br>4. **Boundary Punctuation & Casing**: Preserves enclosing punctuation (*"(Charge B)?"* $\rightarrow$ *"(ChargeBee)?"*, *"「Handee。」"* $\rightarrow$ *"「Handy。」"*) and casing (*"CHARGE B"* $\rightarrow$ *"CHARGEBEE"*).<br>5. **Short-Term Safeguards**: 3-letter acronyms (*SOR*, *SDO*, *EE*) require exact matches, completely preventing common English words (*"for"*, *"site"*, *"so"*) from being mistakenly replaced. | 1. **Potential Over-matching If Threshold $>0.5$**: If `FUZZY_MATCH_THRESHOLD` is set too loosely ($>0.5$), unrelated words may match. *(The strict default of `0.35` and $25\%$ length guard eliminate this risk).*<br>2. **Not Literally Verbatim**: Corrects phonetically misheard proper nouns and acronyms instead of leaving raw ASR errors. | Daily dictation, technical notes, engineering inspections, software development, email drafting, and instant typing modes. |
+| **`ENABLE_FUZZY_CUSTOM_WORDS: false` (OFF)** | 1. **100% Unmodified ASR Tokens**: Output reflects strictly what the speech recognition model emitted character-for-character.<br>2. **Zero Word Replacement**: No dictionary substitutions are attempted. | 1. **Fragmented Proper Nouns**: Spoken acronyms like *"Chat G P T"* or *"D P R"* remain broken into separate spaced letters.<br>2. **Phonetic Errors Remain**: Transcriptions like *"calvert winding"* or *"Charge B"* stay broken unless corrected by a slow LLM call ($+1.5\text{s}$ to $+3.0\text{s}$). | ASR model acoustic benchmarking, pure phonetic transcription analysis, or forensic transcription archiving. |
+
+---
 
 ---
 

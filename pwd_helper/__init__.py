@@ -11,6 +11,11 @@ from pwd_helper.core import (
 )
 from pwd_helper.normalizer import normalize_pwd_terms
 from pwd_helper.translator import translate, process_input
+from pwd_helper.fuzzy_matcher import (
+    FuzzyCustomWordMatcher,
+    apply_custom_words,
+    load_all_domain_words,
+)
 
 __all__ = [
     "get_pwd_dict",
@@ -22,4 +27,7 @@ __all__ = [
     "normalize_pwd_terms",
     "translate",
     "process_input",
+    "FuzzyCustomWordMatcher",
+    "apply_custom_words",
+    "load_all_domain_words",
 ]

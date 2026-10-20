@@ -3,8 +3,8 @@
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
     "MODELS_DIR": "/media/manoj/F1/models-handy",
-    "ACTIVE_ASR_PRESET": "instant_hindi",
-    "ACTIVE_REFINEMENT_GOAL": "official_english",
+    "ACTIVE_ASR_PRESET": "smart_bilingual",
+    "ACTIVE_REFINEMENT_GOAL": "concise_summary",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
@@ -41,6 +41,17 @@
     "ENABLE_FILLER_REMOVAL": true,
     "COLLAPSE_STUTTERS": true,
     "CUSTOM_FILLER_WORDS": [],
+    "ENABLE_FUZZY_CUSTOM_WORDS": true,
+    "FUZZY_MATCH_THRESHOLD": 0.35,
+    "CUSTOM_WORDS": [
+        "ChatGPT",
+        "OpenAI",
+        "Claude",
+        "MacBook Pro",
+        "ChargeBee",
+        "GitHub",
+        "DevOps"
+    ],
     "FEATURES": {
         "start_end_sounds": true,
         "clipboard_output": true,
@@ -48,11 +59,12 @@
         "direct_typing": true,
         "evening_review": true,
         "pwd_terminology_corrector": true,
-        "filler_word_removal": true
+        "filler_word_removal": true,
+        "fuzzy_custom_words": true
     },
     "ASR_PRESETS": {
         "smart_bilingual": {
-            "label": "🎯 Smart Bilingual (Whisper Turbo)",
+            "label": "\ud83c\udfaf Smart Bilingual (Whisper Turbo)",
             "backend": "faster_whisper",
             "model": "large-v3-turbo",
             "device": "auto",
@@ -60,7 +72,7 @@
             "description": "Auto-detects English, Hindi, and mixed Hinglish. Preserves English acronyms in Latin script."
         },
         "instant_english": {
-            "label": "⚡ Instant Pure English (Nemotron)",
+            "label": "\u26a1 Instant Pure English (Nemotron)",
             "backend": "transcribe_cpp",
             "model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
             "device": "auto",
@@ -68,7 +80,7 @@
             "description": "Ultra-fast (<0.8s). Strictly for English speech. Do not use for Hindi audio."
         },
         "instant_hindi": {
-            "label": "⚡ Instant Pure Hindi (Nemotron)",
+            "label": "\u26a1 Instant Pure Hindi (Nemotron)",
             "backend": "transcribe_cpp",
             "model": "nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
             "device": "auto",
@@ -76,7 +88,7 @@
             "description": "Ultra-fast (<0.8s). Strictly for pure Devanagari Hindi speech. Do not use for English audio."
         },
         "roman_hinglish": {
-            "label": "💬 Roman Hinglish Notes (Apex)",
+            "label": "\ud83d\udcac Roman Hinglish Notes (Apex)",
             "backend": "transcribe_cpp",
             "model": "Whisper-Hindi2Hinglish-Apex-Q8.bin",
             "device": "auto",
@@ -86,7 +98,7 @@
     },
     "REFINEMENT_GOALS": {
         "clean_bilingual": {
-            "label": "🌐 Bilingual Field Note",
+            "label": "\ud83c\udf10 Bilingual Field Note",
             "output_lang": "bilingual",
             "target_lang": "bilingual",
             "format": "clean_paragraph",
@@ -97,7 +109,7 @@
             "description": "Polishes grammar, capitalizes PWD acronyms (EE, JE, MB, NIT), preserves spoken mix."
         },
         "official_english": {
-            "label": "🇬🇧 Official English Memo",
+            "label": "\ud83c\uddec\ud83c\udde7 Official English Memo",
             "output_lang": "pure_english",
             "target_lang": "pure_english",
             "format": "clean_paragraph",
@@ -108,7 +120,7 @@
             "description": "Polishes into formal civil engineering English; translates Hindi phrases."
         },
         "official_hindi": {
-            "label": "🇮🇳 Official Hindi Directive",
+            "label": "\ud83c\uddee\ud83c\uddf3 Official Hindi Directive",
             "output_lang": "pure_hindi",
             "target_lang": "pure_hindi",
             "format": "clean_paragraph",
@@ -119,7 +131,7 @@
             "description": "Polishes into formal administrative Devanagari Hindi."
         },
         "concise_summary": {
-            "label": "📋 Concise Executive Summary",
+            "label": "\ud83d\udccb Concise Executive Summary",
             "output_lang": "auto",
             "target_lang": "same_as_input",
             "format": "concise_summary",
@@ -130,7 +142,7 @@
             "description": "Executive bullet summary with key decisions, dates, and sanctions."
         },
         "ideas_actions": {
-            "label": "💡 Ideas, Tasks & Action Items",
+            "label": "\ud83d\udca1 Ideas, Tasks & Action Items",
             "output_lang": "auto",
             "target_lang": "same_as_input",
             "format": "ideas_actions",
@@ -141,7 +153,7 @@
             "description": "Actionable task breakdown with responsible roles, deadlines, and blockers."
         },
         "roman_hinglish": {
-            "label": "💬 Casual Roman Text",
+            "label": "\ud83d\udcac Casual Roman Text",
             "output_lang": "roman_hinglish",
             "target_lang": "roman_hinglish",
             "format": "clean_paragraph",
@@ -153,9 +165,9 @@
         }
     },
     "WHISPER_MODEL": "large-v3-turbo",
-    "ASR_ENGINE": "transcribe_cpp",
-    "ACTIVE_MODEL_PROFILE": "instant_hindi",
-    "LANGUAGE_MODE": "pure_english",
-    "MODE": "translate",
+    "ASR_ENGINE": "faster_whisper",
+    "ACTIVE_MODEL_PROFILE": "smart_bilingual",
+    "LANGUAGE_MODE": "auto",
+    "MODE": "refine",
     "CACHE_RETENTION_DAYS": 7
 }

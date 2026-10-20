@@ -181,6 +181,16 @@ class VoiceEngine:
             self._filler_remover = FillerWordRemover(custom_fillers=custom, collapse_stutters_enabled=collapse)
         return self._filler_remover
 
+    @property
+    def fuzzy_matcher(self):
+        """Lazy loads the in-memory fuzzy n-gram custom word and domain dictionary engine."""
+        if getattr(self, "_fuzzy_matcher", None) is None:
+            from pwd_helper.fuzzy_matcher import FuzzyCustomWordMatcher, load_all_domain_words
+            threshold = float(self.config.get("FUZZY_MATCH_THRESHOLD", 0.35))
+            domain_words = load_all_domain_words(self.config)
+            self._fuzzy_matcher = FuzzyCustomWordMatcher(domain_words, threshold=threshold)
+        return self._fuzzy_matcher
+
     @legacy_recording
     def record(self, on_start=None, on_end=None, pre_record_notification=None, on_audio_chunk=None):
         """Records audio with pre-roll buffer, neural VAD, and manual stop support."""
@@ -293,6 +303,13 @@ class VoiceEngine:
         if self.config.get("ENABLE_FILLER_REMOVAL", True) and features.get("filler_word_removal", True):
             try:
                 raw_text = self.filler_remover.clean(raw_text, enabled=True)
+            except Exception:
+                pass
+
+        # Fuzzy N-Gram Custom Domain Replacement Engine (if enabled)
+        if self.config.get("ENABLE_FUZZY_CUSTOM_WORDS", True) and features.get("fuzzy_custom_words", True):
+            try:
+                raw_text = self.fuzzy_matcher.apply(raw_text)
             except Exception:
                 pass
 

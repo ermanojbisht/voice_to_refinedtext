@@ -57,6 +57,7 @@ _FEATURE_DEFS = [
     ("evening_review", "🌙 Evening Review", "Show 'Start Evening Review' in tray menu. Disable to use Voice Refiner only."),
     ("pwd_terminology_corrector", "🏛 PWD Terminology Corrector", "Auto-capitalizes and normalizes PWD abbreviations (NIT, MB, EE, RCC, SOR) in transcripts."),
     ("filler_word_removal", "✂️ Microsecond Filler Word Remover", "ON (Gain): Strips verbal hesitations ('um', 'uh', 'you know', 'मतलब') in <0.1ms, speeds up LLM generation, collapses stutters ('I I I' → 'I'), and restores sentence capitalization. OFF (Tradeoff): Preserves 100% verbatim raw speech for legal/interview forensic accuracy."),
+    ("fuzzy_custom_words", "🔤 Fuzzy N-Gram Domain Dictionary", "ON (Gain): Repairs split speech acronyms ('Chat G P T' → 'ChatGPT', 'Charge B' → 'ChargeBee', 'D P R' → 'DPR', 'R and D' → 'R&D') and phonetic near-misses in <1ms without calling an LLM. Preserves boundary punctuation and ALL-CAPS/Titlecase. OFF (Tradeoff): Leaves raw split tokens character-for-character as emitted by Whisper/Nemotron without any domain word substitution."),
 ]
 
 

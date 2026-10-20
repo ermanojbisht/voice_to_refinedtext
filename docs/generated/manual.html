@@ -636,6 +636,13 @@ python<span class="w"> </span>doctor.py<span class="w"> </span>--fix
 <td>Master toggle for microsecond verbal hesitation stripping (<em>"um"</em>, <em>"uh"</em>, <em>"you know"</em>, <em>"मतलब"</em>) and stutter collapsing.</td>
 </tr>
 <tr>
+<td><code>FEATURES.fuzzy_custom_words</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Master toggle for in-memory fuzzy n-gram custom word and acronym replacement.</td>
+</tr>
+<tr>
 <td><code>ENABLE_FILLER_REMOVAL</code></td>
 <td><code>boolean</code></td>
 <td><code>true</code></td>
@@ -655,6 +662,27 @@ python<span class="w"> </span>doctor.py<span class="w"> </span>--fix
 <td><code>[]</code></td>
 <td>List of strings</td>
 <td>Optional user-specific filler words (e.g. <code>["basically", "literally"]</code>).</td>
+</tr>
+<tr>
+<td><code>ENABLE_FUZZY_CUSTOM_WORDS</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Sub-millisecond sliding n-gram custom word corrector (&lt;1ms) based on Handy Rust text.rs.</td>
+</tr>
+<tr>
+<td><code>FUZZY_MATCH_THRESHOLD</code></td>
+<td><code>number</code></td>
+<td><code>0.35</code></td>
+<td><code>0.1</code> to <code>0.6</code></td>
+<td>Maximum distance threshold (default 0.35). Lower = stricter; higher = looser.</td>
+</tr>
+<tr>
+<td><code>CUSTOM_WORDS</code></td>
+<td><code>array</code></td>
+<td><code>[...]</code></td>
+<td>List of strings</td>
+<td>User dictionary terms to automatically correct (e.g. <code>["ChatGPT", "OpenAI", "Claude", "MacBook Pro", "ChargeBee"]</code>).</td>
 </tr>
 </tbody>
 </table>
@@ -988,6 +1016,41 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </tbody>
 </table>
 </div>
+<h3 id="fuzzy-n-gram-domain-dictionary-on-vs-off-decision-guide">Fuzzy N-Gram Domain Dictionary (ON vs. OFF Decision Guide)</h3>
+<blockquote>
+<p><strong>Configuration Key:</strong> <code>ENABLE_FUZZY_CUSTOM_WORDS</code> (or <code>FEATURES.fuzzy_custom_words</code> in <code>config.json</code> and Settings GUI)
+<strong>Threshold Key:</strong> <code>FUZZY_MATCH_THRESHOLD</code> (default: <code>0.35</code>)
+<strong>Custom Words Key:</strong> <code>CUSTOM_WORDS</code> (list of strings)</p>
+</blockquote>
+<p>Based on Handy's Rust <code>text.rs</code> architecture, the in-memory Fuzzy N-Gram engine runs immediately after raw speech recognition in $&lt;1\text{ ms}$. It uses a multi-token sliding window ($N \in {1, 2, 3, 4}$), American Soundex phonetic boosting, normalized Levenshtein distance, a 25% length difference guard, and short-term exact safeguards.</p>
+<h4 id="transparent-tradeoff-comparison_1">Transparent Tradeoff Comparison:</h4>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Setting State</th>
+<th>What You GAIN (Benefits)</th>
+<th>What You LOSE / Potential Tradeoff</th>
+<th>Recommended Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>ENABLE_FUZZY_CUSTOM_WORDS: true</code> (ON)</strong></td>
+<td>1. <strong>Repairs Split Acronyms</strong>: Fixes multi-word speech token splits (<em>"Chat G P T"</em> $\rightarrow$ <em>"ChatGPT"</em>, <em>"Charge B"</em> $\rightarrow$ <em>"ChargeBee"</em>, <em>"Open AI"</em> $\rightarrow$ <em>"OpenAI"</em>, <em>"Mac Book Pro"</em> $\rightarrow$ <em>"MacBook Pro"</em>, <em>"D P R"</em> $\rightarrow$ <em>"DPR"</em>, <em>"P M G S Y"</em> $\rightarrow$ <em>"PMGSY"</em>).<br>2. <strong>Phonetic Near-Miss Correction</strong>: Accented speech (<em>"culvert winding"</em> $\rightarrow$ <em>"culvert widening"</em>, <em>"arthwork"</em> $\rightarrow$ <em>"earthwork"</em>, <em>"R and D"</em> $\rightarrow$ <em>"R&amp;D"</em>) matches domain terms instantly.<br>3. <strong>Zero LLM Latency</strong>: Runs entirely in-memory in $&lt;1\text{ ms}$ before clipboard paste.<br>4. <strong>Boundary Punctuation &amp; Casing</strong>: Preserves enclosing punctuation (<em>"(Charge B)?"</em> $\rightarrow$ <em>"(ChargeBee)?"</em>, <em>"「Handee。」"</em> $\rightarrow$ <em>"「Handy。」"</em>) and casing (<em>"CHARGE B"</em> $\rightarrow$ <em>"CHARGEBEE"</em>).<br>5. <strong>Short-Term Safeguards</strong>: 3-letter acronyms (<em>SOR</em>, <em>SDO</em>, <em>EE</em>) require exact matches, completely preventing common English words (<em>"for"</em>, <em>"site"</em>, <em>"so"</em>) from being mistakenly replaced.</td>
+<td>1. <strong>Potential Over-matching If Threshold $&gt;0.5$</strong>: If <code>FUZZY_MATCH_THRESHOLD</code> is set too loosely ($&gt;0.5$), unrelated words may match. <em>(The strict default of <code>0.35</code> and $25\%$ length guard eliminate this risk).</em><br>2. <strong>Not Literally Verbatim</strong>: Corrects phonetically misheard proper nouns and acronyms instead of leaving raw ASR errors.</td>
+<td>Daily dictation, technical notes, engineering inspections, software development, email drafting, and instant typing modes.</td>
+</tr>
+<tr>
+<td><strong><code>ENABLE_FUZZY_CUSTOM_WORDS: false</code> (OFF)</strong></td>
+<td>1. <strong>100% Unmodified ASR Tokens</strong>: Output reflects strictly what the speech recognition model emitted character-for-character.<br>2. <strong>Zero Word Replacement</strong>: No dictionary substitutions are attempted.</td>
+<td>1. <strong>Fragmented Proper Nouns</strong>: Spoken acronyms like <em>"Chat G P T"</em> or <em>"D P R"</em> remain broken into separate spaced letters.<br>2. <strong>Phonetic Errors Remain</strong>: Transcriptions like <em>"calvert winding"</em> or <em>"Charge B"</em> stay broken unless corrected by a slow LLM call ($+1.5\text{s}$ to $+3.0\text{s}$).</td>
+<td>ASR model acoustic benchmarking, pure phonetic transcription analysis, or forensic transcription archiving.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
 <hr />
 </section>
 <section id="chapter-9" class="chapter-card">
@@ -1085,7 +1148,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:24:15
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:56:04
             </div>
         </div>
     </div>
