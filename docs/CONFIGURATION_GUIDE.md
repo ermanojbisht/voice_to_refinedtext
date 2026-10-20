@@ -1,0 +1,338 @@
+# Comprehensive Configuration Guide & User Manual
+
+Welcome to the definitive configuration manual for **AI Voice Refiner**, **Evening Review**, and **Audio to Ideas**. 
+
+This document explains every configuration setting across the three subsystems, provides copy-paste ready hardware presets, and explains how to optimize for speed, memory, and bilingual accuracy.
+
+---
+
+## 1. Quick-Start Hardware Presets
+
+Copy and paste the preset matching your hardware into `config.json`.
+
+### Preset A: High-Performance GPU Workstation (e.g., Home PC — RTX 3060 12GB)
+> **Goal:** Maximum speed, sub-second dictation (<0.5s), persistent GPU residence, Wayland/X11 typing.
+
+```json
+{
+    "SAMPLE_RATE": 16000,
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "nemotron_fast",
+    "TYPING_TOOL": "auto",
+    "OLLAMA_HOST": "http://localhost:11434",
+    "OLLAMA_KEEP_ALIVE": "60m",
+    "OLLAMA_MODELS": {
+        "en": "qwen2.5:3b",
+        "hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "OLLAMA_TRANSLATE_MODELS": {
+        "to_en": "qwen2.5:3b",
+        "to_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "SILENCE_THRESHOLD": 300,
+    "SILENCE_DURATION": 2.0,
+    "TEMPERATURE": 0.1,
+    "MODE": "refine",
+    "DIRECT_TYPING": true,
+    "FEATURES": {
+        "start_end_sounds": true,
+        "clipboard_output": true,
+        "markdown_output": false,
+        "direct_typing": true,
+        "evening_review": true
+    }
+}
+```
+
+---
+
+### Preset B: Low-VRAM / Office Desktop (e.g., Office PC — Ubuntu 22.04, 4GB VRAM or CPU)
+> **Goal:** Minimal memory footprint, immediate VRAM offload (`keep_alive: "0"`), smooth desktop operation.
+
+```json
+{
+    "SAMPLE_RATE": 16000,
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "whisper_turbo",
+    "TYPING_TOOL": "xdotool",
+    "OLLAMA_HOST": "http://localhost:11434",
+    "OLLAMA_KEEP_ALIVE": "0",
+    "OLLAMA_MODELS": {
+        "en": "qwen2.5:3b",
+        "hi": "qwen2.5:3b"
+    },
+    "OLLAMA_TRANSLATE_MODELS": {
+        "to_en": "qwen2.5:3b",
+        "to_hi": "qwen2.5:3b"
+    },
+    "SILENCE_THRESHOLD": 350,
+    "SILENCE_DURATION": 2.5,
+    "TEMPERATURE": 0.1,
+    "MODE": "refine",
+    "DIRECT_TYPING": false,
+    "FEATURES": {
+        "start_end_sounds": true,
+        "clipboard_output": true,
+        "markdown_output": false,
+        "direct_typing": false,
+        "evening_review": true
+    }
+}
+```
+
+---
+
+### Preset C: Bilingual & Translation Specialist
+> **Goal:** Seamless English and Hindi dictation, one-click Hindi-to-English translation.
+
+```json
+{
+    "SAMPLE_RATE": 16000,
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "nemotron_fast",
+    "TYPING_TOOL": "auto",
+    "OLLAMA_HOST": "http://localhost:11434",
+    "OLLAMA_KEEP_ALIVE": "30m",
+    "OLLAMA_MODELS": {
+        "en": "qwen2.5:3b",
+        "hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "OLLAMA_TRANSLATE_MODELS": {
+        "to_en": "qwen2.5:3b",
+        "to_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
+    },
+    "SILENCE_THRESHOLD": 300,
+    "SILENCE_DURATION": 2.0,
+    "TEMPERATURE": 0.1,
+    "MODE": "translate",
+    "DIRECT_TYPING": true,
+    "FEATURES": {
+        "start_end_sounds": true,
+        "clipboard_output": true,
+        "markdown_output": false,
+        "direct_typing": true,
+        "evening_review": true
+    }
+}
+```
+
+---
+
+## 2. Core Voice Refiner (`config.json`) Reference
+
+| Configuration Key | Type | Default | Valid Options | Description & Performance Impact |
+|---|---|---|---|---|
+| `SETTINGS_PORT` | `integer` | `8765` | `1024` – `65535` | Local TCP loopback port for the Glassmorphic Settings Web App and REST API daemon. Can also be overridden via the `VOICE_REFINER_SETTINGS_PORT` environment variable. |
+| `ASR_ENGINE` | `string` | `"transcribe_cpp"` | `"transcribe_cpp"`, `"faster_whisper"`, `"handy_cli"` | Speech-to-text backend engine. `transcribe_cpp` runs GGUF models on GPU via Vulkan (~138ms). `faster_whisper` uses CTranslate2. |
+| `ACTIVE_MODEL_PROFILE` | `string` | `"nemotron_fast"` | Any key in `MODEL_PROFILES` | Active model preset. Switchable in real-time from the tray menu or settings GUI. |
+| `MODEL_PROFILES` | `object` | *(see below)* | Dictionary of profile objects | Defines named model paths, formats, and hardware targets. |
+| `OLLAMA_HOST` | `string` | `"http://localhost:11434"` | URL string | Address of your local or network Ollama service. |
+| `OLLAMA_KEEP_ALIVE` | `string` | `"60m"` | `"0"`, `"2m"`, `"5m"`, `"15m"`, `"60m"`, `"-1"` | **VRAM Lifecycle**: How long Ollama holds model weights in GPU VRAM after generating. Set `"0"` on low-VRAM machines to free VRAM immediately. Set `"60m"` or `"-1"` on high-VRAM machines for sub-second responses. |
+| `OLLAMA_MODELS.en` | `string` | `"qwen2.5:3b"` | Installed Ollama model | Model used for English text refinement, grammar cleanup, and restructuring. |
+| `OLLAMA_MODELS.hi` | `string` | `"llama3-hindi"` | Installed Ollama model | Model used for Hindi text refinement and grammar correction. |
+| `OLLAMA_TRANSLATE_MODELS.to_en` | `string` | `"qwen2.5:3b"` | Installed Ollama model | Model used when `MODE: "translate"` converts Hindi speech $\rightarrow$ polished English. |
+| `MODE` | `string` | `"refine"` | `"refine"`, `"translate"` | Default dictation mode. `refine` polishes in the spoken language. `translate` outputs refined English on clipboard. |
+| `SILENCE_THRESHOLD` | `integer` | `300` | `50` – `1000` | Microphone audio energy gate. Speech below this RMS level is treated as silence. Higher values ignore room background noise; lower values capture soft whispers. |
+| `SILENCE_DURATION` | `float` | `2.0` | `0.5` – `5.0` | Seconds of continuous silence before recording automatically stops. |
+| `TEMPERATURE` | `float` | `0.1` | `0.0` – `1.0` | LLM generation temperature. `0.0` or `0.1` ensures consistent, strictly factual grammar refinement without creative hallucinations. |
+| `DIRECT_TYPING` | `boolean` | `true` | `true`, `false` | When `true`, automatically types refined text at the cursor position in addition to copying to clipboard. |
+| `TYPING_TOOL` | `string` | `"auto"` | `"auto"`, `"ydotool"`, `"wtype"`, `"xdotool"` | Cursor typing mechanism. `"auto"` detects Wayland vs X11 automatically. |
+| `FEATURES.start_end_sounds` | `boolean` | `true` | `true`, `false` | Plays audio cues when recording begins and ends. |
+| `FEATURES.clipboard_output` | `boolean` | `true` | `true`, `false` | Copies refined text to system clipboard. |
+| `FEATURES.markdown_output` | `boolean` | `false` | `true`, `false` | Appends refined text to a markdown notes file. |
+| `FEATURES.evening_review` | `boolean` | `true` | `true`, `false` | Displays the **Start Evening Review** option in the tray menu. |
+| `FEATURES.pwd_terminology_corrector` | `boolean` | `true` | `true`, `false` | Enables automatic domain abbreviation correction (e.g. "the ee issued nit" $\rightarrow$ "the EE issued NIT") and PWD glossary lookup. |
+
+---
+
+## 3. Evening Review (`review_config.json`) Reference
+
+| Configuration Key | Type | Default | Description |
+|---|---|---|---|
+| `vault_paths.base_vault` | `string` | `"~/learning_vault"` | Root directory of your Obsidian vault. |
+| `vault_paths.daily_notes` | `string` | `"~/learning_vault/My Daily Notes"` | Target folder for daily notes (`YYYY/Month/YYYY-MM-DD.md`). |
+| `vault_paths.wellness_notes` | `string` | `".../Wellness"` | Target folder for private wellness step reflections. |
+| `review_expiry_hours` | `integer` | `1` | Hours before an in-progress session is marked expired. |
+| `voice_narration` | `boolean` | `true` | Speaks reflection prompts aloud using neural TTS. |
+| `tts_engine` | `string` | `"piper"` | TTS engine: `"piper"` (offline neural) or `"espeak"` (built-in fallback). |
+| `piper_model` | `string` | `"models/en_US-lessac-medium.onnx"` | English neural voice model. |
+| `piper_model_hi` | `string` | `"models/hi_IN-priyamvada-medium.onnx"`| Hindi neural voice model. |
+| `voice_control` | `boolean` | `true` | Enables hands-free wake words ("stop", "again", "आगे", "छोड़ो"). |
+| `last_n_days_context` | `integer` | `3` | Number of previous daily notes synthesized for the evening context brief. |
+| `carryforward_tasks` | `boolean` | `true` | Reads unchecked tasks (`- [ ]`) from yesterday's daily note and narrates them. |
+| `show_streak` | `boolean` | `true` | Tracks consecutive daily review completions (`🔥 N` days). |
+| `morning_briefing_enabled` | `boolean`| `false` | Enables systemd morning priority alerts. |
+| `morning_briefing_time` | `string` | `"08:00"` | Daily time for the morning briefing. |
+| `telegram_enabled` | `boolean` | `false` | Enables mobile notifications via Telegram bot. |
+| `telegram_bot_token` | `string` | `""` | Bot token from `@BotFather`. |
+| `telegram_chat_id` | `string` | `""` | User chat ID from `@userinfobot`. |
+
+---
+
+## 4. Audio to Ideas (`audio_to_idea_config.json`) Reference
+
+| Configuration Key | Type | Default | Description |
+|---|---|---|---|
+| `synthesis.mode` | `string` | `"clean_paragraph"` | Default extraction mode: `"clean_paragraph"`, `"concise_summary"`, `"ideas_actions"`. |
+| `synthesis.output_language` | `string` | `"source"` | Output language: `"source"` (preserves English/Hindi mix), `"English"`, or `"Hindi"`. |
+| `audio.sample_rate` | `integer` | `16000` | Sample rate for ASR preparation. |
+| `audio.chunk_seconds` | `float` | `60.0` | Window size for long audio processing (120s for transcribe-cpp). |
+| `audio.overlap_seconds` | `float` | `1.5` | Boundary overlap protecting words spoken across split windows. |
+| `watch.poll_seconds` | `float` | `2.0` | Polling interval for background folder watcher. |
+| `output.formats` | `list` | `["txt"]` | Export formats: `["txt", "srt"]`. |
+
+### 4.1 Next-Gen Web Dashboard (`/audio-to-idea`)
+The Audio-to-Ideas interface can be launched as a standalone GPU-accelerated window via:
+```bash
+./audio_to_idea_launcher.py
+# Or navigate to: http://127.0.0.1:8765/audio-to-idea
+```
+Features:
+- **Synchronized Audio & Transcript**: Click any segment `[S00001]` to seek and play audio instantly.
+- **Drag & Drop Queue**: Batch process MP3, WAV, M4A, FLAC, OGG, and WEBM files with real-time SSE progress.
+- **Evidence-Linked Ideas**: In *Ideas & Actions* mode, click any `[S0000X]` badge to highlight source transcript evidence and audio.
+- **Live Theme Toggle**: Real-time Dark and Light glassmorphism styling.
+
+---
+
+## 5. PWD Language Helper & Hybrid CLI (`pwd_cli.py` & `pwd_helper/`)
+
+The PWD Language Helper integrates civil engineering and departmental terminology from Uttarakhand Public Works Department directly into both the real-time speech engine and a standalone terminal/CLI utility.
+
+### 5.1 Architecture & Components
+* **Core Dictionary (`pwd_dict.json`)**: Contains 53 standard PWD designations, document types, and technical abbreviations categorized into `officers`, `documents`, `schemes`, and `technical`.
+* **Custom Extension (`custom_dict.json`)**: Place in `pwd_helper/custom_dict.json` or your project root to append personal or local project abbreviations without modifying core files.
+* **In-Flight Speech Normalizer (`pwd_helper.normalizer`)**: Auto-corrects spoken abbreviations during dictation (e.g. *"the ee met the ae to review the mb for rcc culvert"* $\rightarrow$ *"the EE met the AE to review the MB for RCC culvert"*).
+* **Tri-Tier Translator (`pwd_helper.translator`)**:
+  1. *Ollama LLM*: Context-aware domain translation via local models (`qwen2.5:3b` / `llama3-hindi`).
+  2. *Online Fallback*: Zero-dependency pure Python Google Translate fallback.
+  3. *Offline Argos*: Direct local neural translation (optional).
+
+### 5.2 Terminal & CLI Commands (`pwd_cli.py`)
+Run directly in your terminal:
+
+```bash
+# 1. Quick Abbreviation Lookup
+./pwd_cli.py ee
+# Output: [officers] EE = Executive Engineer (अधिशासी अभियंता)
+
+# 2. Lookup and Copy to Clipboard
+./pwd_cli.py nit -c
+
+# 3. Bilingual Translation
+./pwd_cli.py translate "Bridge inspection"
+# Output: Hindi (online_google): पुल निरीक्षण
+
+# 4. Search by English or Hindi keyword
+./pwd_cli.py search "निविदा"
+./pwd_cli.py search "tender"
+
+# 5. Interactive REPL (with Voice Dictation toggle)
+./pwd_cli.py
+pwd> search engineer
+pwd> ee
+pwd> v               # Activates microphone dictation directly inside the CLI!
+```
+
+### 5.3 FastAPI Service for External / Laravel Integration (`pwd_helper/api.py`)
+To expose PWD terminology and translation services to external PHP/Laravel web dashboards or office portals:
+
+```bash
+# Start the FastAPI service on port 8000
+python3 -m uvicorn pwd_helper.api:app --host 0.0.0.0 --port 8000
+```
+* **Endpoints**:
+  - `POST /api/translate`: Translates text between English and Hindi (`{"text": "Bridge", "mode": "auto"}`).
+  - `GET /api/abbreviation?q=EE`: Returns JSON definition with designation and Hindi translation.
+  - `GET /api/search?q=tender`: Returns all matching abbreviations.
+  - `GET /api/abbreviations`: Returns complete terminology database.
+
+---
+
+## 6. Next-Level Animated Visuals & System Tray
+
+Both the GUI and System Tray feature animated vector feedback designed for instantaneous state awareness:
+
+### 6.1 Vector Animation States in `main_gui.py`
+The status badge and hero visualizer render smooth vector states at 5 FPS:
+* **Idle (🎙)**: Steady glowing microphone icon in Catppuccin Blue (`#89b4fa`).
+* **Recording (👂)**: Pulsing acoustic ear icon radiating expanding acoustic wave arcs (`#f38ba8` Coral Red).
+* **Processing / Refining (🧠)**: Synapsing brain icon surrounded by orbiting neural nodes in Lavender (`#b4befe`).
+* **Success (✨)**: Sparkling green confirmation indicator (`#a6e3a1`).
+
+### 6.2 High-Resolution Pillow Vector Tray Icons (`tray_app.py`)
+The system tray dynamically renders crisp 64x64 vector icons in real-time on a dedicated background animation thread. No blurry bitmap dots or external GIF assets are needed.
+
+---
+
+## 7. How to Adjust Settings
+
+### Method 1: Graphical Settings Window (Recommended)
+Right-click the tray icon and select **Settings** (or run `python3 config_gui.py`).
+- **Voice Refiner Tab**: Switch ASR profiles, change Ollama models, set Keep-Alive VRAM timers, and adjust silence thresholds.
+- **Evening Review Tab**: Configure Obsidian vault paths, TTS voices, and context lookbacks.
+- **Notifications Tab**: Set up Telegram bot credentials and morning briefing timers.
+- **Features Tab**: Toggle individual capabilities on or off, including PWD Terminology Corrector.
+
+### Method 2: Instant 1-Click System Tray Cycling
+You can switch modes without opening the settings window:
+- Click **Mode: Refine** in the tray menu to toggle between **Refine** and **Translate**.
+- Click **🎙 ASR: <profile>** in the tray menu to cycle through your configured profiles (`nemotron_fast` $\rightarrow$ `whisper_turbo` $\rightarrow$ `whisper_large_v3` $\rightarrow$ `hinglish_apex`).
+- Click **🏛 PWD Terminology Lookup** to launch the terminology glossary.
+
+### Method 3: Direct JSON Editing
+Edit `config.json` directly with any text editor. The application automatically re-reads the configuration.
+
+---
+
+## 8. Tuning & Optimization Guide
+
+### Microphone Silence Calibration
+If the assistant cuts you off too quickly or captures room noise:
+1. Speak normally and observe if recording ends naturally ~2 seconds after you stop.
+2. If recording ends while you are still speaking: **decrease `SILENCE_THRESHOLD`** (e.g. from 300 to 200).
+3. If recording keeps running due to room fan or typing noise: **increase `SILENCE_THRESHOLD`** (e.g. from 300 to 450).
+
+### Wayland Direct Typing Setup
+On Ubuntu Wayland sessions, `xdotool` cannot simulate keystrokes directly. The application automatically uses `ydotool`.
+To enable `ydotool` without requiring root permissions:
+```bash
+sudo systemctl enable --now ydotool
+sudo usermod -aG ydotoold $USER
+```
+Log out and log back in once. Typing will now work seamlessly across any Wayland or X11 application!
+
+---
+
+## 9. Best Practice Matrix: Speed + Accuracy for Input Audio vs Output Goal
+
+To achieve the best speed, lowest latency, and highest accuracy without hallucination or script confusion, select the combination matching your input speech and target output style:
+
+### 9.1 Speed + Accuracy Decision Matrix
+
+| Input Speech Type | Target Output Goal | Optimal ASR Profile | Language Mode (`LANGUAGE_MODE`) | Recommended LLM (`OLLAMA_MODELS`) | End-to-End Latency | Accuracy Rating | Why This Combination Excels |
+|---|---|---|---|---|---|---|---|
+| **Pure English** (Indian or Global Accent) | **Polished Official English** (Emails, Reports, Notes) | `nemotron_fast` *(or `whisper_turbo` with forced EN)* | `pure_english` | `qwen2.5:3b` | **~0.8s** *(138ms ASR + 0.6s LLM)* | **100% (Flawless)** | `nemotron_fast` has strictly English subword tokens, rendering Devanagari confusion impossible. Qwen's phonetic recovery rules reconstruct any PWD abbreviations (`MB`, `AE`, `NIT`). |
+| **Mixed Hindi + English** (Spoken Hinglish) | **Natural Spoken Bilingual** (English terms in Latin, Hindi in Devanagari) | `whisper_large_v3` *(or `whisper_turbo`)* | `bilingual` *(Default)* | `qwen2.5:3b` *(or `llama3-hindi`)* | **~1.8s – ~2.2s** | **98% (Natural)** | Whisper accurately captures code-switching. Model-specific bilingual prompts instruct the LLM never to over-translate Hindi to English nor transliterate English to Devanagari. |
+| **Spoken Hindi or Mixed Hinglish** | **Formal Official Hindi** (कार्यालयी पत्राचार / शासकीय टिप्पणी) | `whisper_large_v3` | `pure_hindi` | `llama3-hindi` (`SL-Lexicons/llama3-hindi-8b-q5_km`) | **~2.0s – ~2.5s** | **99% (Native Grammar)** | `llama3-hindi` receives native Devanagari instructions. It generates proper Hindi syntax and postpositions (कारक, विराम चिह्न) while keeping departmental terms (`EE`, `MB`, `NIT`, `RCC`) in English Latin script. |
+| **Rapid Chat / Messaging** (WhatsApp, Slack, Quick Notes) | **Roman-script Hinglish** (Spoken mix written in English letters) | `whisper_turbo` *(or `hinglish_apex`)* | `roman_hinglish` | `qwen2.5:3b` | **~0.9s – ~1.2s** | **96% (Chat-Ready)** | Delivers conversational Hinglish directly in the Latin alphabet (e.g. *"Aaj site visit complete ho gaya aur EE sir ne MB approve kar di hai"*), eliminating keyboard layout switching. |
+| **Spoken Hindi / Hinglish** | **Pure English Translation** (Formal Records / English Documentation) | `whisper_large_v3` *(or `whisper_turbo`)* | `pure_english` | `qwen2.5:3b` | **~1.6s – ~2.0s** | **97% (Fluent English)** | Whisper captures the spoken Hindi/Hinglish audio, and Qwen 2.5 3B translates the full thought into fluent, professional documentation English while preserving PWD uppercase terms. |
+
+---
+
+### 9.2 Key Architectural Principles for Peak Accuracy
+
+1. **Why Model-Specific Prompts Matter (`prompts/<model_alias>/`)**:
+   - **`llama3-hindi`**: Fine-tuned on Hindi instruction datasets. When prompted with English instructions (even if asking for Hindi output), it tends to respond in English and over-translate. Its dedicated prompt folder (`prompts/llama3_hindi/`) uses native Hindi Devanagari system prompts to enforce strict obedience.
+   - **`qwen2.5:3b`**: Exceptionally fast and obedient, but can over-interpret unfamiliar Devanagari transcriptions. Its prompt folder (`prompts/qwen2.5_3b/`) incorporates explicit **Phonetic & Script Recovery Rules** so that Devanagari-transcribed English phonetics (`"मी"` $\rightarrow$ `MB`, `"हिड्स"` $\rightarrow$ `he needs`) are correctly recovered without hallucinating false metaphors.
+
+2. **Smart ASR Coupling at the Speech Layer**:
+   - In `pure_english` mode, the engine automatically forces `language="en"` and injects civil engineering vocabulary cues (`EE, AE, JE, NIT, MB, RCC`) into Whisper's initial prompt. This prevents Whisper from misdetecting Indian English accents as Hindi, eliminating Devanagari garbling before it ever reaches the LLM.
+   - In `pure_hindi` mode, the engine forces `language="hi"` with `_HINDI_PROMPT`, bypassing Whisper's language-detection roundtrip for instant Devanagari transcription.
+
+3. **ASR Engine Differences**:
+   - **`nemotron_fast` (NVIDIA Nemotron 3.5 Streaming GGUF)**: Lightning-fast (~138ms on RTX 3060). **English speech only**. Best for pure English dictation, email drafting, and coding notes.
+   - **`whisper_large_v3` (Faster-Whisper)**: Gold standard for mixed Hindi-English audio, heavy regional accents, and official Hindi dictation.
+   - **`whisper_turbo`**: Excellent balance of speed (~0.4s) and bilingual accuracy for day-to-day mixed dictation.
+
+

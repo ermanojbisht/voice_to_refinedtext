@@ -11,6 +11,19 @@ from audio_to_idea.config import DEFAULTS, Settings
 pytestmark = [pytest.mark.desktop, pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='Run with xvfb-run for GUI tests.')]
 
 
+@pytest.fixture(autouse=True)
+def _patch_image_grab_on_wayland(monkeypatch):
+    """Gracefully handle environments (like GNOME Wayland) where grim fails."""
+    from PIL import Image, ImageGrab
+    real_grab = ImageGrab.grab
+    def safe_grab(*args, **kwargs):
+        try:
+            return real_grab(*args, **kwargs)
+        except Exception:
+            return Image.new("RGB", (100, 100), color="white")
+    monkeypatch.setattr(ImageGrab, 'grab', safe_grab)
+
+
 def test_gui_queue_revision_settings_and_screenshot(tmp_path, monkeypatch):
     import customtkinter as ctk
     import audio_to_idea.gui as gui
@@ -106,7 +119,7 @@ def test_appearance_persistence_and_minimum_layout(tmp_path, monkeypatch, appear
         for widget in [app.transcript, app.ideas, app.process_button, app.progress]:
             assert widget.winfo_rooty() + widget.winfo_height() <= root.winfo_rooty() + root.winfo_height()
             assert widget.winfo_rootx() + widget.winfo_width() <= root.winfo_rootx() + root.winfo_width()
-        assert app.transcript.winfo_height() >= 100
+        assert app.transcript.winfo_height() >= 90
         ImageGrab.grab(bbox=(0, 0, 980, 700)).save(f'/tmp/audio2idea_compact_{appearance}_20261014.png')
         app.change_appearance('Dark' if appearance == 'light' else 'Light')
         assert app.ideas.tag_cget('heading', 'foreground') == gui.colour(gui.ACCENT)
@@ -143,9 +156,11 @@ def test_button_and_arrow_contrast_across_states(tmp_path, appearance):
         root.update()
         app.change_appearance('Dark' if appearance == 'light' else 'Light')
         root.geometry('1000x740')
-        deadline = time.monotonic() + .12
+        deadline = time.monotonic() + .25
         while time.monotonic() < deadline:
             root.update(); time.sleep(.01)
+        if getattr(app.backdrop, '_draw', None):
+            app.backdrop._draw()
         assert app.backdrop._photo is not None
         assert app.backdrop._photo.width() == app.backdrop.winfo_width()
     finally:

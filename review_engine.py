@@ -2178,10 +2178,11 @@ def send_awaiting_notification(state, config):
     idx = state.get("current_step_index", 0)
     step_name = step.get("section_name", f"Step {idx + 1}")
     count = len(state.get("accumulated_raw", []))
+    hotkey = _utils.get_global_hotkey(config)
     send_notification(
         f"Evening Review — Step {idx + 1}/{total} Recorded",
         f"'{step_name}' recorded ({count} clip{'s' if count != 1 else ''}). "
-        f"Speak more with Ctrl+Alt+V, or click 'Next Step' in the dashboard."
+        f"Speak more with {hotkey}, or click 'Next Step' in the dashboard."
     )
     narrate(_ui_narration("saved_speak_more", config), config)
 

@@ -19,7 +19,13 @@ The module's settings live in `audio_to_idea_config.json`; the committed `audio_
 ## Features
 
 ### Core Voice Refiner
-- **Offline speech-to-text** via `faster-whisper` (large-v3-turbo by default)
+- **High-speed modular ASR** — pluggable speech-to-text engines:
+  - `transcribe-cpp` (Vulkan/GPU acceleration on NVIDIA RTX 3060, CPU fallback): runs **Nemotron 3.5 Streaming (0.6B Q8_0 GGUF)** in **~138 ms** (~69x real-time), with built-in punctuation and capitalization. Also supports Whisper GGUF/bin (e.g. `Whisper-Hindi2Hinglish-Apex`) and Voxtral Realtime GGUF.
+  - `faster-whisper` (CTranslate2): large-v3, turbo, and custom Whisper models.
+  - `handy-cli`: headless external CLI fallback using the Handy binary.
+- **Model Profiles & Instant Switching** — switch active models (`nemotron_fast`, `whisper_turbo`, `whisper_large_v3`, `hinglish_apex`) directly from the Settings GUI or with a single click in the System Tray menu.
+- **Wayland & X11 Direct Typing** — types refined text at cursor using `ydotool` (Wayland), `wtype`, or `xdotool` (X11).
+- **Offline speech-to-text** via local models without cloud APIs
 - **Local LLM refinement** via Ollama — grammar cleanup, professional rewriting
 - **Bilingual** — auto-detects English vs Hindi, applies language-specific models and prompts
 - **Silence-based auto-stop** — no fixed timer; recording ends naturally when you pause
@@ -27,7 +33,7 @@ The module's settings live in `audio_to_idea_config.json`; the committed `audio_
 - **Direct typing mode** — optionally simulates keyboard input to insert text at cursor
 - **Refine / Translate toggle** — switch between refining in the same language or translating Hindi → English
 - **Audio feedback** — distinct chimes for recording start, end, and completion
-- **System tray** — persistent coloured-dot indicator (grey/red/blue/green) with right-click menu
+- **System tray** — persistent coloured-dot indicator (grey/red/blue/green) with right-click menu and live active ASR profile title
 
 ### Evening Review
 - **Guided multi-step review** — configurable steps (Focus Word, Achievements, Priorities, Wellness, Meeting, Movement)
@@ -226,20 +232,50 @@ This sends a Unix signal to the running tray, which toggles recording — exactl
 
 ## Configuration
 
+> **📘 Detailed User Manual**: For hardware presets (RTX 3060 vs Low-VRAM Office PC), field-by-field reference tables, and tuning tips, see the [Comprehensive Configuration Guide](docs/CONFIGURATION_GUIDE.md).
+
 All settings are editable via the **Settings** window (tray → Settings) or directly in the JSON files.
 
 ### `config.json` — Voice Refiner
 
 ```json
 {
+    "SAMPLE_RATE": 16000,
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "nemotron_fast",
     "WHISPER_MODEL": "large-v3-turbo",
+    "MODEL_PROFILES": {
+        "nemotron_fast": {
+            "backend": "transcribe_cpp",
+            "family": "nemotron",
+            "path": "/media/manoj/F1/models-handy/nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            "device": "auto"
+        },
+        "whisper_large_v3": {
+            "backend": "faster_whisper",
+            "family": "whisper",
+            "path": "large-v3",
+            "device": "auto"
+        },
+        "whisper_turbo": {
+            "backend": "faster_whisper",
+            "family": "whisper",
+            "path": "large-v3-turbo",
+            "device": "auto"
+        },
+        "hinglish_apex": {
+            "backend": "transcribe_cpp",
+            "family": "whisper",
+            "path": "/media/manoj/F1/models-handy/Whisper-Hindi2Hinglish-Apex-Q8.bin",
+            "device": "auto"
+        }
+    },
     "OLLAMA_HOST": "http://localhost:11434",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
         "hi": "mashriram/sarvam-1:latest"
     },
     "MODE": "refine",
-    "SAMPLE_RATE": 16000,
     "SILENCE_THRESHOLD": 300,
     "SILENCE_DURATION": 2.0,
     "TEMPERATURE": 0.1,
@@ -258,17 +294,20 @@ All settings are editable via the **Settings** window (tray → Settings) or dir
 
 | Key | Description |
 |---|---|
-| `WHISPER_MODEL` | Whisper model size — `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
+| `ASR_ENGINE` | Active ASR engine backend: `transcribe_cpp` (GGUF/Vulkan/CPU), `faster_whisper` (CTranslate2), or `handy_cli` |
+| `ACTIVE_MODEL_PROFILE` | Name of active profile from `MODEL_PROFILES` (e.g. `nemotron_fast`, `whisper_turbo`) |
+| `MODEL_PROFILES` | Dictionary of named model profiles mapping to model paths, families, and compute devices |
+| `WHISPER_MODEL` | Fallback Whisper model size — `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | `OLLAMA_MODELS.en` | Model for English refinement |
 | `OLLAMA_MODELS.hi` | Model for Hindi refinement/translation |
 | `MODE` | `refine` (clean up in same language) or `translate` (Hindi → English) |
 | `SILENCE_THRESHOLD` | Microphone energy threshold for silence detection; lower = more sensitive |
 | `SILENCE_DURATION` | Seconds of silence before auto-stop |
-| `DIRECT_TYPING` | If `true`, types refined text at cursor instead of (or in addition to) clipboard |
+| `DIRECT_TYPING` | If `true`, types refined text at cursor via `ydotool` (Wayland), `wtype`, or `xdotool` (X11) |
 | `FEATURES.start_end_sounds` | Play audio cues when recording starts and stops |
 | `FEATURES.clipboard_output` | Copy refined text to clipboard after processing |
 | `FEATURES.markdown_output` | Also save to Markdown file (requires `SAVE_TO_MARKDOWN` path) |
-| `FEATURES.direct_typing` | Type refined text at cursor (pynput) |
+| `FEATURES.direct_typing` | Type refined text at cursor |
 | `FEATURES.evening_review` | Show **Start Evening Review** in the tray menu |
 
 ### `review_config.json` — Evening Review

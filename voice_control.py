@@ -33,7 +33,8 @@ class WakeWordListener:
     """Continuous keyword listener, active only while narration is playing."""
 
     def __init__(self):
-        self._model    = None          # lazy-loaded WhisperModel("tiny")
+        self._model    = None          # legacy lazy-loaded WhisperModel("tiny")
+        self._provider = None          # modular ASR provider
         self._thread   = None
         self._stop_evt = threading.Event()
 
@@ -69,7 +70,15 @@ class WakeWordListener:
     # ── Internals ─────────────────────────────────────────────────────────────
 
     def _load_model(self):
-        if self._model is None:
+        if getattr(self, "_provider", None) is not None or self._model is not None:
+            return
+        try:
+            from audio_to_idea.asr import ASRFactory
+            self._provider = ASRFactory.from_wake_word_config()
+            self._provider.load()
+        except Exception as exc:
+            self._provider = None
+            review_engine._rlog(f"voice_control: falling back to WhisperModel('tiny'): {exc}")
             from faster_whisper import WhisperModel
             self._model = WhisperModel("tiny", device="cpu", compute_type="int8")
 
@@ -112,13 +121,17 @@ class WakeWordListener:
                 continue
 
             try:
-                segments, _ = self._model.transcribe(
-                    audio,
-                    language=None,   # auto-detect; handles both Hindi and English
-                    beam_size=1,
-                    best_of=1,
-                    vad_filter=True)
-                text = " ".join(s.text.strip() for s in segments).lower().strip()
+                if getattr(self, "_provider", None) is not None:
+                    res = self._provider.transcribe(audio)
+                    text = res.text.lower().strip()
+                else:
+                    segments, _ = self._model.transcribe(
+                        audio,
+                        language=None,   # auto-detect; handles both Hindi and English
+                        beam_size=1,
+                        best_of=1,
+                        vad_filter=True)
+                    text = " ".join(s.text.strip() for s in segments).lower().strip()
             except Exception as exc:
                 review_engine._rlog(f"voice_control: transcribe error — {exc}")
                 continue

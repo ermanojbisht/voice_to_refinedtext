@@ -21,7 +21,8 @@ DEFAULTS = {
     'asr': {'backend': 'faster-whisper', 'model_id': 'Systran/faster-whisper-large-v3',
             'model_path': None, 'cache_root': None, 'revision': None, 'device': 'auto',
             'compute_type': 'auto', 'cpu_threads': 4, 'language': 'auto',
-            'word_timestamps': True, 'offline': True, 'allow_downloads': False},
+            'word_timestamps': True, 'offline': True, 'allow_downloads': False,
+            'active_profile': None, 'model_profiles': {}},
     'audio': {'sample_rate': 16000, 'normalize': False, 'target_lufs': -20.0,
               'true_peak_db': -2.0, 'chunk_seconds': 60.0, 'overlap_seconds': 1.5},
     'synthesis': {'backend': 'ollama', 'host': 'http://localhost:11434', 'model': None,
@@ -147,13 +148,18 @@ def validate(data):
         if data.get('ui', {}).get('appearance', 'system') not in {'system', 'light', 'dark'}:
             raise ValueError('Appearance must be system, light or dark')
         a, p, s = data['asr'], data['audio'], data['synthesis']
-        if s.get('mode', 'clean_paragraph') not in {'clean_paragraph', 'concise_summary', 'ideas_actions'}:
-            raise ValueError('Processing mode must be clean_paragraph, concise_summary or ideas_actions')
+        VALID_MODES = {
+            'clean_paragraph', 'concise_summary', 'ideas_actions',
+            'clean_bilingual', 'official_english', 'official_hindi', 'roman_hinglish'
+        }
+        if s.get('mode', 'clean_paragraph') not in VALID_MODES:
+            raise ValueError('Processing mode must be one of: ' + ', '.join(sorted(VALID_MODES)))
         for key in ['prompt_directory', 'prompt_file']:
             if s.get(key) is not None and (not isinstance(s[key], str) or not s[key].strip()):
                 raise ValueError(f'{key} must be a nonempty path or null')
-        if a['backend'] != 'faster-whisper' or s['backend'] != 'ollama':
-            raise ValueError('This release supports faster-whisper ASR and Ollama synthesis')
+        SUPPORTED_ASR_BACKENDS = {'faster-whisper', 'transcribe-cpp', 'handy-cli'}
+        if a['backend'] not in SUPPORTED_ASR_BACKENDS or s['backend'] != 'ollama':
+            raise ValueError(f'ASR backend must be one of {sorted(SUPPORTED_ASR_BACKENDS)}')
         if a['device'] not in {'auto', 'cpu', 'cuda'}:
             raise ValueError('ASR device must be auto, cpu or cuda; MPS needs another backend')
         if not isinstance(a['cpu_threads'], int) or isinstance(a['cpu_threads'], bool) or a['cpu_threads'] < 1:

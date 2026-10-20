@@ -11,7 +11,7 @@ from pathlib import Path
 import tempfile
 import time
 
-from .audio import EXTENSIONS, chunks, prepare
+from .audio import EXTENSIONS, chunks, pause_guided_chunks, prepare
 from .exports import render
 from .llm import OllamaClient
 from .merging import merge_chunks
@@ -88,6 +88,23 @@ class JobService:
                 raise AudioToIdeaError('Job manifest version/source mismatch; choose another output folder.')
             valid_manifest = True
             manifest['status'] = 'running'
+
+            # 3-Portion Acoustic Language Identification & Non-Blocking Suggestion Check
+            notify({'stage': 'acoustic_analysis', 'message': 'Checking audio language acoustics (Start, Middle, End)...'})
+            try:
+                from .asr.acoustic_langid import AcousticLanguageDetector, get_acoustic_suggestion
+                det = AcousticLanguageDetector.get_instance().detect(str(source))
+                manifest['acoustic_info'] = det
+                result['acoustic_info'] = det
+                active_profile = cfg.get('asr', {}).get('active_profile') or cfg.get('active_preset') or 'smart_bilingual'
+                sug = get_acoustic_suggestion(det, active_profile)
+                if sug:
+                    manifest['acoustic_suggestion'] = sug
+                    result['acoustic_suggestion'] = sug
+                    notify({'stage': 'acoustic_suggestion', 'suggestion': sug, 'message': sug.get('message')})
+            except Exception:
+                pass
+
             write_json(manifest_path, manifest)
             check_cancel(cancel)
             template = self.snapshot_prompt() if summary else None
@@ -111,7 +128,10 @@ class JobService:
                 notify({'stage': 'preparation', 'message': 'Preparing audio; original recording is preserved'})
                 with tempfile.TemporaryDirectory(prefix='.audio2idea-') as temp:
                     prepared, duration = prepare(source, temp, cfg['audio'], cancel)
-                    windows = list(chunks(duration, cfg['audio']['chunk_seconds'], cfg['audio']['overlap_seconds']))
+                    if cfg['audio'].get('pause_guided', False):
+                        windows = list(pause_guided_chunks(prepared, target_seconds=cfg['audio'].get('chunk_seconds', 30.0)))
+                    else:
+                        windows = list(chunks(duration, cfg['audio']['chunk_seconds'], cfg['audio']['overlap_seconds']))
                     raw = []
                     backend = self.transcriber_factory(cfg, model_info, cancel, notify)
                     for window in windows:
@@ -152,8 +172,9 @@ class JobService:
                 target = Path(target)
                 digest = hashlib.sha256(text.encode()).hexdigest()
                 old = manifest['artifacts'].get(target.name)
-                if target.exists():
-                    if not old or file_hash(target) not in {old.get('sha256'), old.get('pending')}:
+                allow_overwrite = cfg['output'].get('overwrite', False) or cfg['output'].get('allow_overwrite', False)
+                if target.exists() and not allow_overwrite:
+                    if file_hash(target) != digest and (not old or file_hash(target) not in {old.get('sha256'), old.get('pending')}):
                         raise AudioToIdeaError(f'Output contains unrelated or manually edited content: {target}. '
                                                'Use a different output folder or save edits through the transcript editor.')
                 # Reserve ownership before writing, so a crash after the rename
@@ -187,7 +208,16 @@ class JobService:
                     else:
                         ideas = rewrite(transcript, profile_data, cfg, client, cancel, notify, template)
                     write_json(idea_path, ideas)
-                suffix = {'clean_paragraph': 'clean', 'concise_summary': 'summary', 'ideas_actions': 'idea'}[mode]
+                suffix_map = {
+                    'clean_paragraph': 'clean',
+                    'clean_bilingual': 'bilingual',
+                    'official_english': 'english',
+                    'official_hindi': 'hindi',
+                    'roman_hinglish': 'hinglish',
+                    'concise_summary': 'summary',
+                    'ideas_actions': 'idea'
+                }
+                suffix = suffix_map.get(mode, 'processed')
                 processed_path = directory / f'{name}_{suffix}.txt'
                 text = render_ideas(ideas, transcript) if mode == 'ideas_actions' else ideas['text'] + '\n'
                 publish(processed_path, text)

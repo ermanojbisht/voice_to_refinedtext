@@ -1025,10 +1025,11 @@ class ReviewDashboard:
                 capture_output=True
             )
             if result.returncode != 0:
+                hk = _utils.get_global_hotkey(script_dir=self.script_dir)
                 messagebox.showwarning(
                     "Tray not found",
                     "Could not signal tray_app.py.\n"
-                    "Use Ctrl+Alt+V if the tray is running."
+                    f"Use {hk} if the tray is running."
                 )
         except Exception as e:
             messagebox.showerror("Error", str(e))

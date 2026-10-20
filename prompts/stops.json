@@ -3,11 +3,19 @@
         "hi": [
             "इनपुट पाठ:",
             "आउटपुट:",
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
             "\n\n"
         ],
         "en": [
             "INPUT TEXT:",
             "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "इनपुट पाठ:",
+            "आउटपुट:",
             "\n\n"
         ]
     },
@@ -15,11 +23,14 @@
         "hi": [
             "इनपुट पाठ:",
             "आउटपुट:",
+            "INPUT TEXT:",
+            "REFINED TEXT:",
             "\n\n"
         ],
         "en": [
             "INPUT TEXT:",
             "REFINED TEXT:",
+            "REFINED ENGLISH:",
             "\n\n"
         ]
     },
@@ -47,6 +58,10 @@
         "hi": [
             "इनपुट पाठ:",
             "आउटपुट:",
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
             "\n\n",
             "Note:",
             "नोट:"
@@ -54,9 +69,14 @@
         "en": [
             "INPUT TEXT:",
             "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "इनपुट पाठ:",
+            "आउटपुट:",
             "\n\n",
             "Note:",
-            "Explanation:"
+            "Explanation:",
+            "नोट:"
         ]
     },
     "nemotron_hindi": {
@@ -85,23 +105,40 @@
         "hi": [
             "Input:",
             "Output:",
-            "\n"
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "\n\n"
         ],
         "en": [
             "Input:",
             "Output:",
-            "\n"
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "\n\n"
         ]
     },
     "qwen2_5": {
         "hi": [
             "इनपुट पाठ:",
             "आउटपुट:",
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
             "\n\n"
         ],
         "en": [
             "INPUT TEXT:",
             "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "इनपुट पाठ:",
+            "आउटपुट:",
             "\n\n"
         ]
     },
@@ -109,12 +146,25 @@
         "hi": [
             "इनपुट पाठ:",
             "आउटपुट:",
-            "\n\n"
+            "INPUT TEXT:",
+            "REFINED TEXT:",
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "\n\n",
+            "Note:",
+            "नोट:"
         ],
         "en": [
             "INPUT TEXT:",
             "REFINED TEXT:",
-            "\n\n"
+            "REFINED ENGLISH:",
+            "REFINED HINDI:",
+            "इनपुट पाठ:",
+            "आउटपुट:",
+            "\n\n",
+            "Note:",
+            "Explanation:",
+            "नोट:"
         ]
     }
 }

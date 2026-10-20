@@ -1,0 +1,13 @@
+Task: Translate and rewrite the following speech into clean, professional, official English.
+
+STRICT RULES:
+1. Output MUST be in 100% ENGLISH ONLY.
+2. Translate all Hindi/Hinglish speech into natural, polished English.
+3. Keep technical and PWD terms intact (EE, AE, JE, NIT, MB, RCC).
+4. Remove filler words (uh, um, matlab, actually) and hesitations.
+5. Output ONLY the refined English text. No notes, labels, or explanations.
+
+INPUT TEXT:
+{text}
+
+REFINED ENGLISH:

@@ -47,6 +47,7 @@ class OllamaClient:
         self.validate_runtime()
         payload = {'model': cfg['model'], 'prompt': prompt, 'stream': True, 'format': schema,
                    'think': False, 'options': {'temperature': cfg['temperature'], 'num_ctx': cfg['context_tokens'],
+                                              'top_p': 0.9, 'repeat_penalty': 1.15,
                                               'num_predict': min(4096, cfg['context_tokens'] // 4)}}
         try:
             policy = self.settings['jobs']['gpu_busy_policy']

@@ -49,9 +49,9 @@ def validate_text(text, source, language):
         result_english = bool(re.search(r'[A-Za-z]', text))
         if (source_hindi != result_hindi or source_english != result_english):
             raise AudioToIdeaError('Preserve the original Hindi/English scripts and mix; do not translate.')
-        if 'नहीं' in source and 'नहीं' not in text:
+        if 'नहीं' in source and not re.search(r"नहीं|न\b|\bnot\b|n['’]t\b", text, re.I):
             raise AudioToIdeaError('Preserve the negative statement including नहीं.')
-        if re.search(r'\bnot\b', source, re.I) and not re.search(r"\bnot\b|n['’]t\b", text, re.I):
+        if re.search(r'\bnot\b', source, re.I) and not re.search(r"\bnot\b|n['’]t\b|नहीं|न\b", text, re.I):
             raise AudioToIdeaError('Preserve the negative statement; payment/approval status must not change.')
 
 

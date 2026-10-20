@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio to Ideas — Intelligent Audio Synthesis & Actions</title>
+  <style>
+    :root[data-theme="dark"] {
+      --bg-gradient: radial-gradient(circle at 50% 20%, #0d283b 0%, #061520 60%, #030a10 100%);
+      --glass-surface: rgba(18, 44, 61, 0.75);
+      --glass-surface-hover: rgba(28, 62, 84, 0.85);
+      --glass-surface-active: rgba(35, 78, 105, 0.95);
+      --glass-border: rgba(94, 148, 178, 0.35);
+      --glass-border-focus: rgba(142, 200, 255, 0.7);
+      --text-main: #f0f7fb;
+      --text-muted: #8ea8b8;
+      --accent-blue: #8ec8ff;
+      --accent-teal: #7bdec4;
+      --accent-green: #4ade80;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --field-bg: rgba(9, 23, 33, 0.85);
+      --field-border: rgba(70, 115, 140, 0.5);
+      --scrollbar-thumb: rgba(142, 200, 255, 0.25);
+    }
+
+    :root[data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 50% 15%, #e1f2fb 0%, #cde8f6 50%, #b8def2 100%);
+      --glass-surface: rgba(245, 252, 255, 0.85);
+      --glass-surface-hover: rgba(255, 255, 255, 0.95);
+      --glass-surface-active: rgba(225, 242, 250, 0.95);
+      --glass-border: rgba(135, 185, 212, 0.6);
+      --glass-border-focus: rgba(20, 91, 165, 0.8);
+      --text-main: #0c2333;
+      --text-muted: #4e6a7c;
+      --accent-blue: #145ba5;
+      --accent-teal: #097b69;
+      --accent-green: #15803d;
+      --accent-amber: #b45309;
+      --accent-rose: #be123c;
+      --card-shadow: 0 10px 30px rgba(16, 50, 75, 0.12);
+      --field-bg: rgba(255, 255, 255, 0.95);
+      --field-border: rgba(150, 195, 220, 0.8);
+      --scrollbar-thumb: rgba(20, 91, 165, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 26px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 8px var(--accent-blue));
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(123, 222, 196, 0.12);
+      border: 1px solid var(--accent-teal);
+      color: var(--accent-teal);
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      color: var(--text-main);
+      backdrop-filter: blur(12px);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
+      color: #04121d;
+      border: none;
+      box-shadow: 0 4px 14px rgba(123, 222, 196, 0.25);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 6px 20px rgba(123, 222, 196, 0.4);
+    }
+
+    .btn-danger {
+      background: rgba(251, 113, 133, 0.15);
+      border-color: var(--accent-rose);
+      color: var(--accent-rose);
+    }
+
+    .btn-danger:hover {
+      background: rgba(251, 113, 133, 0.25);
+    }
+
+    .btn-icon {
+      padding: 6px 10px;
+    }
+
+    .header-select-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      backdrop-filter: blur(12px);
+      transition: all 0.15s ease;
+    }
+
+    .header-select-wrapper:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .header-select {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      padding: 2px 4px;
+    }
+
+    .header-select option {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    .goal-matrix-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .goal-matrix-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(142, 200, 255, 0.1);
+      border: 1px solid rgba(142, 200, 255, 0.25);
+      color: var(--accent-blue);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Main Grid Layout */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 310px 1.25fr 1.15fr;
+      gap: 14px;
+      padding: 14px 20px;
+      height: calc(100vh - 120px);
+      overflow: hidden;
+    }
+
+    .card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Column 1: Queue & Dropzone */
+    .dropzone {
+      border: 2px dashed var(--glass-border);
+      border-radius: 10px;
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(142, 200, 255, 0.03);
+      transition: all 0.2s ease;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent-teal);
+      background: rgba(123, 222, 196, 0.12);
+      transform: scale(1.02);
+    }
+
+    .dropzone-icon {
+      font-size: 28px;
+      margin-bottom: 4px;
+      color: var(--accent-blue);
+    }
+
+    .dropzone-text {
+      font-size: 12px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .dropzone-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .queue-toolbar {
+      display: flex;
+      gap: 6px;
+    }
+
+    .queue-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .queue-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .queue-item:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .queue-item.active {
+      background: rgba(142, 200, 255, 0.15);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 16px rgba(142, 200, 255, 0.2);
+    }
+
+    .queue-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .queue-item-name {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 190px;
+    }
+
+    .queue-item-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .item-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .tag-queued { background: rgba(142, 200, 255, 0.15); color: var(--accent-blue); }
+    .tag-transcribing { background: rgba(251, 191, 36, 0.2); color: var(--accent-amber); }
+    .tag-refining { background: rgba(123, 222, 196, 0.2); color: var(--accent-teal); }
+    .tag-complete { background: rgba(74, 222, 128, 0.2); color: var(--accent-green); }
+    .tag-edited { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .tag-failed { background: rgba(251, 113, 133, 0.2); color: var(--accent-rose); }
+
+    .item-delete {
+      color: var(--text-muted);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px;
+      border-radius: 4px;
+    }
+
+    .item-delete:hover {
+      color: var(--accent-rose);
+      background: rgba(251, 113, 133, 0.2);
+    }
+
+    /* Acoustic Language Suggestion Banner & Badges */
+    .acoustic-banner {
+      display: none;
+      margin-bottom: 14px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="light"] .acoustic-banner-warning {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+    [data-theme="light"] .acoustic-banner-warning .acoustic-pill {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    [data-theme="light"] .acoustic-banner-suggestion {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+    [data-theme="light"] .acoustic-banner-suggestion .acoustic-pill {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+    }
+
+    [data-theme="dark"] .acoustic-banner-warning {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    [data-theme="dark"] .acoustic-banner-warning .acoustic-pill {
+      background: rgba(239, 68, 68, 0.22);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fecaca;
+    }
+
+    [data-theme="dark"] .acoustic-banner-suggestion {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+    }
+    [data-theme="dark"] .acoustic-banner-suggestion .acoustic-pill {
+      background: rgba(245, 158, 11, 0.22);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fef3c7;
+    }
+
+    .acoustic-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    /* Queue item sidebar suggestion badge */
+    .queue-suggestion-badge {
+      font-size: 11px;
+      margin-top: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    [data-theme="light"] .queue-suggestion-badge {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+    [data-theme="light"] .queue-suggestion-badge-warning {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    [data-theme="dark"] .queue-suggestion-badge {
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+    }
+    [data-theme="dark"] .queue-suggestion-badge-warning {
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    /* Column 2: Audio Player & Transcript */
+    .audio-player-card {
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .play-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+      color: #04121d;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(123, 222, 196, 0.3);
+      transition: transform 0.15s ease;
+    }
+
+    .play-btn:hover { transform: scale(1.06); }
+    .play-btn:active { transform: scale(0.96); }
+
+    .scrub-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .scrub-bar {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .scrub-bar::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--accent-teal);
+    }
+
+    .time-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .speed-btn {
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--glass-surface-hover);
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .transcript-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      gap: 8px;
+    }
+
+    .transcript-editor {
+      flex: 1;
+      width: 100%;
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-main);
+      resize: none;
+      outline: none;
+      user-select: text;
+    }
+
+    .transcript-editor:focus {
+      border-color: var(--glass-border-focus);
+      box-shadow: 0 0 12px rgba(142, 200, 255, 0.2);
+    }
+
+    .segment-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      user-select: text;
+    }
+
+    .segment-row {
+      display: flex;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid transparent;
+      font-size: 12.5px;
+      line-height: 1.4;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .segment-row:hover {
+      background: rgba(142, 200, 255, 0.1);
+      border-color: var(--accent-blue);
+    }
+
+    .segment-time-pill {
+      font-family: monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(123, 222, 196, 0.15);
+      color: var(--accent-teal);
+      font-weight: 700;
+      white-space: nowrap;
+      height: fit-content;
+    }
+
+    .segment-text {
+      flex: 1;
+    }
+
+    /* Column 3: Synthesis & Ideas */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-select, .form-input, .form-textarea {
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .form-select:focus, .form-input:focus, .form-textarea:focus {
+      border-color: var(--glass-border-focus);
+    }
+
+    .ideas-container {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      user-select: text;
+    }
+
+    .ideas-container h1, .ideas-container h2, .ideas-container h3 {
+      color: var(--accent-blue);
+      margin: 10px 0 6px 0;
+      font-weight: 700;
+    }
+
+    .ideas-container h1 { font-size: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 4px; }
+    .ideas-container h2 { font-size: 14px; }
+    .ideas-container h3 { font-size: 13px; }
+
+    .ideas-container ul, .ideas-container ol {
+      margin-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .ideas-container li {
+      margin-bottom: 4px;
+    }
+
+    .evidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 7px;
+      border-radius: 12px;
+      background: rgba(142, 200, 255, 0.18);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .evidence-badge:hover {
+      background: var(--accent-blue);
+      color: #04121d;
+      transform: scale(1.08);
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    /* Footer Action Bar */
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      z-index: 10;
+    }
+
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-section {
+      flex: 1;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 0 20px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-fill.indeterminate {
+      width: 40%;
+      position: absolute;
+      animation: indeterminate 1.5s infinite ease-in-out;
+    }
+
+    @keyframes indeterminate {
+      0% { left: -40%; }
+      50% { left: 40%; }
+      100% { left: 100%; }
+    }
+
+    .progress-status {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-window {
+      background: var(--glass-surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      width: 760px;
+      max-width: 90vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid var(--glass-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 70px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 200;
+    }
+
+    .toast {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--glass-surface-active);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      backdrop-filter: blur(16px);
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-icon">🎙️</span>
+      <div>
+        <div class="brand-title">Audio to Ideas</div>
+        <div class="brand-sub">Intelligent Audio Synthesis & Traceable Insights</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div id="liveBadge" class="status-badge">
+        <span class="status-dot"></span>
+        <span id="liveText">Connected</span>
+      </div>
+      <div class="header-select-wrapper" title="Stage 1: ASR Input Preset">
+        <span style="font-size: 13px;">🎙️</span>
+        <select class="header-select" id="asrPresetSelect" onchange="handleHeaderAsrChange()">
+          <option value="smart_bilingual">🎯 Smart Bilingual (Whisper Turbo)</option>
+          <option value="instant_english">⚡ Instant Pure English (Nemotron)</option>
+          <option value="instant_hindi">⚡ Instant Pure Hindi (Nemotron)</option>
+          <option value="roman_hinglish">💬 Roman Hinglish Notes (Apex)</option>
+        </select>
+      </div>
+      <button class="btn" id="goalBadge" onclick="focusGoalSelector()" title="Stage 2: Active Refinement Goal (Click to edit in Column 3)">✨ Goal: ...</button>
+      <button class="btn" onclick="openDoctorModal()">🩺 Check Setup</button>
+      <button class="btn" onclick="openWatcherModal()">👁️ Watch Folder</button>
+      <button class="btn" onclick="window.location.href='/'">⚙️ Settings</button>
+      <button class="btn" onclick="fetch('/api/open_manual', {method: 'POST'})">📖 Manual</button>
+      <button class="btn btn-icon" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- 3-Column Workspace -->
+  <main>
+    <!-- Column 1: Recordings Queue & Dropzone -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📁 Recordings</span>
+          <span id="queueCount" style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(0)</span>
+        </div>
+        <button class="btn btn-danger" style="padding: 2px 8px; font-size: 11px;" onclick="clearQueue()" title="Clear queue">Clear</button>
+      </div>
+
+      <div class="card-body">
+        <!-- Drag & Drop Dropzone -->
+        <div class="dropzone" id="dropzone" onclick="triggerFilePicker()">
+          <div class="dropzone-icon">📥</div>
+          <div class="dropzone-text">Drop Audio Recordings Here</div>
+          <div class="dropzone-hint">WAV · MP3 · M4A · AAC · FLAC · OGG · WEBM</div>
+          <input type="file" id="fileInput" multiple accept=".wav,.mp3,.m4a,.aac,.flac,.ogg,.webm" style="display:none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <div class="queue-toolbar">
+          <button class="btn" style="flex:1;" onclick="browseFiles()">+ Add Files</button>
+          <button class="btn" style="flex:1;" onclick="browseFolder()">+ Add Folder</button>
+        </div>
+
+        <!-- Queue Item List -->
+        <div class="queue-list" id="queueList">
+          <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 30px 10px;">
+            No recordings queued yet.<br>Add files or drag them above to start.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Synchronized Audio Player & Transcript -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🎧 Synchronized Audio & Transcript</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn" style="font-size: 11px; padding: 4px 8px;" onclick="copyTranscript()">📋 Copy</button>
+          <button class="btn" style="font-size: 11px; padding: 4px 8px;" onclick="exportTxt()" title="Download as .TXT">📄 .TXT</button>
+          <button class="btn" style="font-size: 11px; padding: 4px 8px;" onclick="exportSrt()" title="Download as .SRT">⏱️ .SRT</button>
+          <button class="btn" style="font-size: 11px; padding: 4px 8px;" onclick="openSelectedOutput()">📂 Open Folder</button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- Acoustic Language Suggestion Banner -->
+        <div id="acousticSuggestionBanner" style="display:none; margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; align-items: center; justify-content: space-between; transition: all 0.2s;"></div>
+
+        <!-- Interactive Audio Player -->
+        <div class="audio-player-card">
+          <audio id="audioElement" preload="metadata"></audio>
+          <div class="audio-controls">
+            <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+            <div class="scrub-container">
+              <input type="range" class="scrub-bar" id="scrubBar" value="0" min="0" max="100" step="0.1" oninput="handleSeek(event)">
+              <div class="time-info">
+                <span id="currentTime">00:00</span>
+                <span id="audioFileName" style="color: var(--accent-blue); font-weight: 600;">No audio loaded</span>
+                <span id="totalDuration">00:00</span>
+              </div>
+            </div>
+            <button class="speed-btn" id="speedBtn" onclick="cycleSpeed()">1.0x</button>
+          </div>
+        </div>
+
+        <!-- Transcript Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" id="tabEditableBtn" onclick="switchTranscriptTab('editable')">✏️ Editable Revision</button>
+          <button class="tab-btn" id="tabRawBtn" onclick="switchTranscriptTab('raw')">📜 Raw ASR Timestamps</button>
+        </div>
+
+        <!-- Tab 1: Editable Segments Textarea -->
+        <div class="transcript-view" id="viewEditable">
+          <textarea class="transcript-editor" id="editableText" placeholder="Recognition segments [S00001] will appear here. Correct any words and save revision."></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; color: var(--text-muted);">Format: [S00001] segment text. Keep IDs intact.</span>
+            <button class="btn btn-primary" onclick="saveTranscriptRevision()">💾 Save Transcript Revision</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Raw ASR Segment Click-to-Play List -->
+        <div class="transcript-view" id="viewRaw" style="display: none;">
+          <div class="segment-list" id="rawSegmentList">
+            <div style="color: var(--text-muted); font-size: 12px; padding: 20px;">Raw timestamped segments will appear here. Click any row to jump audio!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 3: Synthesis Mode & Generated Ideas -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>💡 Synthesis & Actionable Ideas</span>
+        </div>
+        <button class="btn" style="font-size: 11px; padding: 4px 8px;" onclick="copyIdeas()">📋 Copy Ideas</button>
+      </div>
+
+      <div class="card-body">
+        <div class="controls-grid">
+          <!-- Mode Selector -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Refinement Goal (✨ Goal)</span>
+              <a href="#" style="color: var(--accent-blue); text-decoration: none;" onclick="openPromptEditorModal()">✏️ Edit Prompt</a>
+            </div>
+            <select class="form-select" id="modeSelect" onchange="handleModeChange()">
+              <option value="clean_bilingual">🌐 Bilingual Field Note</option>
+              <option value="official_english">🇬🇧 Official English Memo</option>
+              <option value="official_hindi">🇮🇳 Official Hindi Directive</option>
+              <option value="concise_summary">📋 Concise Executive Summary</option>
+              <option value="ideas_actions">💡 Ideas, Tasks & Action Items</option>
+              <option value="roman_hinglish">💬 Casual Roman Text</option>
+            </select>
+            <div id="goalMatrixPills" class="goal-matrix-pills"></div>
+          </div>
+
+          <!-- Context Profile -->
+          <div class="form-group">
+            <div class="form-label">Project Context Profile</div>
+            <select class="form-select" id="profileSelect" onchange="handleProfileChange()">
+              <option value="">No profile</option>
+            </select>
+          </div>
+
+          <!-- Extra Domain Notes (Collapsible) -->
+          <div class="form-group">
+            <div class="form-label" style="cursor: pointer;" onclick="toggleNotes()">
+              <span>📝 Extra Background Notes</span>
+              <span id="notesToggleIcon">▼</span>
+            </div>
+            <textarea class="form-textarea" id="backgroundNotes" rows="2" style="display:none;" placeholder="Optional technical context, site conditions, or acronyms..."></textarea>
+          </div>
+        </div>
+
+        <!-- Rendered Ideas / Processed Output -->
+        <div class="ideas-container" id="ideasContainer">
+          <div style="color: var(--text-muted); font-size: 12.5px; padding: 20px; text-align: center;">
+            Choose a mode and click <strong>Transcribe + Process</strong> below.<br>
+            Processed text, summaries, and action items with clickable evidence badges will appear here.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Action Footer -->
+  <footer>
+    <div class="batch-actions">
+      <button class="btn btn-primary" id="btnProcess" onclick="runProcessing(true, false)">🚀 Transcribe + Process</button>
+      <button class="btn" id="btnTranscribe" onclick="runProcessing(false, false)">🎙️ Transcript Only</button>
+      <button class="btn" id="btnRegenerate" onclick="runProcessing(true, true)">🔄 Regenerate Selected</button>
+      <button class="btn btn-danger" id="btnStop" onclick="stopProcessing()" disabled>🛑 Stop</button>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-bar-container">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-status" id="progressStatus">Ready. Add audio recordings to begin.</div>
+    </div>
+
+    <div>
+      <span style="font-size: 11px; color: var(--text-muted);">Port 8765 · Vulkan GGUF & Ollama</span>
+    </div>
+  </footer>
+
+  <!-- Modal: Prompt Template Editor -->
+  <div class="modal-overlay" id="promptModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Prompt Template Editor — <span id="promptModalMode">Mode</span></div>
+        <button class="item-delete" onclick="closePromptEditorModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Required: <code>{transcript}</code>. Optional: <code>{context}</code>, <code>{output_language}</code>.<br>
+          Preview validates the template against real transcript samples without calling the model.
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" id="tabPromptEditBtn" onclick="switchPromptModalTab('edit')">Template</button>
+          <button class="tab-btn" id="tabPromptPreviewBtn" onclick="switchPromptModalTab('preview')">Live Preview</button>
+        </div>
+        <div id="promptEditView" style="display:flex; flex-direction:column; gap:8px; flex:1;">
+          <textarea class="form-textarea" id="promptTemplateText" rows="12" style="font-family: monospace; font-size: 12px; line-height: 1.5;"></textarea>
+          <div class="form-group">
+            <label class="form-label">Custom Prompts Folder</label>
+            <input type="text" class="form-input" id="promptFolderInput">
+          </div>
+        </div>
+        <div id="promptPreviewView" style="display:none; flex:1;">
+          <div class="ideas-container" id="promptPreviewBox" style="height: 300px; font-family: monospace; font-size: 12px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="restorePromptBuiltin()">Restore Built-in</button>
+        <button class="btn" onclick="previewPromptTemplate()">👁️ Preview</button>
+        <button class="btn btn-primary" onclick="savePromptTemplate()">Save Prompt</button>
+        <button class="btn" onclick="closePromptEditorModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Diagnostics Report -->
+  <div class="modal-overlay" id="doctorModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div class="modal-title">🩺 Setup & Diagnostics Report</div>
+        <button class="item-delete" onclick="closeDoctorModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre id="doctorOutput" style="background:var(--field-bg); padding:12px; border-radius:8px; font-size:12px; overflow:auto; max-height:400px;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeDoctorModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Watcher Folder -->
+  <div class="modal-overlay" id="watcherModal">
+    <div class="modal-window" style="width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title">👁️ Auto-Watch Folder</div>
+        <button class="item-delete" onclick="closeWatcherModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 12.5px; color: var(--text-muted);">
+          Monitor a directory on this PC. Newly copied audio recordings will be transcribed and synthesized automatically.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Watch Directory</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" class="form-input" id="watchFolderInput" style="flex:1;" placeholder="/home/user/AudioRecordings">
+            <button class="btn" onclick="browseWatchFolder()">Browse</button>
+          </div>
+        </div>
+        <div id="watcherStatusText" style="font-size: 12px; color: var(--accent-teal); font-weight: 600;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btnStopWatch" onclick="stopWatcher()" style="display:none;">Stop Watching</button>
+        <button class="btn btn-primary" id="btnStartWatch" onclick="startWatcher()">Start Watching</button>
+        <button class="btn" onclick="closeWatcherModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Alerts Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script>
+    let appState = {
+      items: [],
+      selected_id: null,
+      selected_detail: null,
+      busy: false,
+      watching: false,
+      playbackRate: 1.0,
+      activeTranscriptTab: 'editable',
+    };
+
+    const audio = document.getElementById('audioElement');
+    const scrubBar = document.getElementById('scrubBar');
+    const playBtn = document.getElementById('playBtn');
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadState();
+      initSSE();
+      initAudioEvents();
+      initDragAndDrop();
+    });
+
+    // --- Theme Management ---
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeIcon(next);
+    }
+
+    function updateThemeIcon(theme) {
+      document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '☀️';
+    }
+
+    // --- State Loading & Polling ---
+    async function loadState() {
+      try {
+        const resp = await fetch('/api/audio_to_idea/state');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        appState.items = data.items || [];
+        appState.selected_id = data.selected_id;
+        appState.busy = data.busy;
+        appState.watching = data.watching;
+
+        // Populate ASR Presets in Header Dropdown
+        const asrSelect = document.getElementById('asrPresetSelect');
+        if (asrSelect && data.asr_presets) {
+          const prevVal = asrSelect.value;
+          asrSelect.innerHTML = '';
+          for (const [key, preset] of Object.entries(data.asr_presets)) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = preset.label || key;
+            if (key === (data.active_asr_preset || prevVal)) opt.selected = true;
+            asrSelect.appendChild(opt);
+          }
+        }
+
+        // Populate Goal Presets
+        const modeSelect = document.getElementById('modeSelect');
+        if (modeSelect) {
+          modeSelect.innerHTML = '';
+          const goalsMap = data.goals || data.modes || {};
+          for (const [key, g] of Object.entries(goalsMap)) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = typeof g === 'object' ? g.label : g;
+            if (key === data.current_mode) opt.selected = true;
+            modeSelect.appendChild(opt);
+          }
+          appState.current_goals = data.goals || {};
+          updateGoalMatrixPills(data.current_mode, data.goals);
+        }
+
+        // Populate profiles
+        const profileSelect = document.getElementById('profileSelect');
+        profileSelect.innerHTML = '';
+        for (const p of data.profiles || []) {
+          const opt = document.createElement('option');
+          opt.value = p.value;
+          opt.textContent = p.label;
+          if (p.value === data.current_profile) opt.selected = true;
+          profileSelect.appendChild(opt);
+        }
+
+        renderQueue();
+        updateControls();
+        if (appState.selected_id) {
+          loadItemDetail(appState.selected_id);
+        }
+        await loadGoalPreset();
+      } catch (err) {
+        console.error('loadState error:', err);
+      }
+    }
+
+    async function handleHeaderAsrChange() {
+      const sel = document.getElementById('asrPresetSelect');
+      if (!sel) return;
+      const val = sel.value;
+      try {
+        const resp = await fetch('/api/refiner/set_preset', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({preset: val})
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          showToast(`🎙 ASR Preset: ${res.status?.active_preset_label || val}`);
+        }
+      } catch (err) {
+        showToast(`Error changing preset: ${err.message}`);
+      }
+    }
+
+    function updateGoalMatrixPills(goalKey, goalsDict) {
+      const container = document.getElementById('goalMatrixPills');
+      if (!container) return;
+      const goals = goalsDict || appState.current_goals || {};
+      const goal = goals[goalKey];
+
+      const langMap = {
+        'pure_english': '🌐 Lang: Pure English',
+        'pure_hindi': '🌐 Lang: Pure Hindi',
+        'bilingual': '🌐 Lang: Bilingual Mix',
+        'roman_hinglish': '🌐 Lang: Roman Hinglish',
+        'same_as_input': '🌐 Lang: Same as Input',
+        'auto': '🌐 Lang: Auto Detect'
+      };
+      const intentMap = {
+        'clean_paragraph': '📑 Intent: Verbatim Polish',
+        'concise_summary': '📋 Intent: Executive Bullets',
+        'ideas_actions': '💡 Intent: Actions & Tasks'
+      };
+      const actionMap = {
+        'translate_and_refine': '🔄 Mode: Translate & Refine',
+        'refine_only': '✨ Mode: Refine Only'
+      };
+      const acronymMap = {
+        'preserve_latin': '🏛️ Acronyms: Keep Latin (EE, MB, NIT)',
+        'expand_bracket': '🏛️ Acronyms: Expand Definition'
+      };
+
+      const langText = langMap[goal?.target_lang || goal?.output_lang] || (goal?.translate ? '🌐 Lang: Translate' : '🌐 Lang: Source');
+      const intentText = intentMap[goal?.intent || goal?.format] || '📑 Intent: Polish';
+      const actionText = actionMap[goal?.action] || (goal?.translate ? '🔄 Mode: Translate & Refine' : '✨ Mode: Refine Only');
+      const acronymText = acronymMap[goal?.acronyms] || '🏛️ Acronyms: Keep Latin';
+
+      container.innerHTML = `
+        <span class="goal-matrix-pill" title="Target Language & Script">${langText}</span>
+        <span class="goal-matrix-pill" title="Document Structure & Format">${intentText}</span>
+        <span class="goal-matrix-pill" title="Technical Terminology Directive">${acronymText}</span>
+        <span class="goal-matrix-pill" title="Translation vs Grammar">${actionText}</span>
+      `;
+    }
+
+    function focusGoalSelector() {
+      const sel = document.getElementById('modeSelect');
+      if (sel) {
+        sel.scrollIntoView({behavior: 'smooth', block: 'center'});
+        sel.focus();
+      }
+    }
+
+    async function loadGoalPreset() {
+      try {
+        const resp = await fetch('/api/refiner/status');
+        if (!resp.ok) return;
+        const d = await resp.json();
+        const badge = document.getElementById('goalBadge');
+        if (badge) {
+          const lbl = d.active_goal_label || d.active_goal || 'clean_bilingual';
+          badge.textContent = `✨ ${lbl}`;
+          badge.title = `${lbl}\n${d.active_goal_desc || ''}\n(Click to jump to Goal selector in Column 3)`;
+        }
+        const sel = document.getElementById('modeSelect');
+        if (sel && d.active_goal && sel.value !== d.active_goal) {
+          sel.value = d.active_goal;
+          updateGoalMatrixPills(d.active_goal, appState.current_goals);
+        }
+      } catch (e) {}
+    }
+
+    async function cycleGoalPreset() {
+      try {
+        const resp = await fetch('/api/refiner/cycle_goal', {method: 'POST'});
+        const d = await resp.json();
+        await loadGoalPreset();
+        if (typeof showToast === 'function') {
+          showToast(`✨ Refinement Goal: ${d.status?.active_goal_label || d.active_goal}`);
+        }
+      } catch (e) {}
+    }
+
+    // --- SSE Real-Time Updates ---
+    function initSSE() {
+      const es = new EventSource('/api/audio_to_idea/events');
+      es.onopen = () => {
+        document.getElementById('liveBadge').style.borderColor = 'var(--accent-teal)';
+        document.getElementById('liveText').textContent = 'Live Connected';
+        loadState();
+      };
+      es.onerror = () => {
+        document.getElementById('liveBadge').style.borderColor = 'var(--accent-amber)';
+        document.getElementById('liveText').textContent = 'Reconnecting…';
+      };
+      es.onmessage = (event) => {
+        try {
+          const evt = JSON.parse(event.data);
+          handleLiveEvent(evt);
+        } catch (e) {}
+      };
+
+      // Periodic safety sync (every 2.5s) to guarantee UI never hangs even if SSE reconnects
+      setInterval(async () => {
+        if (appState.busy) {
+          try {
+            const resp = await fetch('/api/audio_to_idea/state');
+            if (resp.ok) {
+              const data = await resp.json();
+              if (!data.busy && appState.busy) {
+                appState.busy = false;
+                appState.items = data.items || [];
+                renderQueue();
+                updateControls();
+                setProgress(0, 'Queue processing complete!', false);
+                const btnStop = document.getElementById('btnStop');
+                if (btnStop) {
+                  btnStop.innerHTML = '🛑 Stop';
+                  btnStop.disabled = false;
+                }
+                showToast('Queue processing complete!');
+                if (appState.selected_id) {
+                  loadItemDetail(appState.selected_id);
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      }, 2500);
+    }
+
+    function handleLiveEvent(evt) {
+      if (evt.type === 'job_progress') {
+        const pct = evt.total ? Math.round((evt.current / evt.total) * 100) : 0;
+        setProgress(pct, evt.message || 'Processing recordings…', false);
+      } else if (evt.type === 'job_event') {
+        if (evt.total) {
+          const pct = Math.round((evt.current / evt.total) * 100);
+          setProgress(pct, evt.message, false);
+        } else {
+          setProgress(null, evt.message, true);
+        }
+      } else if (evt.type === 'item_updated') {
+        const item = appState.items.find(i => i.id === evt.id);
+        if (item) {
+          item.status = evt.status;
+          item.result = evt.result;
+          renderQueue();
+          if (appState.selected_id === evt.id) {
+            loadItemDetail(evt.id);
+          }
+        }
+      } else if (evt.type === 'job_finished') {
+        setProgress(0, evt.message || 'Queue finished', false);
+        appState.busy = false;
+        const btnStop = document.getElementById('btnStop');
+        if (btnStop) {
+          btnStop.innerHTML = '🛑 Stop';
+        }
+        updateControls();
+        showToast(evt.message || 'Queue processing complete!');
+        loadState();
+      } else if (evt.type === 'items_added') {
+        loadState();
+      }
+    }
+
+    // --- Queue Rendering ---
+    function renderQueue() {
+      const list = document.getElementById('queueList');
+      document.getElementById('queueCount').textContent = `(${appState.items.length})`;
+
+      if (appState.items.length === 0) {
+        list.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 30px 10px;">
+          No recordings queued yet.<br>Add files or drag them above to start.
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = '';
+      appState.items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `queue-item ${item.id === appState.selected_id ? 'active' : ''}`;
+        div.onclick = (e) => {
+          if (!e.target.classList.contains('item-delete')) {
+            selectItem(item.id);
+          }
+        };
+
+        const tagClass = `tag-${item.status || 'queued'}`;
+        const sizeStr = item.size_bytes ? `${(item.size_bytes / (1024*1024)).toFixed(1)} MB` : '';
+        const sug = (item.result && item.result.acoustic_suggestion) ? item.result.acoustic_suggestion : null;
+
+        div.innerHTML = `
+          <div class="queue-item-header">
+            <span class="queue-item-name" title="${item.source}">${item.filename}</span>
+            <button class="item-delete" onclick="removeItem('${item.id}')" title="Remove recording">✕</button>
+          </div>
+          <div class="queue-item-meta">
+            <span>${sizeStr}</span>
+            <span class="item-tag ${tagClass}">${item.status || 'queued'}</span>
+          </div>
+          ${sug ? `
+            <div class="queue-suggestion-badge ${sug.severity === 'warning' ? 'queue-suggestion-badge-warning' : ''}" title="${escapeHtml(sug.message)}">
+              <span>${sug.severity === 'warning' ? '⚠️' : '💡'}</span>
+              <span>Suggested: <strong>${escapeHtml(sug.suggested_preset)}</strong></span>
+            </div>
+          ` : ''}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function selectItem(itemId) {
+      appState.selected_id = itemId;
+      renderQueue();
+      loadItemDetail(itemId);
+      fetch('/api/audio_to_idea/select', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: itemId})
+      }).catch(err => console.error('select error:', err));
+    }
+
+    async function removeItem(itemId) {
+      await fetch('/api/audio_to_idea/remove', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: itemId})
+      });
+      appState.items = appState.items.filter(i => i.id !== itemId);
+      if (appState.selected_id === itemId) {
+        appState.selected_id = appState.items[0]?.id || null;
+      }
+      renderQueue();
+      if (appState.selected_id) loadItemDetail(appState.selected_id);
+    }
+
+    async function clearQueue() {
+      if (!confirm('Clear all recordings from queue?')) return;
+      await fetch('/api/audio_to_idea/clear', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({completed_only: false})
+      });
+      appState.items = [];
+      appState.selected_id = null;
+      renderQueue();
+      resetDetailViews();
+    }
+
+    // --- Detail & Transcript Loading ---
+    async function loadItemDetail(itemId) {
+      try {
+        const resp = await fetch(`/api/audio_to_idea/item_detail?id=${encodeURIComponent(itemId)}`);
+        if (!resp.ok) return;
+        const detail = await resp.json();
+        appState.selected_detail = detail;
+
+        // Load Audio
+        if (detail.audio_url) {
+          audio.src = detail.audio_url;
+          document.getElementById('audioFileName').textContent = detail.item.filename;
+        }
+
+        // Editable Transcript
+        document.getElementById('editableText').value = detail.editable_text || '';
+
+        // Raw Segment Timestamps List
+        renderRawSegments(detail.raw_segments || []);
+
+        // Render Ideas
+        renderIdeasMarkdown(detail.idea_text || '');
+
+        // Acoustic Suggestion Banner
+        const banner = document.getElementById('acousticSuggestionBanner');
+        const sug = detail.acoustic_suggestion || (detail.item && detail.item.result && detail.item.result.acoustic_suggestion);
+        if (sug) {
+          const isWarn = sug.severity === 'warning';
+          banner.style.display = 'flex';
+          banner.className = `acoustic-banner ${isWarn ? 'acoustic-banner-warning' : 'acoustic-banner-suggestion'}`;
+          banner.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <span style="font-size:17px; line-height:1.2;">${isWarn ? '⚠️' : '💡'}</span>
+              <div>
+                <strong style="display:block; margin-bottom:2px; font-size:12px;">${escapeHtml(sug.title || (isWarn ? 'Language Mismatch Warning' : 'Language Advisory'))}</strong>
+                <span>${escapeHtml(sug.message)}</span>
+              </div>
+            </div>
+            <div class="acoustic-pill">
+              <span>Suggested:</span>
+              <strong>${escapeHtml(sug.suggested_preset)}</strong>
+            </div>
+          `;
+        } else {
+          banner.style.display = 'none';
+        }
+
+        updateControls();
+      } catch (err) {
+        console.error('loadItemDetail error:', err);
+      }
+    }
+
+    function renderRawSegments(segments) {
+      const container = document.getElementById('rawSegmentList');
+      if (segments.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; padding: 20px;">Raw recognition will appear after transcription. The original audio is preserved.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      segments.forEach(s => {
+        const row = document.createElement('div');
+        row.className = 'segment-row';
+        row.onclick = () => seekToSeconds(s.start || 0);
+        row.innerHTML = `
+          <span class="segment-time-pill">[${s.id} ${(s.start || 0).toFixed(1)}s]</span>
+          <span class="segment-text">${escapeHtml(s.text)}</span>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderIdeasMarkdown(text) {
+      const container = document.getElementById('ideasContainer');
+      if (!text) {
+        container.innerHTML = `<div style="color: var(--text-muted); font-size: 12.5px; padding: 20px; text-align: center;">
+          Choose a mode and click <strong>Transcribe + Process</strong> below.<br>
+          Clean paragraphs, summaries, or evidence-linked action points will render here.
+        </div>`;
+        return;
+      }
+
+      // Convert Markdown + Evidence Badges [S00001]
+      let html = escapeHtml(text)
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\n\n+/g, '<br><br>');
+
+      // Wrap list items
+      html = html.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
+
+      // Clickable Evidence Badges: [S00002] -> <span class="evidence-badge" onclick="...">🔍 S00002</span>
+      html = html.replace(/\[(S\d+)\]/g, (match, p1) => {
+        return `<span class="evidence-badge" onclick="jumpToEvidence('${p1}')" title="Click to seek audio to this segment">🔍 ${p1}</span>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function jumpToEvidence(segmentId) {
+      if (!appState.selected_detail) return;
+      const seg = (appState.selected_detail.raw_segments || []).find(s => s.id === segmentId);
+      if (seg && seg.start !== undefined) {
+        seekToSeconds(seg.start);
+        showToast(`Seeking audio to ${segmentId} (${seg.start.toFixed(1)}s)`);
+      } else {
+        showToast(`Segment ${segmentId} found in transcript.`);
+      }
+    }
+
+    // --- Transcript Revision Saving ---
+    async function saveTranscriptRevision() {
+      if (!appState.selected_id) return;
+      const text = document.getElementById('editableText').value;
+      try {
+        const resp = await fetch('/api/audio_to_idea/save_edit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id: appState.selected_id, text})
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          showToast('Transcript revision saved! Click Regenerate to update ideas.');
+          loadState();
+        } else {
+          alert('Error saving revision: ' + (res.error || 'Check segment IDs [S00001].'));
+        }
+      } catch (err) {
+        alert('Network error saving transcript: ' + err);
+      }
+    }
+
+    // --- Audio Player Logic ---
+    function initAudioEvents() {
+      audio.addEventListener('timeupdate', () => {
+        if (!isNaN(audio.duration) && audio.duration > 0) {
+          scrubBar.value = (audio.currentTime / audio.duration) * 100;
+          document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+        }
+      });
+      audio.addEventListener('loadedmetadata', () => {
+        document.getElementById('totalDuration').textContent = formatTime(audio.duration);
+      });
+      audio.addEventListener('ended', () => {
+        playBtn.textContent = '▶';
+      });
+    }
+
+    function togglePlay() {
+      if (!audio.src) return;
+      if (audio.paused) {
+        audio.play();
+        playBtn.textContent = '⏸';
+      } else {
+        audio.pause();
+        playBtn.textContent = '▶';
+      }
+    }
+
+    function handleSeek(e) {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        audio.currentTime = (e.target.value / 100) * audio.duration;
+      }
+    }
+
+    function seekToSeconds(seconds) {
+      audio.currentTime = seconds;
+      if (audio.paused) {
+        audio.play();
+        playBtn.textContent = '⏸';
+      }
+    }
+
+    function cycleSpeed() {
+      const speeds = [1.0, 1.25, 1.5, 2.0];
+      const curIdx = speeds.indexOf(appState.playbackRate);
+      appState.playbackRate = speeds[(curIdx + 1) % speeds.length];
+      audio.playbackRate = appState.playbackRate;
+      document.getElementById('speedBtn').textContent = `${appState.playbackRate}x`;
+    }
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return '00:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // --- Drag and Drop File Ingestion ---
+    function initDragAndDrop() {
+      const dropzone = document.getElementById('dropzone');
+      ['dragenter', 'dragover'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('dragover');
+        });
+      });
+      dropzone.addEventListener('drop', (e) => {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+          uploadFileList(files);
+        }
+      });
+    }
+
+    function triggerFilePicker() {
+      browseFiles();
+    }
+
+    async function browseFiles() {
+      try {
+        const resp = await fetch('/api/audio_to_idea/browse', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({kind: 'files'})
+        });
+        const res = await resp.json();
+        if (res.paths && res.paths.length > 0) {
+          addPathsToQueue(res.paths);
+        }
+      } catch (err) {
+        document.getElementById('fileInput').click();
+      }
+    }
+
+    async function browseFolder() {
+      try {
+        const resp = await fetch('/api/audio_to_idea/browse', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({kind: 'folder'})
+        });
+        const res = await resp.json();
+        if (res.paths && res.paths.length > 0) {
+          addPathsToQueue(res.paths);
+        }
+      } catch (err) {
+        console.error('browseFolder error:', err);
+      }
+    }
+
+    async function addPathsToQueue(paths) {
+      const resp = await fetch('/api/audio_to_idea/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({paths})
+      });
+      const res = await resp.json();
+      showToast(`Added ${res.added_count || 0} recording(s) to queue.`);
+      loadState();
+    }
+
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) uploadFileList(files);
+    }
+
+    async function uploadFileList(files) {
+      showToast(`Selected ${files.length} file(s). Probing paths...`);
+      browseFiles();
+    }
+
+    // --- Batch Execution Controls ---
+    async function runProcessing(summary = true, selectedOnly = false) {
+      if (appState.busy) return;
+      const mode = document.getElementById('modeSelect').value;
+      const profile = document.getElementById('profileSelect').value;
+      const context = document.getElementById('backgroundNotes').value;
+
+      appState.busy = true;
+      updateControls();
+      setProgress(null, 'Starting audio processing pipeline…', true);
+
+      try {
+        const asrPreset = document.getElementById('asrPresetSelect')?.value;
+        const resp = await fetch('/api/audio_to_idea/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            summary,
+            selected_only: selectedOnly,
+            mode,
+            profile,
+            context,
+            preset: asrPreset
+          })
+        });
+        const res = await resp.json();
+        if (!res.ok) {
+          appState.busy = false;
+          updateControls();
+          alert('Cannot start processing: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        appState.busy = false;
+        updateControls();
+        alert('Network error: ' + err);
+      }
+    }
+
+    async function stopProcessing() {
+      const btn = document.getElementById('btnStop');
+      if (btn) {
+        btn.innerHTML = '⏳ Stopping…';
+        btn.disabled = true;
+      }
+      setProgress(null, 'Stopping at next safe checkpoint…', true);
+      showToast('🛑 Stop signal sent. Halting processing at next safe checkpoint…');
+      try {
+        await fetch('/api/audio_to_idea/stop', {method: 'POST'});
+        setTimeout(async () => {
+          await loadState();
+          if (btn) {
+            btn.innerHTML = '🛑 Stop';
+            btn.disabled = false;
+          }
+        }, 1200);
+      } catch (err) {
+        console.error('stopProcessing error:', err);
+      }
+    }
+
+    function setProgress(percent, statusText, isIndeterminate) {
+      const fill = document.getElementById('progressFill');
+      const status = document.getElementById('progressStatus');
+      if (statusText) status.textContent = statusText;
+
+      if (isIndeterminate) {
+        fill.classList.add('indeterminate');
+      } else {
+        fill.classList.remove('indeterminate');
+        fill.style.width = `${Math.min(100, Math.max(0, percent || 0))}%`;
+      }
+    }
+
+    function updateControls() {
+      const busy = appState.busy;
+      const hasItems = appState.items.length > 0;
+      const hasSelected = !!appState.selected_id;
+
+      document.getElementById('btnProcess').disabled = busy || !hasItems;
+      document.getElementById('btnTranscribe').disabled = busy || !hasItems;
+      document.getElementById('btnRegenerate').disabled = busy || !hasSelected;
+      document.getElementById('btnStop').disabled = !busy;
+    }
+
+    // --- UI Helpers & Copy ---
+    function switchTranscriptTab(tab) {
+      appState.activeTranscriptTab = tab;
+      document.getElementById('tabEditableBtn').classList.toggle('active', tab === 'editable');
+      document.getElementById('tabRawBtn').classList.toggle('active', tab === 'raw');
+      document.getElementById('viewEditable').style.display = tab === 'editable' ? 'flex' : 'none';
+      document.getElementById('viewRaw').style.display = tab === 'raw' ? 'flex' : 'none';
+    }
+
+    function copyTranscript() {
+      const text = document.getElementById('editableText').value;
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      showToast('Transcript copied to clipboard!');
+    }
+
+    function copyIdeas() {
+      const text = appState.selected_detail?.idea_text || '';
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      showToast('Ideas & actions copied to clipboard!');
+    }
+
+    async function openSelectedOutput() {
+      if (!appState.selected_detail?.item?.output) return;
+      await fetch('/api/audio_to_idea/open_folder', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path: appState.selected_detail.item.output})
+      });
+    }
+
+    function toggleNotes() {
+      const ta = document.getElementById('backgroundNotes');
+      const icon = document.getElementById('notesToggleIcon');
+      const isHidden = ta.style.display === 'none';
+      ta.style.display = isHidden ? 'block' : 'none';
+      icon.textContent = isHidden ? '▲' : '▼';
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function resetDetailViews() {
+      audio.src = '';
+      document.getElementById('audioFileName').textContent = 'No audio loaded';
+      document.getElementById('editableText').value = '';
+      document.getElementById('rawSegmentList').innerHTML = '';
+      document.getElementById('ideasContainer').innerHTML = '<div style="color: var(--text-muted); font-size: 12.5px; padding: 20px; text-align: center;">Queue is empty.</div>';
+      const banner = document.getElementById('acousticSuggestionBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    // --- Modals: Prompt Editor ---
+    async function openPromptEditorModal() {
+      const mode = document.getElementById('modeSelect').value;
+      document.getElementById('promptModalMode').textContent = mode;
+      const resp = await fetch(`/api/audio_to_idea/prompt?mode=${encodeURIComponent(mode)}`);
+      if (resp.ok) {
+        const info = await resp.json();
+        document.getElementById('promptTemplateText').value = info.text;
+        document.getElementById('promptFolderInput').value = info.custom_folder || '';
+      }
+      document.getElementById('promptModal').classList.add('active');
+      switchPromptModalTab('edit');
+    }
+
+    function closePromptEditorModal() {
+      document.getElementById('promptModal').classList.remove('active');
+    }
+
+    function switchPromptModalTab(tab) {
+      document.getElementById('tabPromptEditBtn').classList.toggle('active', tab === 'edit');
+      document.getElementById('tabPromptPreviewBtn').classList.toggle('active', tab === 'preview');
+      document.getElementById('promptEditView').style.display = tab === 'edit' ? 'flex' : 'none';
+      document.getElementById('promptPreviewView').style.display = tab === 'preview' ? 'block' : 'none';
+    }
+
+    async function previewPromptTemplate() {
+      const mode = document.getElementById('modeSelect').value;
+      const text = document.getElementById('promptTemplateText').value;
+      const profile = document.getElementById('profileSelect').value;
+      const context = document.getElementById('backgroundNotes').value;
+
+      const resp = await fetch('/api/audio_to_idea/prompt/preview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mode, text, item_id: appState.selected_id, profile, context})
+      });
+      const res = await resp.json();
+      if (res.ok) {
+        document.getElementById('promptPreviewBox').textContent = res.preview;
+        switchPromptModalTab('preview');
+      } else {
+        alert('Preview error: ' + res.error);
+      }
+    }
+
+    async function savePromptTemplate() {
+      const mode = document.getElementById('modeSelect').value;
+      const text = document.getElementById('promptTemplateText').value;
+      const custom_folder = document.getElementById('promptFolderInput').value;
+
+      const resp = await fetch('/api/audio_to_idea/prompt/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mode, text, custom_folder})
+      });
+      const res = await resp.json();
+      if (res.ok) {
+        showToast('Custom prompt template saved!');
+        closePromptEditorModal();
+      } else {
+        alert('Save error: ' + res.error);
+      }
+    }
+
+    async function restorePromptBuiltin() {
+      const mode = document.getElementById('modeSelect').value;
+      const resp = await fetch(`/api/audio_to_idea/prompt?mode=${encodeURIComponent(mode)}`);
+      if (resp.ok) {
+        const info = await resp.json();
+        document.getElementById('promptTemplateText').value = info.builtin_text;
+        showToast('Restored shipped built-in template.');
+      }
+    }
+
+    // --- Modals: Diagnostics ---
+    async function openDoctorModal() {
+      document.getElementById('doctorOutput').textContent = 'Running diagnostics…';
+      document.getElementById('doctorModal').classList.add('active');
+      const resp = await fetch('/api/audio_to_idea/doctor');
+      if (resp.ok) {
+        const report = await resp.json();
+        document.getElementById('doctorOutput').textContent = JSON.stringify(report, null, 2);
+      } else {
+        document.getElementById('doctorOutput').textContent = 'Failed to run diagnostics.';
+      }
+    }
+
+    function closeDoctorModal() {
+      document.getElementById('doctorModal').classList.remove('active');
+    }
+
+    // --- Modals: Watcher ---
+    function openWatcherModal() {
+      document.getElementById('watcherModal').classList.add('active');
+      document.getElementById('btnStartWatch').style.display = appState.watching ? 'none' : 'inline-flex';
+      document.getElementById('btnStopWatch').style.display = appState.watching ? 'inline-flex' : 'none';
+      document.getElementById('watcherStatusText').textContent = appState.watching ? '● Watcher currently active' : '';
+    }
+
+    function closeWatcherModal() {
+      document.getElementById('watcherModal').classList.remove('active');
+    }
+
+    async function browseWatchFolder() {
+      const resp = await fetch('/api/audio_to_idea/browse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({kind: 'folder'})
+      });
+      const res = await resp.json();
+      if (res.paths && res.paths[0]) {
+        document.getElementById('watchFolderInput').value = res.paths[0];
+      }
+    }
+
+    async function startWatcher() {
+      const folder = document.getElementById('watchFolderInput').value;
+      if (!folder) return alert('Select or type a watch directory.');
+      const resp = await fetch('/api/audio_to_idea/watch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'start', folder})
+      });
+      const res = await resp.json();
+      if (res.ok) {
+        appState.watching = true;
+        showToast(`Watching ${folder} for new audio recordings.`);
+        closeWatcherModal();
+      } else {
+        alert('Watcher error: ' + res.error);
+      }
+    }
+
+    async function stopWatcher() {
+      await fetch('/api/audio_to_idea/watch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'stop'})
+      });
+      appState.watching = false;
+      showToast('Folder watcher stopped.');
+      closeWatcherModal();
+    }
+
+    // --- Mode & Profile Dynamic Handlers ---
+    async function handleModeChange() {
+      const mode = document.getElementById('modeSelect').value;
+      updateGoalMatrixPills(mode, appState.current_goals);
+      try {
+        await fetch('/api/audio_to_idea/set_mode', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({mode: mode})
+        });
+        await fetch('/api/audio_to_idea/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({patch: {'synthesis.mode': mode, 'synthesis.prompt_file': null}})
+        });
+        await loadGoalPreset();
+        showToast(`✨ Refinement Goal switched to: ${mode}`);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function handleProfileChange() {
+      const profile = document.getElementById('profileSelect').value;
+      try {
+        await fetch('/api/audio_to_idea/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({patch: {'synthesis.context_profile': profile || null}})
+        });
+        showToast('Context profile updated.');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // --- Export Options ---
+    function exportTxt() {
+      const text = document.getElementById('editableText').value || appState.selected_detail?.idea_text;
+      if (!text) return alert('No transcript available to export.');
+      const name = (appState.selected_detail?.item?.filename || 'transcript').replace(/\.[^/.]+$/, '');
+      downloadFile(text, `${name}.txt`, 'text/plain;charset=utf-8');
+    }
+
+    function exportSrt() {
+      const segments = appState.selected_detail?.raw_segments || [];
+      if (segments.length === 0) return alert('No timestamped segments available for SRT export.');
+      let srt = '';
+      segments.forEach((s, idx) => {
+        const start = formatSrtTime(s.start || 0);
+        const duration = s.duration || (s.end ? (s.end - s.start) : 2.5);
+        const end = formatSrtTime((s.start || 0) + duration);
+        srt += `${idx + 1}\n${start} --> ${end}\n${(s.text || '').trim()}\n\n`;
+      });
+      const name = (appState.selected_detail?.item?.filename || 'transcript').replace(/\.[^/.]+$/, '');
+      downloadFile(srt, `${name}.srt`, 'text/plain;charset=utf-8');
+    }
+
+    function formatSrtTime(totalSec) {
+      const hrs = Math.floor(totalSec / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = Math.floor(totalSec % 60);
+      const millis = Math.floor((totalSec % 1) * 1000);
+      return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')},${String(millis).padStart(3,'0')}`;
+    }
+
+    function downloadFile(content, filename, mimeType) {
+      const blob = new Blob([content], {type: mimeType});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${filename}`);
+    }
+
+    // --- Global Keyboard Shortcuts ---
+    window.addEventListener('keydown', (e) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInput = activeTag === 'input' || activeTag === 'textarea';
+
+      // Space: Toggle play/pause (only when not typing in text field)
+      if (e.code === 'Space' && !isInput) {
+        e.preventDefault();
+        togglePlay();
+      }
+
+      // Ctrl + S: Save transcript revision
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        if (isInput && document.activeElement.id === 'editableText') {
+          e.preventDefault();
+          saveTranscriptRevision();
+        }
+      }
+
+      // Ctrl + Enter: Run Transcribe + Process
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runProcessing(true, false);
+      }
+    });
+  </script>
+</body>
+</html>

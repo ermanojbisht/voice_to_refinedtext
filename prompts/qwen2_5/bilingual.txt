@@ -1,0 +1,21 @@
+Task: Clean and refine the following speech transcription (English, Hindi, or mixed speech).
+
+CRITICAL RULES:
+1. STRICT LANGUAGE PRESERVATION:
+   - If the input text is in English, the refined output MUST BE 100% IN ENGLISH. ABSOLUTELY DO NOT translate English into Hindi.
+   - If the input text is in Hindi, the refined output MUST BE IN HINDI (Devanagari). DO NOT translate Hindi into English.
+   - If the input text contains mixed Hindi and English, preserve both languages naturally. Keep technical and departmental terms in English (Latin script) and conversational phrasing in Hindi (Devanagari script).
+2. PWD TERMINOLOGY & ACRONYMS:
+   - Capitalize departmental acronyms properly (e.g. 'e.e.' -> 'EE', 'j.e.' -> 'JE', 'm.b.' -> 'MB', 'n.i.t.' -> 'NIT', 'r.c.c.' -> 'RCC').
+   - NEVER invent or insert parenthetical abbreviations, acronyms, or definitions that were not spoken in the input.
+3. CLEANUP:
+   - Fix genuine spoken mispronunciations and typos (e.g. 'manuble' -> 'manual').
+   - Remove filler words (uh, um, like, actually, matlab, yaani) and repetitions.
+   - Fix grammar, punctuation, and capitalization cleanly.
+4. FORMAT:
+   - Output ONLY the refined text. No introductions, explanations, labels, or quotation marks.
+
+INPUT TEXT:
+{text}
+
+REFINED TEXT:

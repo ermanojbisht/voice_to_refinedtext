@@ -1,0 +1,219 @@
+{
+  "benchmark_version": "1.0.0",
+  "description": "Multi-mode PWD Speech Refinement Evaluation Matrix",
+  "recordings_dir": "benchmarks/recordings",
+  "scripts_dir": "benchmarks/scripts",
+  "scripts": [
+    {
+      "id": "script1",
+      "title": "System & Technical Manual Governance",
+      "category": "pure_english",
+      "script_file": "script1.txt",
+      "audio_files": ["script1.wav", "script1.mp3", "script1.m4a", "script1.ogg"],
+      "expected_class": "pure_english",
+      "mandatory_terms": ["system", "manual", "documentation"],
+      "forbidden_tokens": ["(IAR)", "(REC)", "(SUS)", "(MD)", "(DS)", "(EE)", "(MB)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "allow_chinese": false,
+          "justification": "In bilingual mode, pure English must stay 100% English. Zero Hindi translation."
+        },
+        "pure_english": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Pure English mode must output polished English."
+        },
+        "pure_hindi": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Pure Hindi mode should formulate Hindi with technical terms in English."
+        },
+        "translate": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Translate mode must translate English into professional Hindi."
+        }
+      }
+    },
+    {
+      "id": "script2",
+      "title": "Bridge Structural Engineering & Quality Audit",
+      "category": "pure_english",
+      "script_file": "script2.txt",
+      "audio_files": ["script2.wav", "script2.mp3", "script2.m4a", "script2.ogg"],
+      "expected_class": "pure_english",
+      "mandatory_terms": ["Executive Engineer", "Assistant Engineer", "M35", "bearings", "load test"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(MD)", "(REC)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Technical English must be preserved with uppercase terms (M35, EE, AE)."
+        },
+        "pure_english": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Professional civil engineering English format."
+        }
+      }
+    },
+    {
+      "id": "script3",
+      "title": "Administrative Directive & Fiscal Audit",
+      "category": "pure_hindi",
+      "script_file": "script3.txt",
+      "audio_files": ["script3.wav", "script3.mp3", "script3.m4a", "script3.ogg"],
+      "expected_class": "pure_hindi",
+      "mandatory_terms": ["मुख्य अभियंता", "अधिशासी अभियंताओं", "वित्तीय वर्ष", "समीक्षा बैठक"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(MD)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Pure Hindi speech must remain in formal Devanagari Hindi. Zero English translation."
+        },
+        "pure_english": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Pure English mode should translate formal Hindi directive into official English."
+        },
+        "pure_hindi": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Refines Hindi grammar, removes hesitations, formal tone."
+        }
+      }
+    },
+    {
+      "id": "script4",
+      "title": "Hill Road Quality & Drainage Inspection",
+      "category": "pure_hindi",
+      "script_file": "script4.txt",
+      "audio_files": ["script4.wav", "script4.mp3", "script4.m4a", "script4.ogg"],
+      "expected_class": "pure_hindi",
+      "mandatory_terms": ["डामरीकरण", "जल निकासी", "रिटेनिंग वॉल", "सहायक अभियंता"],
+      "forbidden_tokens": ["(IAR)", "(SUS)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Preserves civil engineering Devanagari terminology cleanly."
+        }
+      }
+    },
+    {
+      "id": "script5",
+      "title": "Typical Site Visit & Measurement Dictation",
+      "category": "mixed_devanagari_hinglish",
+      "script_file": "script5.txt",
+      "audio_files": ["script5.wav", "script5.mp3", "script5.m4a", "script5.ogg"],
+      "expected_class": "mixed_devanagari_hinglish",
+      "mandatory_terms": ["site visit", "EE", "JE", "measurement book", "concreting"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(REC)", "(MD)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Preserves spoken code-mix: Latin for technical terms, Devanagari for Hindi flow."
+        },
+        "pure_english": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Translates full Hinglish field note into documentation-grade English."
+        }
+      }
+    },
+    {
+      "id": "script6",
+      "title": "Spoken Dotted Abbreviations & Official Roles",
+      "category": "pure_english",
+      "script_file": "script6.txt",
+      "audio_files": ["script6.wav", "script6.mp3", "script6.m4a", "script6.ogg"],
+      "expected_class": "pure_english",
+      "mandatory_terms": ["EE", "JE", "MB", "SOR", "RA Bill", "NIT"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(REC)", "(MD)", "(SR)", "(DS)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Dotted abbreviations (e.e., m.b., n.i.t.) must be capitalized in English without Hindi hallucination."
+        }
+      }
+    },
+    {
+      "id": "script7",
+      "title": "Roman Hinglish - Tender Evaluation Meeting",
+      "category": "roman_hinglish",
+      "script_file": "script7.txt",
+      "audio_files": ["script7.wav", "script7.mp3", "script7.m4a", "script7.ogg"],
+      "expected_class": "roman_hinglish",
+      "mandatory_terms": ["tender", "Assistant Engineer", "earnest money deposit"],
+      "forbidden_tokens": ["(IAR)", "(SUS)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Clean bilingual rendering without dropping sentences."
+        },
+        "pure_english": {
+          "expected_lang": "en",
+          "allow_devanagari": false,
+          "justification": "Converts conversational Roman Hinglish into clear formal English memo."
+        }
+      }
+    },
+    {
+      "id": "script8",
+      "title": "Casual Speech with Verbal Hesitations & Fillers",
+      "category": "roman_hinglish",
+      "script_file": "script8.txt",
+      "audio_files": ["script8.wav", "script8.mp3", "script8.m4a", "script8.ogg"],
+      "expected_class": "roman_hinglish",
+      "mandatory_terms": ["highway maintenance", "show cause notice"],
+      "forbidden_tokens": ["matlab", "you know", "actually", "(IAR)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Strips all fillers (uh, actually, matlab, you know) and keeps professional directives."
+        }
+      }
+    },
+    {
+      "id": "script9",
+      "title": "Bilingual Land Clearance & Forest Hindrance",
+      "category": "roman_hinglish",
+      "script_file": "script9.txt",
+      "audio_files": ["script9.wav", "script9.mp3", "script9.m4a", "script9.ogg"],
+      "expected_class": "roman_hinglish",
+      "mandatory_terms": ["DFO", "forest clearance", "SDM", "utility shifting"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(REC)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Maintains inter-departmental titles and cause-effect reasoning."
+        }
+      }
+    },
+    {
+      "id": "script10",
+      "title": "Financial Audit, Variations & Security Deposit",
+      "category": "roman_hinglish",
+      "script_file": "script10.txt",
+      "audio_files": ["script10.wav", "script10.mp3", "script10.m4a", "script10.ogg"],
+      "expected_class": "roman_hinglish",
+      "mandatory_terms": ["EE", "measurement book", "BOQ", "security deposit", "defect liability"],
+      "forbidden_tokens": ["(IAR)", "(SUS)", "(REC)"],
+      "rules": {
+        "bilingual": {
+          "expected_lang": "hi",
+          "allow_devanagari": true,
+          "justification": "Accurately capitalizes civil audit acronyms and preserves numerical percentages."
+        }
+      }
+    }
+  ]
+}

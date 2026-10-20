@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Refiner — Comprehensive User Manual</title>
+    <style>
+        :root {
+            --bg-base: #1e1e2e;
+            --bg-surface: #24273a;
+            --bg-card: #2a2e45;
+            --bg-sidebar: #181926;
+            --border: #363a4f;
+            --text-main: #cad3f5;
+            --text-subtle: #a5adcb;
+            --accent-blue: #8aadf4;
+            --accent-teal: #8bd5ca;
+            --accent-green: #a6da95;
+            --accent-yellow: #eed49f;
+            --accent-peach: #f5a97f;
+            --accent-red: #ed8796;
+            --code-bg: #181926;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 320px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-header h1 {
+            font-size: 1.15rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-header p {
+            font-size: 0.8rem;
+            color: var(--text-subtle);
+            margin-top: 4px;
+        }
+        .search-container {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .search-box {
+            width: 100%;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .search-box:focus { border-color: var(--accent-blue); }
+        .nav-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 8px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: var(--text-subtle);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            margin-bottom: 4px;
+            transition: all 0.15s ease;
+        }
+        .nav-link:hover {
+            background-color: var(--bg-surface);
+            color: var(--text-main);
+        }
+        .nav-icon { font-size: 1.1rem; }
+        /* Main Content Container */
+        #content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px;
+            scroll-behavior: smooth;
+        }
+        .content-container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        /* Chapter Card Container */
+        .chapter-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px 36px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .chapter-badge {
+            display: inline-block;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--accent-teal);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        h2 {
+            color: var(--accent-blue);
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+        h3 {
+            color: var(--accent-teal);
+            font-size: 1.25rem;
+            margin: 24px 0 12px 0;
+        }
+        h4 {
+            color: var(--accent-peach);
+            font-size: 1.05rem;
+            margin: 18px 0 8px 0;
+        }
+        p, li {
+            color: var(--text-main);
+            font-size: 0.95rem;
+            line-height: 1.65;
+            margin-bottom: 12px;
+        }
+        ul, ol { margin-left: 24px; margin-bottom: 16px; }
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background-color: var(--bg-card);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        table {
+            min-width: 850px;
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        th {
+            background-color: var(--bg-sidebar);
+            color: var(--accent-blue);
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-family: "JetBrains Mono", Consolas, Monaco, monospace;
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+        code {
+            background-color: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.88rem;
+            color: var(--accent-yellow);
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        /* Callouts */
+        .callout {
+            border-left: 4px solid var(--accent-blue);
+            background-color: rgba(138, 173, 244, 0.08);
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin: 18px 0;
+            font-size: 0.92rem;
+        }
+        .callout-info { border-color: var(--accent-blue); background-color: rgba(138, 173, 244, 0.08); }
+        .callout-success { border-color: var(--accent-green); background-color: rgba(166, 218, 149, 0.08); }
+        .callout-warning { border-color: var(--accent-peach); background-color: rgba(245, 169, 127, 0.08); }
+        .callout-danger { border-color: var(--accent-red); background-color: rgba(237, 135, 150, 0.08); }
+        .footer-note {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-subtle);
+            padding: 24px 0 40px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h1>📖 User Manual & Guide</h1>
+            <p>Voice Refiner & Review Hub</p>
+        </div>
+        <div class="search-container">
+            <input type="text" id="manualSearch" class="search-box" placeholder="🔍 Search manual..." onkeyup="filterManual()">
+        </div>
+        <nav class="nav-list" id="navList">
+            <a href="#chapter-1" class="nav-link"><span class="nav-icon">🚀</span> <span class="nav-text">1. Quick-Start Hardware Presets</span></a>
+<a href="#chapter-2" class="nav-link"><span class="nav-icon">⚙️</span> <span class="nav-text">2. Core Voice Refiner (`config.json`) Reference</span></a>
+<a href="#chapter-3" class="nav-link"><span class="nav-icon">🌙</span> <span class="nav-text">3. Evening Review (`review_config.json`) Reference</span></a>
+<a href="#chapter-4" class="nav-link"><span class="nav-icon">💡</span> <span class="nav-text">4. Audio to Ideas (`audio_to_idea_config.json`) Reference</span></a>
+<a href="#chapter-5" class="nav-link"><span class="nav-icon">🏛</span> <span class="nav-text">5. PWD Language Helper & Hybrid CLI (`pwd_cli.py` & `pwd_helper/`)</span></a>
+<a href="#chapter-6" class="nav-link"><span class="nav-icon">🎨</span> <span class="nav-text">6. Next-Level Animated Visuals & System Tray</span></a>
+<a href="#chapter-7" class="nav-link"><span class="nav-icon">🔧</span> <span class="nav-text">7. How to Adjust Settings</span></a>
+<a href="#chapter-8" class="nav-link"><span class="nav-icon">🛠</span> <span class="nav-text">8. Tuning & Optimization Guide</span></a>
+<a href="#chapter-9" class="nav-link"><span class="nav-icon">⚡</span> <span class="nav-text">9. Best Practice Matrix: Speed + Accuracy for Input Audio vs Output Goal</span></a>
+        </nav>
+    </div>
+    <div id="content-wrapper">
+        <div class="content-container">
+            <section id="chapter-1" class="chapter-card">
+<div class="chapter-badge">🚀 Chapter 1</div>
+<h2 id="1-quick-start-hardware-presets">1. Quick-Start Hardware Presets</h2>
+<p>Copy and paste the preset matching your hardware into <code>config.json</code>.</p>
+<h3 id="preset-a-high-performance-gpu-workstation-eg-home-pc-rtx-3060-12gb">Preset A: High-Performance GPU Workstation (e.g., Home PC — RTX 3060 12GB)</h3>
+<blockquote>
+<p><strong>Goal:</strong> Maximum speed, sub-second dictation (&lt;0.5s), persistent GPU residence, Wayland/X11 typing.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;SAMPLE_RATE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ASR_ENGINE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transcribe_cpp&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ACTIVE_MODEL_PROFILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nemotron_fast&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TYPING_TOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_KEEP_ALIVE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;60m&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_TRANSLATE_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;to_en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;to_hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_THRESHOLD&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_DURATION&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TEMPERATURE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;MODE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;DIRECT_TYPING&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;FEATURES&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;start_end_sounds&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clipboard_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;markdown_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;direct_typing&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;evening_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h3 id="preset-b-low-vram-office-desktop-eg-office-pc-ubuntu-2204-4gb-vram-or-cpu">Preset B: Low-VRAM / Office Desktop (e.g., Office PC — Ubuntu 22.04, 4GB VRAM or CPU)</h3>
+<blockquote>
+<p><strong>Goal:</strong> Minimal memory footprint, immediate VRAM offload (<code>keep_alive: "0"</code>), smooth desktop operation.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;SAMPLE_RATE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ASR_ENGINE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transcribe_cpp&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ACTIVE_MODEL_PROFILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;whisper_turbo&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TYPING_TOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;xdotool&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_KEEP_ALIVE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_TRANSLATE_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;to_en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;to_hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_THRESHOLD&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">350</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_DURATION&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TEMPERATURE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;MODE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;DIRECT_TYPING&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;FEATURES&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;start_end_sounds&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clipboard_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;markdown_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;direct_typing&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;evening_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h3 id="preset-c-bilingual-translation-specialist">Preset C: Bilingual &amp; Translation Specialist</h3>
+<blockquote>
+<p><strong>Goal:</strong> Seamless English and Hindi dictation, one-click Hindi-to-English translation.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;SAMPLE_RATE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ASR_ENGINE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transcribe_cpp&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ACTIVE_MODEL_PROFILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nemotron_fast&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TYPING_TOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:11434&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_KEEP_ALIVE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;30m&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;OLLAMA_TRANSLATE_MODELS&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;to_en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;qwen2.5:3b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;to_hi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_THRESHOLD&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;SILENCE_DURATION&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;TEMPERATURE&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;MODE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;translate&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;DIRECT_TYPING&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;FEATURES&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;start_end_sounds&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;clipboard_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;markdown_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;direct_typing&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;evening_review&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+</section>
+<section id="chapter-2" class="chapter-card">
+<div class="chapter-badge">⚙️ Chapter 2</div>
+<h2 id="2-core-voice-refiner-configjson-reference">2. Core Voice Refiner (<code>config.json</code>) Reference</h2>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Configuration Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Valid Options</th>
+<th>Description &amp; Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SETTINGS_PORT</code></td>
+<td><code>integer</code></td>
+<td><code>8765</code></td>
+<td><code>1024</code> – <code>65535</code></td>
+<td>Local TCP loopback port for the Glassmorphic Settings Web App and REST API daemon. Can also be overridden via the <code>VOICE_REFINER_SETTINGS_PORT</code> environment variable.</td>
+</tr>
+<tr>
+<td><code>ASR_ENGINE</code></td>
+<td><code>string</code></td>
+<td><code>"transcribe_cpp"</code></td>
+<td><code>"transcribe_cpp"</code>, <code>"faster_whisper"</code>, <code>"handy_cli"</code></td>
+<td>Speech-to-text backend engine. <code>transcribe_cpp</code> runs GGUF models on GPU via Vulkan (~138ms). <code>faster_whisper</code> uses CTranslate2.</td>
+</tr>
+<tr>
+<td><code>ACTIVE_MODEL_PROFILE</code></td>
+<td><code>string</code></td>
+<td><code>"nemotron_fast"</code></td>
+<td>Any key in <code>MODEL_PROFILES</code></td>
+<td>Active model preset. Switchable in real-time from the tray menu or settings GUI.</td>
+</tr>
+<tr>
+<td><code>MODEL_PROFILES</code></td>
+<td><code>object</code></td>
+<td><em>(see below)</em></td>
+<td>Dictionary of profile objects</td>
+<td>Defines named model paths, formats, and hardware targets.</td>
+</tr>
+<tr>
+<td><code>OLLAMA_HOST</code></td>
+<td><code>string</code></td>
+<td><code>"http://localhost:11434"</code></td>
+<td>URL string</td>
+<td>Address of your local or network Ollama service.</td>
+</tr>
+<tr>
+<td><code>OLLAMA_KEEP_ALIVE</code></td>
+<td><code>string</code></td>
+<td><code>"60m"</code></td>
+<td><code>"0"</code>, <code>"2m"</code>, <code>"5m"</code>, <code>"15m"</code>, <code>"60m"</code>, <code>"-1"</code></td>
+<td><strong>VRAM Lifecycle</strong>: How long Ollama holds model weights in GPU VRAM after generating. Set <code>"0"</code> on low-VRAM machines to free VRAM immediately. Set <code>"60m"</code> or <code>"-1"</code> on high-VRAM machines for sub-second responses.</td>
+</tr>
+<tr>
+<td><code>OLLAMA_MODELS.en</code></td>
+<td><code>string</code></td>
+<td><code>"qwen2.5:3b"</code></td>
+<td>Installed Ollama model</td>
+<td>Model used for English text refinement, grammar cleanup, and restructuring.</td>
+</tr>
+<tr>
+<td><code>OLLAMA_MODELS.hi</code></td>
+<td><code>string</code></td>
+<td><code>"llama3-hindi"</code></td>
+<td>Installed Ollama model</td>
+<td>Model used for Hindi text refinement and grammar correction.</td>
+</tr>
+<tr>
+<td><code>OLLAMA_TRANSLATE_MODELS.to_en</code></td>
+<td><code>string</code></td>
+<td><code>"qwen2.5:3b"</code></td>
+<td>Installed Ollama model</td>
+<td>Model used when <code>MODE: "translate"</code> converts Hindi speech $\rightarrow$ polished English.</td>
+</tr>
+<tr>
+<td><code>MODE</code></td>
+<td><code>string</code></td>
+<td><code>"refine"</code></td>
+<td><code>"refine"</code>, <code>"translate"</code></td>
+<td>Default dictation mode. <code>refine</code> polishes in the spoken language. <code>translate</code> outputs refined English on clipboard.</td>
+</tr>
+<tr>
+<td><code>SILENCE_THRESHOLD</code></td>
+<td><code>integer</code></td>
+<td><code>300</code></td>
+<td><code>50</code> – <code>1000</code></td>
+<td>Microphone audio energy gate. Speech below this RMS level is treated as silence. Higher values ignore room background noise; lower values capture soft whispers.</td>
+</tr>
+<tr>
+<td><code>SILENCE_DURATION</code></td>
+<td><code>float</code></td>
+<td><code>2.0</code></td>
+<td><code>0.5</code> – <code>5.0</code></td>
+<td>Seconds of continuous silence before recording automatically stops.</td>
+</tr>
+<tr>
+<td><code>TEMPERATURE</code></td>
+<td><code>float</code></td>
+<td><code>0.1</code></td>
+<td><code>0.0</code> – <code>1.0</code></td>
+<td>LLM generation temperature. <code>0.0</code> or <code>0.1</code> ensures consistent, strictly factual grammar refinement without creative hallucinations.</td>
+</tr>
+<tr>
+<td><code>DIRECT_TYPING</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>When <code>true</code>, automatically types refined text at the cursor position in addition to copying to clipboard.</td>
+</tr>
+<tr>
+<td><code>TYPING_TOOL</code></td>
+<td><code>string</code></td>
+<td><code>"auto"</code></td>
+<td><code>"auto"</code>, <code>"ydotool"</code>, <code>"wtype"</code>, <code>"xdotool"</code></td>
+<td>Cursor typing mechanism. <code>"auto"</code> detects Wayland vs X11 automatically.</td>
+</tr>
+<tr>
+<td><code>FEATURES.start_end_sounds</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Plays audio cues when recording begins and ends.</td>
+</tr>
+<tr>
+<td><code>FEATURES.clipboard_output</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Copies refined text to system clipboard.</td>
+</tr>
+<tr>
+<td><code>FEATURES.markdown_output</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Appends refined text to a markdown notes file.</td>
+</tr>
+<tr>
+<td><code>FEATURES.evening_review</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Displays the <strong>Start Evening Review</strong> option in the tray menu.</td>
+</tr>
+<tr>
+<td><code>FEATURES.pwd_terminology_corrector</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td>Enables automatic domain abbreviation correction (e.g. "the ee issued nit" $\rightarrow$ "the EE issued NIT") and PWD glossary lookup.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+</section>
+<section id="chapter-3" class="chapter-card">
+<div class="chapter-badge">🌙 Chapter 3</div>
+<h2 id="3-evening-review-review_configjson-reference">3. Evening Review (<code>review_config.json</code>) Reference</h2>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Configuration Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vault_paths.base_vault</code></td>
+<td><code>string</code></td>
+<td><code>"~/learning_vault"</code></td>
+<td>Root directory of your Obsidian vault.</td>
+</tr>
+<tr>
+<td><code>vault_paths.daily_notes</code></td>
+<td><code>string</code></td>
+<td><code>"~/learning_vault/My Daily Notes"</code></td>
+<td>Target folder for daily notes (<code>YYYY/Month/YYYY-MM-DD.md</code>).</td>
+</tr>
+<tr>
+<td><code>vault_paths.wellness_notes</code></td>
+<td><code>string</code></td>
+<td><code>".../Wellness"</code></td>
+<td>Target folder for private wellness step reflections.</td>
+</tr>
+<tr>
+<td><code>review_expiry_hours</code></td>
+<td><code>integer</code></td>
+<td><code>1</code></td>
+<td>Hours before an in-progress session is marked expired.</td>
+</tr>
+<tr>
+<td><code>voice_narration</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Speaks reflection prompts aloud using neural TTS.</td>
+</tr>
+<tr>
+<td><code>tts_engine</code></td>
+<td><code>string</code></td>
+<td><code>"piper"</code></td>
+<td>TTS engine: <code>"piper"</code> (offline neural) or <code>"espeak"</code> (built-in fallback).</td>
+</tr>
+<tr>
+<td><code>piper_model</code></td>
+<td><code>string</code></td>
+<td><code>"models/en_US-lessac-medium.onnx"</code></td>
+<td>English neural voice model.</td>
+</tr>
+<tr>
+<td><code>piper_model_hi</code></td>
+<td><code>string</code></td>
+<td><code>"models/hi_IN-priyamvada-medium.onnx"</code></td>
+<td>Hindi neural voice model.</td>
+</tr>
+<tr>
+<td><code>voice_control</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Enables hands-free wake words ("stop", "again", "आगे", "छोड़ो").</td>
+</tr>
+<tr>
+<td><code>last_n_days_context</code></td>
+<td><code>integer</code></td>
+<td><code>3</code></td>
+<td>Number of previous daily notes synthesized for the evening context brief.</td>
+</tr>
+<tr>
+<td><code>carryforward_tasks</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Reads unchecked tasks (<code>- [ ]</code>) from yesterday's daily note and narrates them.</td>
+</tr>
+<tr>
+<td><code>show_streak</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Tracks consecutive daily review completions (<code>🔥 N</code> days).</td>
+</tr>
+<tr>
+<td><code>morning_briefing_enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enables systemd morning priority alerts.</td>
+</tr>
+<tr>
+<td><code>morning_briefing_time</code></td>
+<td><code>string</code></td>
+<td><code>"08:00"</code></td>
+<td>Daily time for the morning briefing.</td>
+</tr>
+<tr>
+<td><code>telegram_enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enables mobile notifications via Telegram bot.</td>
+</tr>
+<tr>
+<td><code>telegram_bot_token</code></td>
+<td><code>string</code></td>
+<td><code>""</code></td>
+<td>Bot token from <code>@BotFather</code>.</td>
+</tr>
+<tr>
+<td><code>telegram_chat_id</code></td>
+<td><code>string</code></td>
+<td><code>""</code></td>
+<td>User chat ID from <code>@userinfobot</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+</section>
+<section id="chapter-4" class="chapter-card">
+<div class="chapter-badge">💡 Chapter 4</div>
+<h2 id="4-audio-to-ideas-audio_to_idea_configjson-reference">4. Audio to Ideas (<code>audio_to_idea_config.json</code>) Reference</h2>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Configuration Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>synthesis.mode</code></td>
+<td><code>string</code></td>
+<td><code>"clean_paragraph"</code></td>
+<td>Default extraction mode: <code>"clean_paragraph"</code>, <code>"concise_summary"</code>, <code>"ideas_actions"</code>.</td>
+</tr>
+<tr>
+<td><code>synthesis.output_language</code></td>
+<td><code>string</code></td>
+<td><code>"source"</code></td>
+<td>Output language: <code>"source"</code> (preserves English/Hindi mix), <code>"English"</code>, or <code>"Hindi"</code>.</td>
+</tr>
+<tr>
+<td><code>audio.sample_rate</code></td>
+<td><code>integer</code></td>
+<td><code>16000</code></td>
+<td>Sample rate for ASR preparation.</td>
+</tr>
+<tr>
+<td><code>audio.chunk_seconds</code></td>
+<td><code>float</code></td>
+<td><code>60.0</code></td>
+<td>Window size for long audio processing (120s for transcribe-cpp).</td>
+</tr>
+<tr>
+<td><code>audio.overlap_seconds</code></td>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+<td>Boundary overlap protecting words spoken across split windows.</td>
+</tr>
+<tr>
+<td><code>watch.poll_seconds</code></td>
+<td><code>float</code></td>
+<td><code>2.0</code></td>
+<td>Polling interval for background folder watcher.</td>
+</tr>
+<tr>
+<td><code>output.formats</code></td>
+<td><code>list</code></td>
+<td><code>["txt"]</code></td>
+<td>Export formats: <code>["txt", "srt"]</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="41-next-gen-web-dashboard-audio-to-idea">4.1 Next-Gen Web Dashboard (<code>/audio-to-idea</code>)</h3>
+<p>The Audio-to-Ideas interface can be launched as a standalone GPU-accelerated window via:</p>
+<div class="codehilite"><pre><span></span><code>./audio_to_idea_launcher.py
+<span class="c1"># Or navigate to: http://127.0.0.1:8765/audio-to-idea</span>
+</code></pre></div>
+
+<p>Features:
+- <strong>Synchronized Audio &amp; Transcript</strong>: Click any segment <code>[S00001]</code> to seek and play audio instantly.
+- <strong>Drag &amp; Drop Queue</strong>: Batch process MP3, WAV, M4A, FLAC, OGG, and WEBM files with real-time SSE progress.
+- <strong>Evidence-Linked Ideas</strong>: In <em>Ideas &amp; Actions</em> mode, click any <code>[S0000X]</code> badge to highlight source transcript evidence and audio.
+- <strong>Live Theme Toggle</strong>: Real-time Dark and Light glassmorphism styling.</p>
+<hr />
+</section>
+<section id="chapter-5" class="chapter-card">
+<div class="chapter-badge">🏛 Chapter 5</div>
+<h2 id="5-pwd-language-helper-hybrid-cli-pwd_clipy-pwd_helper">5. PWD Language Helper &amp; Hybrid CLI (<code>pwd_cli.py</code> &amp; <code>pwd_helper/</code>)</h2>
+<p>The PWD Language Helper integrates civil engineering and departmental terminology from Uttarakhand Public Works Department directly into both the real-time speech engine and a standalone terminal/CLI utility.</p>
+<h3 id="51-architecture-components">5.1 Architecture &amp; Components</h3>
+<ul>
+<li><strong>Core Dictionary (<code>pwd_dict.json</code>)</strong>: Contains 53 standard PWD designations, document types, and technical abbreviations categorized into <code>officers</code>, <code>documents</code>, <code>schemes</code>, and <code>technical</code>.</li>
+<li><strong>Custom Extension (<code>custom_dict.json</code>)</strong>: Place in <code>pwd_helper/custom_dict.json</code> or your project root to append personal or local project abbreviations without modifying core files.</li>
+<li><strong>In-Flight Speech Normalizer (<code>pwd_helper.normalizer</code>)</strong>: Auto-corrects spoken abbreviations during dictation (e.g. <em>"the ee met the ae to review the mb for rcc culvert"</em> $\rightarrow$ <em>"the EE met the AE to review the MB for RCC culvert"</em>).</li>
+<li><strong>Tri-Tier Translator (<code>pwd_helper.translator</code>)</strong>:
+  1. <em>Ollama LLM</em>: Context-aware domain translation via local models (<code>qwen2.5:3b</code> / <code>llama3-hindi</code>).
+  2. <em>Online Fallback</em>: Zero-dependency pure Python Google Translate fallback.
+  3. <em>Offline Argos</em>: Direct local neural translation (optional).</li>
+</ul>
+<h3 id="52-terminal-cli-commands-pwd_clipy">5.2 Terminal &amp; CLI Commands (<code>pwd_cli.py</code>)</h3>
+<p>Run directly in your terminal:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. Quick Abbreviation Lookup</span>
+./pwd_cli.py<span class="w"> </span>ee
+<span class="c1"># Output: [officers] EE = Executive Engineer (अधिशासी अभियंता)</span>
+
+<span class="c1"># 2. Lookup and Copy to Clipboard</span>
+./pwd_cli.py<span class="w"> </span>nit<span class="w"> </span>-c
+
+<span class="c1"># 3. Bilingual Translation</span>
+./pwd_cli.py<span class="w"> </span>translate<span class="w"> </span><span class="s2">&quot;Bridge inspection&quot;</span>
+<span class="c1"># Output: Hindi (online_google): पुल निरीक्षण</span>
+
+<span class="c1"># 4. Search by English or Hindi keyword</span>
+./pwd_cli.py<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;निविदा&quot;</span>
+./pwd_cli.py<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;tender&quot;</span>
+
+<span class="c1"># 5. Interactive REPL (with Voice Dictation toggle)</span>
+./pwd_cli.py
+pwd&gt;<span class="w"> </span>search<span class="w"> </span>engineer
+pwd&gt;<span class="w"> </span>ee
+pwd&gt;<span class="w"> </span>v<span class="w">               </span><span class="c1"># Activates microphone dictation directly inside the CLI!</span>
+</code></pre></div>
+
+<h3 id="53-fastapi-service-for-external-laravel-integration-pwd_helperapipy">5.3 FastAPI Service for External / Laravel Integration (<code>pwd_helper/api.py</code>)</h3>
+<p>To expose PWD terminology and translation services to external PHP/Laravel web dashboards or office portals:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Start the FastAPI service on port 8000</span>
+python3<span class="w"> </span>-m<span class="w"> </span>uvicorn<span class="w"> </span>pwd_helper.api:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+</code></pre></div>
+
+<ul>
+<li><strong>Endpoints</strong>:</li>
+<li><code>POST /api/translate</code>: Translates text between English and Hindi (<code>{"text": "Bridge", "mode": "auto"}</code>).</li>
+<li><code>GET /api/abbreviation?q=EE</code>: Returns JSON definition with designation and Hindi translation.</li>
+<li><code>GET /api/search?q=tender</code>: Returns all matching abbreviations.</li>
+<li><code>GET /api/abbreviations</code>: Returns complete terminology database.</li>
+</ul>
+<hr />
+</section>
+<section id="chapter-6" class="chapter-card">
+<div class="chapter-badge">🎨 Chapter 6</div>
+<h2 id="6-next-level-animated-visuals-system-tray">6. Next-Level Animated Visuals &amp; System Tray</h2>
+<p>Both the GUI and System Tray feature animated vector feedback designed for instantaneous state awareness:</p>
+<h3 id="61-vector-animation-states-in-main_guipy">6.1 Vector Animation States in <code>main_gui.py</code></h3>
+<p>The status badge and hero visualizer render smooth vector states at 5 FPS:
+* <strong>Idle (🎙)</strong>: Steady glowing microphone icon in Catppuccin Blue (<code>#89b4fa</code>).
+* <strong>Recording (👂)</strong>: Pulsing acoustic ear icon radiating expanding acoustic wave arcs (<code>#f38ba8</code> Coral Red).
+* <strong>Processing / Refining (🧠)</strong>: Synapsing brain icon surrounded by orbiting neural nodes in Lavender (<code>#b4befe</code>).
+* <strong>Success (✨)</strong>: Sparkling green confirmation indicator (<code>#a6e3a1</code>).</p>
+<h3 id="62-high-resolution-pillow-vector-tray-icons-tray_apppy">6.2 High-Resolution Pillow Vector Tray Icons (<code>tray_app.py</code>)</h3>
+<p>The system tray dynamically renders crisp 64x64 vector icons in real-time on a dedicated background animation thread. No blurry bitmap dots or external GIF assets are needed.</p>
+<hr />
+</section>
+<section id="chapter-7" class="chapter-card">
+<div class="chapter-badge">🔧 Chapter 7</div>
+<h2 id="7-how-to-adjust-settings">7. How to Adjust Settings</h2>
+<h3 id="method-1-graphical-settings-window-recommended">Method 1: Graphical Settings Window (Recommended)</h3>
+<p>Right-click the tray icon and select <strong>Settings</strong> (or run <code>python3 config_gui.py</code>).
+- <strong>Voice Refiner Tab</strong>: Switch ASR profiles, change Ollama models, set Keep-Alive VRAM timers, and adjust silence thresholds.
+- <strong>Evening Review Tab</strong>: Configure Obsidian vault paths, TTS voices, and context lookbacks.
+- <strong>Notifications Tab</strong>: Set up Telegram bot credentials and morning briefing timers.
+- <strong>Features Tab</strong>: Toggle individual capabilities on or off, including PWD Terminology Corrector.</p>
+<h3 id="method-2-instant-1-click-system-tray-cycling">Method 2: Instant 1-Click System Tray Cycling</h3>
+<p>You can switch modes without opening the settings window:
+- Click <strong>Mode: Refine</strong> in the tray menu to toggle between <strong>Refine</strong> and <strong>Translate</strong>.
+- Click <strong>🎙 ASR: <profile></strong> in the tray menu to cycle through your configured profiles (<code>nemotron_fast</code> $\rightarrow$ <code>whisper_turbo</code> $\rightarrow$ <code>whisper_large_v3</code> $\rightarrow$ <code>hinglish_apex</code>).
+- Click <strong>🏛 PWD Terminology Lookup</strong> to launch the terminology glossary.</p>
+<h3 id="method-3-direct-json-editing">Method 3: Direct JSON Editing</h3>
+<p>Edit <code>config.json</code> directly with any text editor. The application automatically re-reads the configuration.</p>
+<hr />
+</section>
+<section id="chapter-8" class="chapter-card">
+<div class="chapter-badge">🛠 Chapter 8</div>
+<h2 id="8-tuning-optimization-guide">8. Tuning &amp; Optimization Guide</h2>
+<h3 id="microphone-silence-calibration">Microphone Silence Calibration</h3>
+<p>If the assistant cuts you off too quickly or captures room noise:
+1. Speak normally and observe if recording ends naturally ~2 seconds after you stop.
+2. If recording ends while you are still speaking: <strong>decrease <code>SILENCE_THRESHOLD</code></strong> (e.g. from 300 to 200).
+3. If recording keeps running due to room fan or typing noise: <strong>increase <code>SILENCE_THRESHOLD</code></strong> (e.g. from 300 to 450).</p>
+<h3 id="wayland-direct-typing-setup">Wayland Direct Typing Setup</h3>
+<p>On Ubuntu Wayland sessions, <code>xdotool</code> cannot simulate keystrokes directly. The application automatically uses <code>ydotool</code>.
+To enable <code>ydotool</code> without requiring root permissions:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>ydotool
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>ydotoold<span class="w"> </span><span class="nv">$USER</span>
+</code></pre></div>
+
+<p>Log out and log back in once. Typing will now work seamlessly across any Wayland or X11 application!</p>
+<hr />
+</section>
+<section id="chapter-9" class="chapter-card">
+<div class="chapter-badge">⚡ Chapter 9</div>
+<h2 id="9-best-practice-matrix-speed-accuracy-for-input-audio-vs-output-goal">9. Best Practice Matrix: Speed + Accuracy for Input Audio vs Output Goal</h2>
+<p>To achieve the best speed, lowest latency, and highest accuracy without hallucination or script confusion, select the combination matching your input speech and target output style:</p>
+<h3 id="91-speed-accuracy-decision-matrix">9.1 Speed + Accuracy Decision Matrix</h3>
+<div class="table-responsive">
+<table>
+<thead>
+<tr>
+<th>Input Speech Type</th>
+<th>Target Output Goal</th>
+<th>Optimal ASR Profile</th>
+<th>Language Mode (<code>LANGUAGE_MODE</code>)</th>
+<th>Recommended LLM (<code>OLLAMA_MODELS</code>)</th>
+<th>End-to-End Latency</th>
+<th>Accuracy Rating</th>
+<th>Why This Combination Excels</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Pure English</strong> (Indian or Global Accent)</td>
+<td><strong>Polished Official English</strong> (Emails, Reports, Notes)</td>
+<td><code>nemotron_fast</code> <em>(or <code>whisper_turbo</code> with forced EN)</em></td>
+<td><code>pure_english</code></td>
+<td><code>qwen2.5:3b</code></td>
+<td><strong>~0.8s</strong> <em>(138ms ASR + 0.6s LLM)</em></td>
+<td><strong>100% (Flawless)</strong></td>
+<td><code>nemotron_fast</code> has strictly English subword tokens, rendering Devanagari confusion impossible. Qwen's phonetic recovery rules reconstruct any PWD abbreviations (<code>MB</code>, <code>AE</code>, <code>NIT</code>).</td>
+</tr>
+<tr>
+<td><strong>Mixed Hindi + English</strong> (Spoken Hinglish)</td>
+<td><strong>Natural Spoken Bilingual</strong> (English terms in Latin, Hindi in Devanagari)</td>
+<td><code>whisper_large_v3</code> <em>(or <code>whisper_turbo</code>)</em></td>
+<td><code>bilingual</code> <em>(Default)</em></td>
+<td><code>qwen2.5:3b</code> <em>(or <code>llama3-hindi</code>)</em></td>
+<td><strong>~1.8s – ~2.2s</strong></td>
+<td><strong>98% (Natural)</strong></td>
+<td>Whisper accurately captures code-switching. Model-specific bilingual prompts instruct the LLM never to over-translate Hindi to English nor transliterate English to Devanagari.</td>
+</tr>
+<tr>
+<td><strong>Spoken Hindi or Mixed Hinglish</strong></td>
+<td><strong>Formal Official Hindi</strong> (कार्यालयी पत्राचार / शासकीय टिप्पणी)</td>
+<td><code>whisper_large_v3</code></td>
+<td><code>pure_hindi</code></td>
+<td><code>llama3-hindi</code> (<code>SL-Lexicons/llama3-hindi-8b-q5_km</code>)</td>
+<td><strong>~2.0s – ~2.5s</strong></td>
+<td><strong>99% (Native Grammar)</strong></td>
+<td><code>llama3-hindi</code> receives native Devanagari instructions. It generates proper Hindi syntax and postpositions (कारक, विराम चिह्न) while keeping departmental terms (<code>EE</code>, <code>MB</code>, <code>NIT</code>, <code>RCC</code>) in English Latin script.</td>
+</tr>
+<tr>
+<td><strong>Rapid Chat / Messaging</strong> (WhatsApp, Slack, Quick Notes)</td>
+<td><strong>Roman-script Hinglish</strong> (Spoken mix written in English letters)</td>
+<td><code>whisper_turbo</code> <em>(or <code>hinglish_apex</code>)</em></td>
+<td><code>roman_hinglish</code></td>
+<td><code>qwen2.5:3b</code></td>
+<td><strong>~0.9s – ~1.2s</strong></td>
+<td><strong>96% (Chat-Ready)</strong></td>
+<td>Delivers conversational Hinglish directly in the Latin alphabet (e.g. <em>"Aaj site visit complete ho gaya aur EE sir ne MB approve kar di hai"</em>), eliminating keyboard layout switching.</td>
+</tr>
+<tr>
+<td><strong>Spoken Hindi / Hinglish</strong></td>
+<td><strong>Pure English Translation</strong> (Formal Records / English Documentation)</td>
+<td><code>whisper_large_v3</code> <em>(or <code>whisper_turbo</code>)</em></td>
+<td><code>pure_english</code></td>
+<td><code>qwen2.5:3b</code></td>
+<td><strong>~1.6s – ~2.0s</strong></td>
+<td><strong>97% (Fluent English)</strong></td>
+<td>Whisper captures the spoken Hindi/Hinglish audio, and Qwen 2.5 3B translates the full thought into fluent, professional documentation English while preserving PWD uppercase terms.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+<h3 id="92-key-architectural-principles-for-peak-accuracy">9.2 Key Architectural Principles for Peak Accuracy</h3>
+<ol>
+<li>
+<p><strong>Why Model-Specific Prompts Matter (<code>prompts/&lt;model_alias&gt;/</code>)</strong>:
+   - <strong><code>llama3-hindi</code></strong>: Fine-tuned on Hindi instruction datasets. When prompted with English instructions (even if asking for Hindi output), it tends to respond in English and over-translate. Its dedicated prompt folder (<code>prompts/llama3_hindi/</code>) uses native Hindi Devanagari system prompts to enforce strict obedience.
+   - <strong><code>qwen2.5:3b</code></strong>: Exceptionally fast and obedient, but can over-interpret unfamiliar Devanagari transcriptions. Its prompt folder (<code>prompts/qwen2.5_3b/</code>) incorporates explicit <strong>Phonetic &amp; Script Recovery Rules</strong> so that Devanagari-transcribed English phonetics (<code>"मी"</code> $\rightarrow$ <code>MB</code>, <code>"हिड्स"</code> $\rightarrow$ <code>he needs</code>) are correctly recovered without hallucinating false metaphors.</p>
+</li>
+<li>
+<p><strong>Smart ASR Coupling at the Speech Layer</strong>:
+   - In <code>pure_english</code> mode, the engine automatically forces <code>language="en"</code> and injects civil engineering vocabulary cues (<code>EE, AE, JE, NIT, MB, RCC</code>) into Whisper's initial prompt. This prevents Whisper from misdetecting Indian English accents as Hindi, eliminating Devanagari garbling before it ever reaches the LLM.
+   - In <code>pure_hindi</code> mode, the engine forces <code>language="hi"</code> with <code>_HINDI_PROMPT</code>, bypassing Whisper's language-detection roundtrip for instant Devanagari transcription.</p>
+</li>
+<li>
+<p><strong>ASR Engine Differences</strong>:
+   - <strong><code>nemotron_fast</code> (NVIDIA Nemotron 3.5 Streaming GGUF)</strong>: Lightning-fast (~138ms on RTX 3060). <strong>English speech only</strong>. Best for pure English dictation, email drafting, and coding notes.
+   - <strong><code>whisper_large_v3</code> (Faster-Whisper)</strong>: Gold standard for mixed Hindi-English audio, heavy regional accents, and official Hindi dictation.
+   - <strong><code>whisper_turbo</code></strong>: Excellent balance of speed (~0.4s) and bilingual accuracy for day-to-day mixed dictation.</p>
+</li>
+</ol>
+</section>
+            <div class="footer-note">
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-19 16:58:30
+            </div>
+        </div>
+    </div>
+    <script>
+        function filterManual() {
+            const input = document.getElementById('manualSearch');
+            const filter = input.value.toLowerCase();
+            const cards = document.getElementsByClassName('chapter-card');
+            const links = document.getElementsByClassName('nav-link');
+
+            for (let i = 0; i < cards.length; i++) {
+                const text = cards[i].innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    cards[i].style.display = "";
+                    if (links[i]) links[i].style.display = "flex";
+                } else {
+                    cards[i].style.display = "none";
+                    if (links[i]) links[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

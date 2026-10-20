@@ -10,9 +10,16 @@ import re
 
 from .schemas import AudioToIdeaError
 
-MODES = {'clean_paragraph': '1. Clean paragraph',
-         'concise_summary': '2. Concise summary',
-         'ideas_actions': '3. Ideas and actions'}
+MODES = {
+    'clean_bilingual': '🌐 1. Bilingual Field Note (Hindi Devanagari + English Technical)',
+    'official_english': '🇬🇧 2. Official English Memo (Clean British/Indian English)',
+    'official_hindi': '🇮🇳 3. Shuddh Hindi Karyalaya Note (Formal Devanagari Hindi)',
+    'concise_summary': '📋 4. Concise Executive Summary (Key Findings & Bulleted Takeaways)',
+    'ideas_actions': '💡 5. Ideas & Action Items (Traceable Evidence-Linked Actions)',
+    'roman_hinglish': '💬 6. Conversational Roman Hinglish (WhatsApp/Slack style Latin)',
+    # Backward compatibility
+    'clean_paragraph': '1. Clean paragraph',
+}
 BUILTINS = Path(__file__).parent / 'prompt_templates'
 FIELDS = {'transcript', 'context', 'output_language'}
 PLACEHOLDER = re.compile(r'\{([a-zA-Z_]\w*)\}')
@@ -46,14 +53,25 @@ class Template:
 
 def load_template(settings, mode=None):
     cfg = settings['synthesis']
-    mode = mode or cfg.get('mode', 'clean_paragraph')
+    mode = mode or cfg.get('mode', 'clean_bilingual')
     if mode not in MODES:
         raise AudioToIdeaError('Unknown processing mode: ' + str(mode))
-    path = BUILTINS / f'{mode}.txt'
+
+    file_mapping = {
+        'clean_bilingual': 'clean_bilingual.txt',
+        'official_english': 'official_english.txt',
+        'official_hindi': 'official_hindi.txt',
+        'roman_hinglish': 'roman_hinglish.txt',
+        'clean_paragraph': 'clean_paragraph.txt',
+        'concise_summary': 'concise_summary.txt',
+        'ideas_actions': 'ideas_actions.txt',
+    }
+    filename = file_mapping.get(mode, f'{mode}.txt')
+    path = BUILTINS / filename
     if cfg.get('prompt_file'):
         path = Path(cfg['prompt_file']).expanduser()
     elif cfg.get('prompt_directory'):
-        candidate = Path(cfg['prompt_directory']).expanduser() / f'{mode}.txt'
+        candidate = Path(cfg['prompt_directory']).expanduser() / filename
         # A missing mode file uses its packaged default, but a broken symlink
         # or unreadable chosen file must report a problem instead of falling back.
         if candidate.exists() or candidate.is_symlink():

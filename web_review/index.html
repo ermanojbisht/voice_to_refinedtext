@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Evening Review Studio — AI Voice Refiner</title>
+  <style>
+    :root[data-theme="dark"] {
+      --bg-gradient: radial-gradient(circle at 50% 15%, #0d283b 0%, #061520 60%, #030a10 100%);
+      --glass-surface: rgba(18, 44, 61, 0.75);
+      --glass-surface-hover: rgba(28, 62, 84, 0.85);
+      --glass-border: rgba(94, 148, 178, 0.35);
+      --glass-border-focus: rgba(142, 200, 255, 0.7);
+      --text-main: #f0f7fb;
+      --text-muted: #8ea8b8;
+      --accent-blue: #8ec8ff;
+      --accent-teal: #7bdec4;
+      --accent-purple: #c084fc;
+      --accent-yellow: #fbbf24;
+      --accent-rose: #fb7185;
+      --accent-green: #4ade80;
+      --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --field-bg: rgba(9, 23, 33, 0.85);
+      --field-border: rgba(70, 115, 140, 0.5);
+    }
+
+    :root[data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 50% 15%, #e1f2fb 0%, #cde8f6 50%, #b8def2 100%);
+      --glass-surface: rgba(245, 252, 255, 0.85);
+      --glass-surface-hover: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(135, 185, 212, 0.6);
+      --glass-border-focus: rgba(20, 91, 165, 0.8);
+      --text-main: #0c2333;
+      --text-muted: #4e6a7c;
+      --accent-blue: #145ba5;
+      --accent-teal: #097b69;
+      --accent-purple: #7e22ce;
+      --accent-yellow: #b45309;
+      --accent-rose: #be123c;
+      --accent-green: #15803d;
+      --card-shadow: 0 10px 30px rgba(16, 50, 75, 0.12);
+      --field-bg: rgba(255, 255, 255, 0.95);
+      --field-border: rgba(150, 195, 220, 0.8);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Top App Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 26px;
+      filter: drop-shadow(0 2px 8px rgba(123, 222, 196, 0.4));
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+    }
+
+    .streak-badge {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: rgba(251, 191, 36, 0.4);
+      color: var(--accent-yellow);
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    /* Stepper Bar */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid var(--glass-border);
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .step-item.active {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+      color: #04121d;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(123, 222, 196, 0.35);
+      font-weight: 700;
+    }
+
+    .step-item.completed {
+      background: rgba(74, 222, 128, 0.15);
+      border-color: rgba(74, 222, 128, 0.35);
+      color: var(--accent-green);
+    }
+
+    /* Main Split-View Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px 24px;
+      flex: 1;
+      height: calc(100vh - 120px);
+      overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow-y: auto;
+      }
+    }
+
+    .studio-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    /* Glass Cards */
+    .card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* Voice Partner Dialogue Card */
+    .partner-card {
+      border-left: 4px solid var(--accent-blue);
+      background: linear-gradient(145deg, var(--glass-surface) 0%, rgba(20, 91, 165, 0.12) 100%);
+    }
+
+    .partner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .partner-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .prompt-text-hi {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+
+    .prompt-text-en {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Waveform visualizer */
+    .waveform-bar {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 20px;
+    }
+
+    .wave-line {
+      width: 3px;
+      height: 6px;
+      background: var(--accent-blue);
+      border-radius: 2px;
+      transition: height 0.1s ease;
+    }
+
+    .wave-active .wave-line:nth-child(1) { animation: wavePulse 0.6s infinite 0.1s; }
+    .wave-active .wave-line:nth-child(2) { animation: wavePulse 0.6s infinite 0.2s; }
+    .wave-active .wave-line:nth-child(3) { animation: wavePulse 0.6s infinite 0.3s; }
+    .wave-active .wave-line:nth-child(4) { animation: wavePulse 0.6s infinite 0.4s; }
+    .wave-active .wave-line:nth-child(5) { animation: wavePulse 0.6s infinite 0.5s; }
+
+    @keyframes wavePulse {
+      0%, 100% { height: 6px; }
+      50% { height: 20px; }
+    }
+
+    /* Voice Capture Controls */
+    .capture-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .record-btn {
+      flex: 1;
+      padding: 12px 24px;
+      font-size: 14.5px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-record-idle {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+      color: #04121d;
+      box-shadow: 0 4px 14px rgba(123, 222, 196, 0.25);
+    }
+
+    .btn-record-idle:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-record-active {
+      background: linear-gradient(135deg, #f43f5e, var(--accent-rose));
+      color: #fff;
+      animation: recordGlow 1.5s infinite;
+    }
+
+    @keyframes recordGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 16px rgba(251, 113, 133, 0.4); }
+      50% { transform: scale(1.02); box-shadow: 0 0 24px rgba(251, 113, 133, 0.7); }
+    }
+
+    .upload-btn {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--glass-surface);
+      border: 1px dashed var(--glass-border-focus);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .upload-btn:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-teal);
+    }
+
+    /* Staged Clips Tray */
+    .staged-tray-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .staged-tray-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-teal);
+    }
+
+    .clip-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 190px;
+      overflow-y: auto;
+    }
+
+    .clip-bubble {
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .clip-bubble-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .clip-textarea {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 40px;
+      outline: none;
+      user-select: text;
+    }
+
+    .clip-textarea:focus {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    /* Step 5 Carry-Forward Task Matrix */
+    .task-matrix {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: var(--glass-surface);
+      font-size: 12px;
+    }
+
+    .task-label {
+      flex: 1;
+      user-select: text;
+    }
+
+    .task-age {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--accent-yellow);
+      font-weight: 700;
+    }
+
+    /* Navigation Action Bar */
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .btn-advance {
+      background: linear-gradient(135deg, var(--accent-teal), #34d399);
+      color: #04121d;
+      font-weight: 700;
+      padding: 10px 22px;
+      font-size: 14px;
+      border: none;
+    }
+
+    .btn-advance:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    /* Right Column Live Obsidian Assembly Preview */
+    .markdown-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 380px;
+    }
+
+    .markdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 10px;
+    }
+
+    .markdown-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+      user-select: text;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    .markdown-scroll h1, .markdown-scroll h2, .markdown-scroll h3 {
+      color: var(--accent-blue);
+      margin: 14px 0 6px 0;
+      font-size: 15px;
+    }
+
+    .markdown-scroll p {
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .markdown-scroll ul {
+      margin-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .highlight-active-section {
+      background: rgba(123, 222, 196, 0.08);
+      border-left: 3px solid var(--accent-teal);
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin: 8px 0;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 300;
+    }
+
+    .toast {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--glass-surface);
+      border: 1px solid var(--accent-teal);
+      color: var(--text-main);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      backdrop-filter: blur(16px);
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 18, 29, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+    }
+
+    .modal-window {
+      background: var(--glass-surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      max-width: 540px;
+      width: 90%;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Acoustic Language Suggestion Banner */
+    .acoustic-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="light"] .acoustic-banner-warning {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+    [data-theme="light"] .acoustic-banner-warning .acoustic-pill {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+    [data-theme="light"] .acoustic-banner-suggestion {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+    [data-theme="light"] .acoustic-banner-suggestion .acoustic-pill {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+    }
+
+    [data-theme="dark"] .acoustic-banner-warning {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    [data-theme="dark"] .acoustic-banner-warning .acoustic-pill {
+      background: rgba(239, 68, 68, 0.22);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fecaca;
+    }
+    [data-theme="dark"] .acoustic-banner-suggestion {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+    }
+    [data-theme="dark"] .acoustic-banner-suggestion .acoustic-pill {
+      background: rgba(245, 158, 11, 0.22);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fef3c7;
+    }
+
+    .acoustic-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-icon">🌙</span>
+      <div>
+        <div class="brand-title">Executive Evening Review Studio</div>
+        <div class="brand-sub">Conversational AI Secretary & Daily Obsidian Reflection</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <span class="badge-pill" id="datePill" onclick="openDateModal()" title="Click to change review date">📅 <span id="reviewDateTxt">Today</span></span>
+      <span class="badge-pill streak-badge" id="streakPill">🔥 <span id="streakCount">0</span> Days</span>
+      <button class="btn" onclick="fetch('/api/open_manual', {method: 'POST'})">📖 Manual</button>
+      <button class="btn" onclick="window.location.href='/dashboard'">🎙️ Refiner</button>
+      <button class="btn" onclick="window.location.href='/pwd-lookup'">🏛️ PWD Terms</button>
+      <button class="btn" onclick="window.location.href='/'">⚙️ Settings</button>
+      <button class="btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- Guided Stepper Navigation -->
+  <div class="stepper-container" id="stepperBar">
+    <div class="step-item active" id="stepPill_0" onclick="jumpToStep(0)">🌿 1. Wellness Log</div>
+    <div class="step-item" id="stepPill_1" onclick="jumpToStep(1)">🚶 2. Movement</div>
+    <div class="step-item" id="stepPill_2" onclick="jumpToStep(2)">👥 3. Meetings</div>
+    <div class="step-item" id="stepPill_3" onclick="jumpToStep(3)">🏆 4. Wins & Work</div>
+    <div class="step-item" id="stepPill_4" onclick="jumpToStep(4)">🎯 5. Priorities</div>
+    <div class="step-item" id="stepPill_5" onclick="jumpToStep(5)">💡 6. Focus Word</div>
+  </div>
+
+  <!-- Dual Split-View Workspace -->
+  <main class="workspace">
+    <!-- LEFT: Guided Dialogue & Voice Capture -->
+    <div class="studio-panel">
+      <!-- Voice Partner Dialogue Card -->
+      <div class="card partner-card">
+        <div class="partner-header">
+          <div class="partner-badge">
+            <span>Executive Secretary</span>
+            <div class="waveform-bar" id="waveformBar">
+              <div class="wave-line"></div>
+              <div class="wave-line"></div>
+              <div class="wave-line"></div>
+              <div class="wave-line"></div>
+              <div class="wave-line"></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="replayVoice()" title="Replay question narration">🔁 Replay</button>
+            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="stopVoice()" title="Stop voice narration">🔇 Stop</button>
+          </div>
+        </div>
+
+        <div class="prompt-text-hi" id="promptTextHi">मित्र, आज आपकी तबियत कैसी रही? कुछ निजी बात साझा करना चाहें तो बताइए...</div>
+        <div class="prompt-text-en" id="promptTextEn">Step 1/6: Any wellness or personal reflections for today?</div>
+      </div>
+
+      <!-- Acoustic Language Suggestion Banner -->
+      <div id="reviewAcousticSuggestion" class="acoustic-banner"></div>
+
+      <!-- Voice Capture Bar -->
+      <div class="card">
+        <div class="capture-box">
+          <button class="record-btn btn-record-idle" id="recordToggleBtn" onclick="toggleRecord()">
+            <span id="recordGlyph">🎙️</span>
+            <span id="recordLabel">Start Speaking</span>
+            <kbd id="reviewHotkeyKbd" style="font-size:10px; opacity:0.8; margin-left:6px; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px;">Ctrl+Space</kbd>
+          </button>
+
+          <label class="upload-btn" title="Upload voice memo recorded on-site during inspection visit">
+            <span>📎 Attach Site Audio</span>
+            <input type="file" id="audioFileInput" accept="audio/*,.wav,.mp3,.m4a" style="display:none;" onchange="handleAudioUpload(this)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Staged Clips Tray -->
+      <div class="card">
+        <div class="staged-tray-header">
+          <div class="staged-tray-title">🎙️ Staged Speech Clips (<span id="stagedCount">0</span>)</div>
+          <span style="font-size:11px; color:var(--text-muted);">Double-click any clip to correct words before advancing</span>
+        </div>
+
+        <div class="clip-list" id="clipList">
+          <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:16px;">
+            No speech captured for this step yet. Speak your thoughts above or attach field audio.
+          </div>
+        </div>
+      </div>
+
+      <!-- Carry-Forward Tasks Board (Visible on Step 5) -->
+      <div class="card" id="carryForwardCard" style="display:none;">
+        <div class="staged-tray-header">
+          <div class="staged-tray-title">📋 Open Tasks from Past Days</div>
+          <span style="font-size:11px; color:var(--text-muted);">Click ✅ to complete or leave unchecked to carry forward</span>
+        </div>
+        <div class="task-matrix" id="taskMatrix">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+      <!-- Navigation & Action Footer -->
+      <div class="nav-actions">
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="skipStep()">⏭️ Skip</button>
+          <button class="btn" onclick="redoStep()">🔄 Redo</button>
+          <button class="btn" style="color:var(--accent-rose); border-color:rgba(251,113,133,0.3);" onclick="cancelReview()">✕ Cancel</button>
+        </div>
+
+        <button class="btn btn-advance" id="advanceBtn" onclick="advanceStep()">
+          <span>Next Step ➡️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Live Assembling Obsidian Note & Context -->
+    <div class="studio-panel">
+      <!-- Context Memory Brief -->
+      <div class="card" style="padding:14px 18px;">
+        <div class="markdown-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-blue);">
+              🧠 Context Memory (Past 3 Days)
+            </div>
+            <div style="display:flex; gap:4px;">
+              <button class="btn" style="padding:2px 8px; font-size:10px; font-weight:700; background:var(--accent-blue); color:#04121d;" id="langBtnEn" onclick="switchBriefLang('en')">EN</button>
+              <button class="btn" style="padding:2px 8px; font-size:10px; font-weight:700;" id="langBtnHi" onclick="switchBriefLang('hi')">HI</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" style="padding:3px 8px; font-size:10.5px;" onclick="regenBrief()" title="Bust cache and re-synthesize brief">↻ Regen</button>
+            <button class="btn" style="padding:3px 8px; font-size:10.5px;" onclick="loadState()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="contextBriefContent" style="font-size:12px; color:var(--text-muted); line-height:1.5; max-height:80px; overflow-y:auto; user-select:text; margin-top:6px;">
+          Scanning previous daily notes for context briefing...
+        </div>
+      </div>
+
+      <!-- Live Assembling Daily Note -->
+      <div class="card markdown-card">
+        <div class="markdown-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">📝</span>
+            <span style="font-size:13px; font-weight:700;">Obsidian Vault Note Assembly</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="openInObsidian()" title="Open directly in Obsidian app">📖 Obsidian</button>
+            <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="copyMarkdownNote()">📋 Copy Note</button>
+          </div>
+        </div>
+
+        <div class="markdown-scroll" id="noteMarkdownView">
+          <em>Your daily note will assemble here in real-time as steps progress...</em>
+        </div>
+      </div>
+
+      <!-- 7-Day Focus Word Trend Card -->
+      <div class="card" id="focusTrendCard" style="display:none; padding:12px 18px;">
+        <div class="markdown-header">
+          <div style="font-size:12px; font-weight:700; color:var(--accent-teal);">
+            💡 Focus Trend (Last 7 Days)
+          </div>
+          <span style="font-size:11px; color:var(--text-muted);">Word Frequency</span>
+        </div>
+        <div id="focusChartContainer" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Date Selector -->
+  <div class="modal-overlay" id="dateModal">
+    <div class="modal-window">
+      <div class="modal-title">📅 Choose Review Date</div>
+      <p style="font-size:12.5px; color:var(--text-muted);">
+        Select today or pick a past date to backfill your daily reflection note.
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" style="flex:1;" onclick="setReviewDate('today')">Today</button>
+        <button class="btn" style="flex:1;" onclick="setReviewDate('yesterday')">Yesterday</button>
+      </div>
+      <input type="date" id="customDateInput" style="padding:10px; background:var(--field-bg); border:1px solid var(--field-border); border-radius:8px; color:var(--text-main);">
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" onclick="closeDateModal()">Cancel</button>
+        <button class="btn" style="background:var(--accent-blue); color:#04121d; font-weight:700;" onclick="applyCustomDate()">Start Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Completion & Secretary Synthesis Celebration -->
+  <div class="modal-overlay" id="celebrationModal">
+    <div class="modal-window" style="max-width:620px;">
+      <div class="modal-title">🎉 Evening Review Complete!</div>
+      <div style="font-size:13.5px; color:var(--text-main); line-height:1.5;">
+        The <strong>AI Executive Secretary</strong> has analyzed your voice interview and structured all meetings, movement, decisions, and tomorrow's priorities into your Obsidian vault.
+      </div>
+
+      <div style="background:rgba(74, 222, 128, 0.1); border:1px solid rgba(74, 222, 128, 0.3); border-radius:10px; padding:14px; display:flex; align-items:center; gap:14px;">
+        <span style="font-size:32px;">🔥</span>
+        <div>
+          <div style="font-size:15px; font-weight:800; color:var(--accent-green);" id="celebrateStreak">Streak Updated!</div>
+          <div style="font-size:11.5px; color:var(--text-muted);">Consistency builds excellence. Great work reflecting today.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+        <button class="btn" style="flex:1; background:var(--accent-purple); color:#fff; font-weight:700; padding:10px;" onclick="openInObsidian()">📖 Open in Obsidian</button>
+        <button class="btn" style="flex:1; background:linear-gradient(135deg, var(--accent-blue), var(--accent-teal)); color:#04121d; font-weight:700; padding:10px;" onclick="copyMarkdownNote()">📋 Copy Note</button>
+        <button class="btn" style="flex:1; padding:10px;" onclick="closeCelebrationModal()">Close & Return</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    let currentState = null;
+    let pollInterval = null;
+    let activeBriefLang = 'en';
+
+    // Theme Management
+    function initTheme() {
+      const saved = localStorage.getItem('voice_refiner_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeToggle').textContent = saved === 'dark' ? '🌙' : '☀️';
+    }
+
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('voice_refiner_theme', next);
+      document.getElementById('themeToggle').textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+
+    // Load Live Review State
+    async function loadState() {
+      try {
+        const resp = await fetch('/api/review/state');
+        if (!resp.ok) return;
+        const state = await resp.json();
+        currentState = state;
+        renderState(state);
+      } catch (err) {
+        console.error('State load error:', err);
+      }
+    }
+
+    // Render Studio Interface
+    function renderState(state) {
+      if (state && state.global_hotkey) {
+        const kbd = document.getElementById('reviewHotkeyKbd');
+        if (kbd && kbd.textContent !== state.global_hotkey) {
+          kbd.textContent = state.global_hotkey;
+        }
+      }
+
+      if (!state.active) {
+        document.getElementById('promptTextHi').textContent = "कोई समीक्षा सत्र सक्रिय नहीं है। शुरू करने के लिए नीचे क्लिक करें।";
+        document.getElementById('promptTextEn').textContent = "No active review session. Click below to begin.";
+        document.getElementById('advanceBtn').innerHTML = "<span>Start Evening Review 🚀</span>";
+        document.getElementById('advanceBtn').onclick = () => startSession();
+        return;
+      }
+
+      document.getElementById('reviewDateTxt').textContent = state.date || 'Today';
+      document.getElementById('streakCount').textContent = state.streak_current || 0;
+
+      // Update Stepper
+      const stepIdx = state.current_step_index || 0;
+      for (let i = 0; i < 6; i++) {
+        const pill = document.getElementById(`stepPill_${i}`);
+        if (pill) {
+          pill.className = 'step-item';
+          if (i < stepIdx) pill.classList.add('completed');
+          if (i === stepIdx) pill.classList.add('active');
+        }
+      }
+
+      // Update Active Prompt
+      const curStep = state.current_step;
+      if (curStep) {
+        const variants = curStep.narration_variants || [];
+        document.getElementById('promptTextHi').textContent = variants[0] || curStep.prompt_notification || '';
+        document.getElementById('promptTextEn').textContent = curStep.prompt_notification || '';
+      }
+
+      // Recording State
+      const recBtn = document.getElementById('recordToggleBtn');
+      const recGlyph = document.getElementById('recordGlyph');
+      const recLabel = document.getElementById('recordLabel');
+      const waveBar = document.getElementById('waveformBar');
+
+      if (state.is_recording) {
+        recBtn.className = 'record-btn btn-record-active';
+        recGlyph.textContent = '⏹️';
+        recLabel.textContent = 'Stop Speaking';
+        waveBar.classList.add('wave-active');
+      } else {
+        recBtn.className = 'record-btn btn-record-idle';
+        recGlyph.textContent = '🎙️';
+        recLabel.textContent = 'Start Speaking';
+        waveBar.classList.remove('wave-active');
+      }
+
+      // Render Staged Clips
+      renderClips(state.clips || []);
+
+      // Acoustic Suggestion Banner
+      const sug = state.acoustic_suggestion;
+      const sugBox = document.getElementById('reviewAcousticSuggestion');
+      if (sug && sug.is_mismatch) {
+        const isWarn = sug.severity === 'warning';
+        sugBox.style.display = 'flex';
+        sugBox.className = `acoustic-banner ${isWarn ? 'acoustic-banner-warning' : 'acoustic-banner-suggestion'}`;
+        sugBox.innerHTML = `
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:17px; line-height:1.2;">${isWarn ? '⚠️' : '💡'}</span>
+            <div>
+              <strong style="display:block; margin-bottom:2px; font-size:12px;">${escapeHtml(sug.title || (isWarn ? 'Language Mismatch Warning' : 'Language Advisory'))}</strong>
+              <span style="font-size:12px; opacity:0.95;">${escapeHtml(sug.message)}</span>
+            </div>
+          </div>
+          <div class="acoustic-pill">
+            <span>Suggested:</span>
+            <strong>${escapeHtml(sug.suggested_preset)}</strong>
+          </div>
+        `;
+      } else if (sugBox) {
+        sugBox.style.display = 'none';
+      }
+
+      // Carry-Forward Tasks on Step 5 (index 4)
+      const carryCard = document.getElementById('carryForwardCard');
+      if (stepIdx === 4 && state.carryforward_tasks && state.carryforward_tasks.length > 0) {
+        carryCard.style.display = 'flex';
+        renderTasks(state.carryforward_tasks);
+      } else {
+        carryCard.style.display = 'none';
+      }
+
+      // Context Brief
+      renderBriefText();
+
+      // Focus Trend
+      const trendContainer = document.getElementById('focusChartContainer');
+      const trendCard = document.getElementById('focusTrendCard');
+      if (state.focus_trend && state.focus_trend.length > 0) {
+        trendCard.style.display = 'flex';
+        renderFocusTrend(state.focus_trend);
+      } else {
+        trendCard.style.display = 'none';
+      }
+
+      // Button label
+      const isLast = stepIdx >= (state.step_count - 1);
+      document.getElementById('advanceBtn').innerHTML = isLast ? "<span>✨ Finish & Synthesize Note</span>" : "<span>Next Step ➡️</span>";
+      document.getElementById('advanceBtn').onclick = () => advanceStep();
+
+      // Refresh Note Preview
+      refreshNotePreview();
+    }
+
+    // Render Staged Clips
+    function renderClips(clips) {
+      const container = document.getElementById('clipList');
+      document.getElementById('stagedCount').textContent = clips.length;
+
+      if (!clips.length) {
+        container.innerHTML = `
+          <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:16px;">
+            No speech captured for this step yet. Speak your thoughts above or attach field audio.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = clips.map((c, i) => `
+        <div class="clip-bubble">
+          <div class="clip-bubble-header">
+            <span>Clip #${i + 1} · ${c.words} words</span>
+            <button class="btn" style="padding:2px 6px; font-size:10px; color:var(--accent-rose);" onclick="deleteClip(${i})">🗑️ Delete</button>
+          </div>
+          <textarea class="clip-textarea" onblur="updateClipText(${i}, this.value)">${escapeHtml(c.text)}</textarea>
+        </div>
+      `).join('');
+    }
+
+    // Render Carry-Forward Tasks
+    function renderTasks(tasks) {
+      const container = document.getElementById('taskMatrix');
+      container.innerHTML = tasks.map((t, i) => `
+        <div class="task-item">
+          <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="resolveTask('${escapeJs(t.task)}', '${t.date}')">✅ Done</button>
+          <div class="task-label">${escapeHtml(t.task)}</div>
+          <span class="task-age">${t.days_pending}d pending</span>
+        </div>
+      `).join('');
+    }
+
+    // Note Preview
+    async function refreshNotePreview() {
+      try {
+        const resp = await fetch('/api/review/note_preview');
+        const data = await resp.json();
+        const view = document.getElementById('noteMarkdownView');
+        if (data.ok && data.content) {
+          view.innerHTML = formatMarkdown(data.content);
+        }
+      } catch (err) {
+        console.error('Note preview error:', err);
+      }
+    }
+
+    function formatMarkdown(raw) {
+      return raw
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/^\- \[ \] (.*$)/gim, '<li>☐ $1</li>')
+        .replace(/^\- \[x\] (.*$)/gim, '<li>☑ $1</li>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '<br><br>');
+    }
+
+    // User Operations
+    async function startSession(dateStr) {
+      const resp = await fetch('/api/review/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({date: dateStr})
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        showToast('Evening Review session started!');
+        loadState();
+      }
+    }
+
+    async function toggleRecord() {
+      if (!currentState || !currentState.active) {
+        await startSession();
+      }
+      const endpoint = currentState && currentState.is_recording ? '/api/review/stop' : '/api/review/record';
+      const resp = await fetch(endpoint, {method: 'POST', headers: {'Content-Type': 'application/json'}});
+      const res = await resp.json();
+      loadState();
+    }
+
+    async function handleAudioUpload(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      showToast(`Uploading and transcribing ${file.name}...`);
+      
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result;
+        const resp = await fetch('/api/review/upload_clip', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({filename: file.name, data: base64})
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          showToast('Field audio transcribed and staged!');
+        } else {
+          showToast(`Upload failed: ${res.error}`);
+        }
+        input.value = '';
+        loadState();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function updateClipText(index, text) {
+      await fetch('/api/review/update_clip', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({index, text})
+      });
+      loadState();
+    }
+
+    async function deleteClip(index) {
+      await fetch('/api/review/delete_clip', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({index})
+      });
+      loadState();
+    }
+
+    async function advanceStep() {
+      showToast('Processing step and saving to vault...');
+      const resp = await fetch('/api/review/advance', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+      const res = await resp.json();
+      if (!res.still_active) {
+        openCelebrationModal();
+      }
+      loadState();
+    }
+
+    async function skipStep() {
+      await fetch('/api/review/skip', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+      showToast('Step skipped.');
+      loadState();
+    }
+
+    async function redoStep() {
+      await fetch('/api/review/redo', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+      showToast('Step reset. Ready to record.');
+      loadState();
+    }
+
+    async function cancelReview() {
+      if (confirm('Are you sure you want to cancel the current review session?')) {
+        await fetch('/api/review/cancel', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+        showToast('Review session cancelled.');
+        loadState();
+      }
+    }
+
+    async function resolveTask(task, noteDate) {
+      await fetch('/api/review/resolve_task', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({task, note_date: noteDate})
+      });
+      showToast('Task marked completed!');
+      loadState();
+    }
+
+    async function replayVoice() {
+      await fetch('/api/review/replay_narration', {method: 'POST'});
+      showToast('Replaying voice prompt...');
+    }
+
+    async function stopVoice() {
+      await fetch('/api/review/stop_narration', {method: 'POST'});
+      showToast('Voice narration stopped.');
+    }
+
+    async function copyMarkdownNote() {
+      const resp = await fetch('/api/review/note_preview');
+      const data = await resp.json();
+      if (data.ok && data.content) {
+        navigator.clipboard.writeText(data.content);
+        showToast('Markdown note copied to clipboard!');
+      }
+    }
+
+    function switchBriefLang(lang) {
+      activeBriefLang = lang;
+      const btnEn = document.getElementById('langBtnEn');
+      const btnHi = document.getElementById('langBtnHi');
+      if (btnEn && btnHi) {
+        if (lang === 'en') {
+          btnEn.style.background = 'var(--accent-blue)';
+          btnEn.style.color = '#04121d';
+          btnHi.style.background = 'var(--glass-surface)';
+          btnHi.style.color = 'var(--text-main)';
+        } else {
+          btnHi.style.background = 'var(--accent-blue)';
+          btnHi.style.color = '#04121d';
+          btnEn.style.background = 'var(--glass-surface)';
+          btnEn.style.color = 'var(--text-main)';
+        }
+      }
+      renderBriefText();
+    }
+
+    function renderBriefText() {
+      if (!currentState) return;
+      const el = document.getElementById('contextBriefContent');
+      if (!el) return;
+      if (activeBriefLang === 'hi') {
+        el.textContent = currentState.context_brief_hi || currentState.context_brief || 'हिंदी में कोई संदर्भ उपलब्ध नहीं है।';
+      } else {
+        el.textContent = currentState.context_brief_en || currentState.context_brief || 'Scanning previous daily notes for context briefing...';
+      }
+    }
+
+    async function regenBrief() {
+      showToast('Regenerating context memory brief with Ollama...');
+      await fetch('/api/review/regen_brief', {method: 'POST'});
+      loadState();
+    }
+
+    async function openInObsidian() {
+      const resp = await fetch('/api/review/open_in_obsidian', {method: 'POST'});
+      const res = await resp.json();
+      if (res.ok) {
+        showToast('Daily note opened in Obsidian!');
+      } else {
+        showToast(`Could not open Obsidian: ${res.error || 'Check vault path'}`);
+      }
+    }
+
+    function renderFocusTrend(counts) {
+      const container = document.getElementById('focusChartContainer');
+      if (!counts || !counts.length || !container) return;
+      const maxCount = counts[0][1] || 1;
+      container.innerHTML = counts.map(([word, count]) => {
+        const pct = Math.max(12, Math.round((count / maxCount) * 100));
+        return `
+          <div style="display:flex; align-items:center; gap:8px; font-size:11.5px;">
+            <div style="width:85px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; text-align:right; color:var(--text-main); font-weight:600;">${escapeHtml(word)}</div>
+            <div style="flex:1; background:rgba(0,0,0,0.25); border-radius:4px; height:12px; overflow:hidden;">
+              <div style="width:${pct}%; background:linear-gradient(90deg, var(--accent-blue), var(--accent-teal)); height:100%; border-radius:4px;"></div>
+            </div>
+            <div style="width:24px; font-size:10.5px; color:var(--text-muted); text-align:left;">${count}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Date Modal
+    function openDateModal() {
+      document.getElementById('dateModal').style.display = 'flex';
+    }
+
+    function closeDateModal() {
+      document.getElementById('dateModal').style.display = 'none';
+    }
+
+    function setReviewDate(which) {
+      let d = new Date();
+      if (which === 'yesterday') d.setDate(d.getDate() - 1);
+      const iso = d.toISOString().split('T')[0];
+      closeDateModal();
+      startSession(iso);
+    }
+
+    function applyCustomDate() {
+      const val = document.getElementById('customDateInput').value;
+      if (val) {
+        closeDateModal();
+        startSession(val);
+      }
+    }
+
+    // Celebration Modal
+    function openCelebrationModal() {
+      document.getElementById('celebrationModal').style.display = 'flex';
+      if (currentState && currentState.streak_current) {
+        document.getElementById('celebrateStreak').textContent = `🔥 Streak: ${currentState.streak_current} Days!`;
+      }
+    }
+
+    function closeCelebrationModal() {
+      document.getElementById('celebrationModal').style.display = 'none';
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        toggleRecord();
+      }
+    });
+
+    // Startup Initialization
+    initTheme();
+    loadState();
+    pollInterval = setInterval(loadState, 1500);
+  </script>
+</body>
+</html>

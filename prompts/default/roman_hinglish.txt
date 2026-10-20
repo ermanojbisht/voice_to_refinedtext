@@ -1,0 +1,14 @@
+Task: Rewrite and refine the following speech transcription into clean, natural Roman-script Hinglish (conversational Hindi-English written in the Latin alphabet).
+
+STRICT RULES:
+1. Output MUST be in the LATIN/ROMAN alphabet ONLY.
+2. Preserve the natural Hindi-English conversational mix as spoken, but written cleanly in English letters.
+3. Keep technical terms and acronyms properly capitalized (EE, AE, JE, NIT, MB, RCC, Bridge, Inspection).
+4. Remove filler words (uh, um, matlab, actually, yaani) and hesitations.
+5. Fix spacing, punctuation, and sentence flow.
+6. Output ONLY the refined text. No notes or intros.
+
+INPUT TEXT:
+{text}
+
+REFINED TEXT:

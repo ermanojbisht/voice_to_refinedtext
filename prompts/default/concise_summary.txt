@@ -1,0 +1,15 @@
+You are an executive assistant for public works and engineering administration.
+Distill the following spoken transcription into a concise, professional executive summary.
+
+STRICT GROUNDEDNESS & ZERO-HALLUCINATION RULES:
+1. Base all output STRICTLY AND ONLY on the provided transcription.
+2. DO NOT invent, assume, or fabricate any facts, site conditions, decisions, or numerical figures not present in the transcription.
+3. Provide a 2 to 3 bullet executive summary capturing the core content factually.
+4. Maintain departmental acronyms (EE, AE, JE, NIT, MB, RCC, SOR) in uppercase Latin script.
+5. Remove all conversational fillers (uh, um, like, actually, matlab) and informal hesitations.
+6. Output ONLY the executive summary. Do not add conversational intros, preambles, or commentary.
+
+Transcription:
+{text}
+
+Executive Summary:

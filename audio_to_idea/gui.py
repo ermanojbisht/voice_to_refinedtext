@@ -32,7 +32,9 @@ HELP = {
     'synthesis.prompt_file': ('Prompt file override', 'Optional custom UTF-8 template for the selected mode. Requires {transcript}; optional {context} and {output_language}. Switching modes in the toolbar clears this single-file override.'),
     'ui.appearance': ('Window appearance', 'System follows the appearance reported by your desktop. Choose Light or Dark explicitly if your desktop does not report it.'),
     'integration.enabled': ('Show Audio to Ideas in the app', 'Applies to the tray/main window the next time they start. CLI always remains available.'),
-    'asr.backend': ('Speech engine', 'This release uses faster-whisper and converted CTranslate2 weights.'),
+    'asr.backend': ('Speech engine', 'Choose speech recognition backend: faster-whisper, transcribe-cpp (Nemotron/Whisper/Voxtral GGUF), or handy-cli.'),
+    'asr.active_profile': ('Active ASR model profile', 'Fast selection from model_profiles (e.g. nemotron_fast, whisper_turbo, hinglish_apex). When set, overrides backend and model_path.'),
+    'asr.model_profiles': ('Available model profiles', 'Dictionary of named ASR profiles mapping to GGUF, CTranslate2, or binary models.'),
     'asr.model_id': ('Cached model repository', 'Choose a repository ID or alias such as large-v3. A model folder overrides this value.'),
     'asr.model_path': ('Model folder', 'Optional complete snapshot containing model.bin. Raw OpenAI/Transformers weights need another backend.'),
     'asr.cache_root': ('Model cache folder', 'Where downloaded models are stored on this PC. Change this path when moving to another computer.'),
@@ -73,7 +75,9 @@ HELP = {
 CHOICES = {
     'synthesis.mode': list(MODES),
     'ui.appearance': ['system', 'light', 'dark'],
-    'asr.device': ['auto', 'cpu', 'cuda'],
+    'asr.backend': ['faster-whisper', 'transcribe-cpp', 'handy-cli'],
+    'asr.active_profile': ['', 'nemotron_fast', 'whisper_turbo', 'whisper_large_v3', 'hinglish_apex'],
+    'asr.device': ['auto', 'cpu', 'cuda', 'vulkan'],
     'asr.compute_type': ['auto', 'float16', 'int8', 'int8_float16', 'float32'],
     'asr.language': ['auto', 'hi', 'en'],
     'jobs.gpu_busy_policy': ['queue', 'cpu', 'error'],
@@ -158,6 +162,8 @@ class SettingsWindow:
             row += 1
             for key, default in defaults.items():
                 dotted = f'{section}.{key}'
+                if dotted not in HELP:
+                    continue
                 label, help_text = HELP[dotted]
                 ctk.CTkLabel(scroll, text=label).grid(row=row, column=0, sticky='w', padx=8)
                 value = app.settings.data[section][key]
@@ -165,8 +171,14 @@ class SettingsWindow:
                     variable = tk.BooleanVar(value=value)
                     widget = ctk.CTkSwitch(scroll, text='', variable=variable)
                 else:
-                    variable = tk.StringVar(value=json.dumps(value) if isinstance(value, list) else ('' if value is None else str(value)))
-                    if dotted in CHOICES:
+                    variable = tk.StringVar(value=json.dumps(value) if isinstance(value, (list, dict)) else ('' if value is None else str(value)))
+                    if dotted == 'asr.active_profile':
+                        prof_choices = [''] + list(app.settings.data.get('asr', {}).get('model_profiles', {}).keys())
+                        for c in CHOICES.get(dotted, []):
+                            if c not in prof_choices:
+                                prof_choices.append(c)
+                        widget = combo_box(scroll, variable=variable, values=prof_choices)
+                    elif dotted in CHOICES:
                         # Editable comboboxes retain advanced values/language codes.
                         widget = combo_box(scroll, variable=variable, values=CHOICES[dotted])
                     else:
@@ -211,7 +223,7 @@ class SettingsWindow:
                 value = int(value)
             elif isinstance(default, float):
                 value = float(value)
-            elif isinstance(default, list):
+            elif isinstance(default, (list, dict)):
                 value = json.loads(value)
             else:
                 value = value.strip() or None

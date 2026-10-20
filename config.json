@@ -1,6 +1,10 @@
 {
+    "GLOBAL_HOTKEY": "Ctrl+Space",
     "SAMPLE_RATE": 16000,
-    "WHISPER_MODEL": "large-v3",
+    "SETTINGS_PORT": 8765,
+    "ACTIVE_ASR_PRESET": "instant_hindi",
+    "ACTIVE_REFINEMENT_GOAL": "official_hindi",
+    "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
         "hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
@@ -10,18 +14,130 @@
         "to_hi": "SL-Lexicons/llama3-hindi-8b-q5_km.gguf:latest"
     },
     "OLLAMA_HOST": "http://localhost:11434",
-    "SILENCE_THRESHOLD": 778,
-    "SILENCE_DURATION": 4.0,
-    "TEMPERATURE": 0.0,
-    "MODE": "refine",
+    "OLLAMA_KEEP_ALIVE": "60m",
+    "SILENCE_THRESHOLD": 780,
+    "SILENCE_DURATION": 4,
+    "PRE_ROLL_BUFFER_MS": 500,
+    "VAD_THRESHOLD": 0.5,
+    "TEMPERATURE": 0,
+    "DIRECT_TYPING": true,
     "SAVE_TO_MARKDOWN": false,
     "MARKDOWN_PATH": "~/Documents/VoiceNotes",
-    "DIRECT_TYPING": true,
+    "TYPING_TOOL": "auto",
     "FEATURES": {
         "start_end_sounds": true,
         "clipboard_output": true,
-        "markdown_output": false,
+        "markdown_output": true,
         "direct_typing": true,
-        "evening_review": true
-    }
+        "evening_review": true,
+        "pwd_terminology_corrector": true
+    },
+    "ASR_PRESETS": {
+        "smart_bilingual": {
+            "label": "\ud83c\udfaf Smart Bilingual (Whisper Turbo)",
+            "backend": "faster_whisper",
+            "model": "large-v3-turbo",
+            "device": "auto",
+            "asr_language": null,
+            "description": "Auto-detects English, Hindi, and mixed Hinglish. Preserves English acronyms in Latin script."
+        },
+        "instant_english": {
+            "label": "\u26a1 Instant Pure English (Nemotron)",
+            "backend": "transcribe_cpp",
+            "model": "/media/manoj/F1/models-handy/nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            "device": "auto",
+            "asr_language": "en",
+            "description": "Ultra-fast (<0.8s). Strictly for English speech. Do not use for Hindi audio."
+        },
+        "instant_hindi": {
+            "label": "\u26a1 Instant Pure Hindi (Nemotron)",
+            "backend": "transcribe_cpp",
+            "model": "/media/manoj/F1/models-handy/nemotron-3.5-asr-streaming-0.6b-Q8_0.gguf",
+            "device": "auto",
+            "asr_language": "hi",
+            "description": "Ultra-fast (<0.8s). Strictly for pure Devanagari Hindi speech. Do not use for English audio."
+        },
+        "roman_hinglish": {
+            "label": "\ud83d\udcac Roman Hinglish Notes (Apex)",
+            "backend": "transcribe_cpp",
+            "model": "/media/manoj/F1/models-handy/Whisper-Hindi2Hinglish-Apex-Q8.bin",
+            "device": "auto",
+            "asr_language": null,
+            "description": "Fast (<0.7s). Transcribes Hindi/Hinglish speech into Roman Latin script (WhatsApp/Slack style)."
+        }
+    },
+    "REFINEMENT_GOALS": {
+        "clean_bilingual": {
+            "label": "\ud83c\udf10 Bilingual Field Note",
+            "output_lang": "bilingual",
+            "target_lang": "bilingual",
+            "format": "clean_paragraph",
+            "intent": "clean_paragraph",
+            "acronyms": "preserve_latin",
+            "translate": false,
+            "action": "refine_only",
+            "description": "Polishes grammar, capitalizes PWD acronyms (EE, JE, MB, NIT), preserves spoken mix."
+        },
+        "official_english": {
+            "label": "\ud83c\uddec\ud83c\udde7 Official English Memo",
+            "output_lang": "pure_english",
+            "target_lang": "pure_english",
+            "format": "clean_paragraph",
+            "intent": "clean_paragraph",
+            "acronyms": "preserve_latin",
+            "translate": true,
+            "action": "translate_and_refine",
+            "description": "Polishes into formal civil engineering English; translates Hindi phrases."
+        },
+        "official_hindi": {
+            "label": "\ud83c\uddee\ud83c\uddf3 Official Hindi Directive",
+            "output_lang": "pure_hindi",
+            "target_lang": "pure_hindi",
+            "format": "clean_paragraph",
+            "intent": "clean_paragraph",
+            "acronyms": "preserve_latin",
+            "translate": true,
+            "action": "translate_and_refine",
+            "description": "Polishes into formal administrative Devanagari Hindi."
+        },
+        "concise_summary": {
+            "label": "\ud83d\udccb Concise Executive Summary",
+            "output_lang": "auto",
+            "target_lang": "same_as_input",
+            "format": "concise_summary",
+            "intent": "concise_summary",
+            "acronyms": "preserve_latin",
+            "translate": false,
+            "action": "refine_only",
+            "description": "Executive bullet summary with key decisions, dates, and sanctions."
+        },
+        "ideas_actions": {
+            "label": "\ud83d\udca1 Ideas, Tasks & Action Items",
+            "output_lang": "auto",
+            "target_lang": "same_as_input",
+            "format": "ideas_actions",
+            "intent": "ideas_actions",
+            "acronyms": "preserve_latin",
+            "translate": false,
+            "action": "refine_only",
+            "description": "Actionable task breakdown with responsible roles, deadlines, and blockers."
+        },
+        "roman_hinglish": {
+            "label": "\ud83d\udcac Casual Roman Text",
+            "output_lang": "roman_hinglish",
+            "target_lang": "roman_hinglish",
+            "format": "clean_paragraph",
+            "intent": "clean_paragraph",
+            "acronyms": "preserve_latin",
+            "translate": false,
+            "action": "refine_only",
+            "description": "Conversational code-mix written entirely in English alphabet."
+        }
+    },
+    "WHISPER_MODEL": "large-v3-turbo",
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "instant_hindi",
+    "LANGUAGE_MODE": "pure_hindi",
+    "MODE": "translate",
+    "CACHE_RETENTION_DAYS": 7
 }

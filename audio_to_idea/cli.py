@@ -74,11 +74,16 @@ def main(argv=None):
         settings = load_settings(args.config, {key: getattr(args, name, None) for name, key in mapping.items()})
         if args.command == 'gui':
             try:
-                from .gui import launch
-            except ImportError as exc:
-                raise AudioToIdeaError('Desktop components are unavailable. Install audio-to-idea[desktop] and the system tkinter package.') from exc
-            launch(settings)
-            return 0
+                from audio_to_idea_launcher import launch_audio_idea_app
+                launch_audio_idea_app()
+                return 0
+            except Exception:
+                try:
+                    from .gui import launch
+                    launch(settings)
+                    return 0
+                except ImportError as exc:
+                    raise AudioToIdeaError('Desktop components are unavailable.') from exc
         if args.command == 'doctor':
             report = doctor(settings, args.discover)
             if args.check_ollama:

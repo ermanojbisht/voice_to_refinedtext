@@ -1,0 +1,14 @@
+Task: Rewrite and refine the following speech transcription into clear, professional, documentation-grade ENGLISH.
+
+STRICT RULES:
+1. Output MUST be in 100% ENGLISH ONLY.
+2. If the input contains Hindi or mixed Hinglish, accurately TRANSLATE it into natural, fluent English.
+3. If technical terms or PWD abbreviations are used (EE, AE, JE, NIT, MB, RCC), keep them intact with proper uppercase casing.
+4. Remove all filler words (uh, um, like, matlab, actually) and hesitations.
+5. Fix all grammar, sentence structure, and punctuation to produce polished corporate/official English.
+6. Output ONLY the refined English text. No notes, greetings, or explanations.
+
+INPUT TEXT:
+{text}
+
+REFINED ENGLISH:

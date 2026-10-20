@@ -111,15 +111,31 @@ def doctor(settings, include_discovery=False):
     report = {'config': str(settings.path), 'settings': data, 'sources': settings.sources,
               'resolved_cache_root': str(cache_root(data['asr'])),
               'dependencies': {x: shutil.which(x) for x in ['ffmpeg', 'ffprobe']}, 'errors': []}
-    try:
-        report['model'] = resolve_model({**data['asr'], 'allow_downloads': False})
-    except (AudioToIdeaError, OSError) as exc:
-        report['errors'].append(str(exc))
-    try:
-        device, compute = execution_device(data['asr'])
-        report['hardware'] = {'device': device, 'compute_type': compute}
-    except Exception as exc:
-        report['errors'].append(str(exc))
+    backend = data['asr'].get('backend', 'faster-whisper')
+    if backend == 'faster-whisper':
+        try:
+            report['model'] = resolve_model({**data['asr'], 'allow_downloads': False})
+        except (AudioToIdeaError, OSError) as exc:
+            report['errors'].append(str(exc))
+        try:
+            device, compute = execution_device(data['asr'])
+            report['hardware'] = {'device': device, 'compute_type': compute}
+        except Exception as exc:
+            report['errors'].append(str(exc))
+    elif backend == 'transcribe-cpp':
+        m_path = data['asr'].get('model_path')
+        if m_path and os.path.isfile(m_path):
+            report['model'] = {'path': str(m_path), 'compatible': True}
+        elif m_path:
+            report['errors'].append(f"Model file not found: {m_path}")
+        else:
+            report['model'] = {'path': 'auto', 'compatible': True}
+    elif backend == 'handy-cli':
+        h_bin = shutil.which('handy') or '/usr/bin/handy'
+        if os.path.isfile(h_bin) and os.access(h_bin, os.X_OK):
+            report['model'] = {'path': h_bin, 'compatible': True}
+        else:
+            report['errors'].append(f"Handy binary not found or not executable: {h_bin}")
     for name, path in report['dependencies'].items():
         if not path:
             report['errors'].append(f'{name} is missing; install FFmpeg.')

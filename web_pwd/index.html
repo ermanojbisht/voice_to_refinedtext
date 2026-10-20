@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWD Uttarakhand — Terminology & SOR Explorer</title>
+  <style>
+    :root[data-theme="dark"] {
+      --bg-gradient: radial-gradient(circle at 50% 20%, #0d283b 0%, #061520 60%, #030a10 100%);
+      --glass-surface: rgba(18, 44, 61, 0.75);
+      --glass-surface-hover: rgba(28, 62, 84, 0.85);
+      --glass-border: rgba(94, 148, 178, 0.35);
+      --glass-border-focus: rgba(142, 200, 255, 0.7);
+      --text-main: #f0f7fb;
+      --text-muted: #8ea8b8;
+      --accent-blue: #8ec8ff;
+      --accent-teal: #7bdec4;
+      --accent-yellow: #fbbf24;
+      --accent-green: #4ade80;
+      --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --field-bg: rgba(9, 23, 33, 0.85);
+      --field-border: rgba(70, 115, 140, 0.5);
+    }
+
+    :root[data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 50% 15%, #e1f2fb 0%, #cde8f6 50%, #b8def2 100%);
+      --glass-surface: rgba(245, 252, 255, 0.85);
+      --glass-surface-hover: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(135, 185, 212, 0.6);
+      --glass-border-focus: rgba(20, 91, 165, 0.8);
+      --text-main: #0c2333;
+      --text-muted: #4e6a7c;
+      --accent-blue: #145ba5;
+      --accent-teal: #097b69;
+      --accent-yellow: #b45309;
+      --accent-green: #15803d;
+      --card-shadow: 0 10px 30px rgba(16, 50, 75, 0.12);
+      --field-bg: rgba(255, 255, 255, 0.95);
+      --field-border: rgba(150, 195, 220, 0.8);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 28px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 26px;
+      filter: drop-shadow(0 2px 8px var(--accent-blue));
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      color: var(--text-main);
+      backdrop-filter: blur(12px);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-teal) 100%);
+      color: #04121d;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(123, 222, 196, 0.25);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Search Bar */
+    .search-card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 10px;
+      padding: 12px 14px 12px 42px;
+      font-size: 15px;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--glass-border-focus);
+      box-shadow: 0 0 16px rgba(142, 200, 255, 0.2);
+    }
+
+    /* Category Filter Pills */
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .pill {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .pill:hover {
+      color: var(--text-main);
+      border-color: var(--accent-blue);
+    }
+
+    .pill.active {
+      background: var(--accent-blue);
+      color: #04121d;
+      border-color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    /* Terms Cards Grid */
+    .terms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+
+    .term-card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+
+    .term-card:hover {
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .term-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .term-abbr {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--accent-blue);
+      font-family: monospace;
+    }
+
+    .term-cat-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(123, 222, 196, 0.15);
+      color: var(--accent-teal);
+      border: 1px solid var(--accent-teal);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .term-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .term-english {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .term-hindi {
+      font-size: 13.5px;
+      color: var(--accent-teal);
+      font-weight: 500;
+    }
+
+    .term-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 8px;
+    }
+
+    .copy-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.15);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      color: var(--text-main);
+      background: var(--glass-surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-window {
+      background: var(--glass-surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      width: 520px;
+      max-width: 90vw;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .form-input, .form-select {
+      background: var(--field-bg);
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 200;
+    }
+
+    .toast {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--glass-surface);
+      border: 1px solid var(--accent-teal);
+      color: var(--text-main);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      backdrop-filter: blur(16px);
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-icon">🏛️</span>
+      <div>
+        <div class="brand-title">PWD Terminology & SOR Explorer</div>
+        <div class="brand-sub">Uttarakhand Civil Works Designations, Document Codes & Glossary</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add Custom Term</button>
+      <button class="btn" onclick="openSandboxModal()">🧪 Translation Sandbox</button>
+      <button class="btn" onclick="window.location.href='/dashboard'">🎙️ Voice Refiner</button>
+      <button class="btn" onclick="window.location.href='/audio-to-idea'">📁 Audio to Ideas</button>
+      <button class="btn" onclick="window.location.href='/'">⚙️ Settings</button>
+      <button class="btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- Main Explorer Interface -->
+  <main>
+    <!-- Search Bar Card -->
+    <div class="search-card">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search abbreviation (EE, MB, NIT, SOR), English name, or Hindi (अभियंता)..." oninput="handleSearch()">
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="filter-pills" id="categoryPills">
+        <button class="pill active" onclick="filterCategory('all')">All Terms (<span id="totalCount">0</span>)</button>
+        <button class="pill" onclick="filterCategory('officers')">👷 Officers & Staff</button>
+        <button class="pill" onclick="filterCategory('documents')">📜 Contracts & Documents</button>
+        <button class="pill" onclick="filterCategory('schemes')">🏗️ Schemes & Programs</button>
+        <button class="pill" onclick="filterCategory('technical')">🔬 Technical Specifications</button>
+        <button class="pill" onclick="filterCategory('custom')">⭐ Custom Additions</button>
+      </div>
+    </div>
+
+    <!-- Terms Cards Grid -->
+    <div class="terms-grid" id="termsGrid">
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">
+        Loading PWD dictionary...
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Add Custom Term -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-window">
+      <div class="modal-title">⭐ Add Custom PWD Abbreviation</div>
+      <div class="form-group">
+        <label class="form-label">Abbreviation (e.g. PMU, AE-1)</label>
+        <input type="text" class="form-input" id="customAbbr" placeholder="PMU">
+      </div>
+      <div class="form-group">
+        <label class="form-label">English Expansion</label>
+        <input type="text" class="form-input" id="customEnglish" placeholder="Project Management Unit">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hindi Official Designation (Optional)</label>
+        <input type="text" class="form-input" id="customHindi" placeholder="परियोजना प्रबंधन इकाई">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="customCategory">
+          <option value="custom">Custom Extension</option>
+          <option value="officers">Officers & Staff</option>
+          <option value="documents">Contracts & Documents</option>
+          <option value="schemes">Schemes & Programs</option>
+          <option value="technical">Technical Specifications</option>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn" onclick="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCustomTerm()">Save Abbreviation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Translation Sandbox -->
+  <div class="modal-overlay" id="sandboxModal">
+    <div class="modal-window" style="width: 600px;">
+      <div class="modal-title">🧪 PWD Translation & Normalization Sandbox</div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Type a sentence containing PWD acronyms (e.g. <em>"the ae asked the je to prepare mb for rcc slab"</em>).<br>
+        See how it auto-normalizes terms and translates to official PWD Hindi.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Spoken / Input Sentence</label>
+        <input type="text" class="form-input" id="sandboxInput" placeholder="the ee met the ae to review the mb for rcc bridge">
+      </div>
+      <button class="btn btn-primary" onclick="runSandboxTranslate()">Normalize & Translate</button>
+      
+      <div id="sandboxResult" style="display:none; flex-direction:column; gap:8px; background:var(--field-bg); padding:12px; border-radius:8px; border:1px solid var(--field-border); font-size:13px;">
+        <div><strong>Normalized:</strong> <span id="sandNorm" style="color:var(--accent-blue);"></span></div>
+        <div><strong>Hindi Translation:</strong> <span id="sandTrans" style="color:var(--accent-teal);"></span></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn" onclick="closeSandboxModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script>
+    let allTerms = [];
+    let currentCategory = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadTerms();
+
+      // Keyboard shortcut '/' to search
+      window.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+          e.preventDefault();
+          document.getElementById('searchInput').focus();
+        }
+      });
+    });
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeToggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      document.getElementById('themeToggle').textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+
+    async function loadTerms() {
+      try {
+        const resp = await fetch('/api/pwd/terms');
+        const data = await resp.json();
+        allTerms = data.terms || [];
+        document.getElementById('totalCount').textContent = data.total || allTerms.length;
+        renderTerms(allTerms);
+      } catch (e) {
+        console.error('loadTerms error:', e);
+      }
+    }
+
+    function renderTerms(terms) {
+      const grid = document.getElementById('termsGrid');
+      const filtered = terms.filter(t => currentCategory === 'all' || t.category === currentCategory);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No abbreviations match your search query.</div>';
+        return;
+      }
+
+      grid.innerHTML = '';
+      filtered.forEach(term => {
+        const card = document.createElement('div');
+        card.className = 'term-card';
+        card.innerHTML = `
+          <div class="term-header">
+            <span class="term-abbr">${escapeHtml(term.abbr)}</span>
+            <span class="term-cat-badge">${escapeHtml(term.category)}</span>
+          </div>
+          <div class="term-details">
+            <div class="term-english">${escapeHtml(term.english)}</div>
+            ${term.hindi ? `<div class="term-hindi">${escapeHtml(term.hindi)}</div>` : ''}
+          </div>
+          <div class="term-actions">
+            <button class="copy-btn" onclick="copyText('${escapeJs(term.english)}')">📋 EN</button>
+            ${term.hindi ? `<button class="copy-btn" onclick="copyText('${escapeJs(term.hindi)}')">📋 HI</button>` : ''}
+            <button class="copy-btn" onclick="copyText('${escapeJs(term.full)}')">📋 Both</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function handleSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        renderTerms(allTerms);
+        return;
+      }
+      try {
+        const resp = await fetch('/api/pwd/search', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query})
+        });
+        const res = await resp.json();
+        renderTerms(res.terms || []);
+      } catch (e) {
+        console.error('search error:', e);
+      }
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('#categoryPills .pill').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      handleSearch();
+    }
+
+    function copyText(val) {
+      if (!val) return;
+      navigator.clipboard.writeText(val);
+      showToast(`Copied: ${val}`);
+    }
+
+    function openAddModal() {
+      document.getElementById('addModal').classList.add('active');
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+
+    async function submitCustomTerm() {
+      const abbr = document.getElementById('customAbbr').value.trim();
+      const english = document.getElementById('customEnglish').value.trim();
+      const hindi = document.getElementById('customHindi').value.trim();
+      const category = document.getElementById('customCategory').value;
+
+      if (!abbr || !english) return alert('Abbreviation and English meaning are required.');
+
+      const resp = await fetch('/api/pwd/add_custom', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({abbr, english, hindi, category})
+      });
+      const res = await resp.json();
+      if (res.ok) {
+        showToast(`Saved ${res.abbr} to dictionary!`);
+        closeAddModal();
+        loadTerms();
+      } else {
+        alert('Error: ' + res.error);
+      }
+    }
+
+    function openSandboxModal() {
+      document.getElementById('sandboxModal').classList.add('active');
+    }
+
+    function closeSandboxModal() {
+      document.getElementById('sandboxModal').classList.remove('active');
+    }
+
+    async function runSandboxTranslate() {
+      const text = document.getElementById('sandboxInput').value.trim();
+      if (!text) return;
+      const resp = await fetch('/api/pwd/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text})
+      });
+      const res = await resp.json();
+      if (res.ok) {
+        document.getElementById('sandNorm').textContent = res.result.normalized;
+        document.getElementById('sandTrans').textContent = res.result.translation;
+        document.getElementById('sandboxResult').style.display = 'flex';
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function escapeJs(str) {
+      return String(str || '')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

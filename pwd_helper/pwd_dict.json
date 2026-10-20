@@ -1,0 +1,63 @@
+{
+  "officers": {
+    "E-IN-C": "Engineer-in-Chief (प्रमुख अभियंता)",
+    "CE": "Chief Engineer (मुख्य अभियंता)",
+    "SE": "Superintending Engineer (अधीक्षण अभियंता)",
+    "EE": "Executive Engineer (अधिशासी अभियंता)",
+    "AE": "Assistant Engineer (सहायक अभियंता)",
+    "JE": "Junior Engineer (अवर अभियंता)",
+    "HOD": "Head of Department (विभागाध्यक्ष)",
+    "SDO": "Sub Divisional Officer (उप-प्रभागीय अधिकारी)",
+    "XEN": "Executive Engineer (अधिशासी अभियंता)"
+  },
+  "documents": {
+    "SOR": "Schedule of Rates (दरों की अनुसूची)",
+    "MB": "Measurement Book (माप पुस्तिका)",
+    "NIT": "Notice Inviting Tender (निविदा आमंत्रण सूचना)",
+    "AS": "Administrative Approval (प्रशासकीय स्वीकृति)",
+    "TS": "Technical Sanction (तकनीकी स्वीकृति)",
+    "RA BILL": "Running Account Bill (चालू खाता बिल)",
+    "FINAL BILL": "Final Bill (अंतिम बिल)",
+    "HR": "Hindrance Register (बाधा पंजिका)",
+    "BOQ": "Bill of Quantities (मात्रा विवरण पत्र)",
+    "DPR": "Detailed Project Report (विस्तृत परियोजना रिपोर्ट)",
+    "EOI": "Expression of Interest (अभिरुचि अभिव्यक्ति)",
+    "LOI": "Letter of Intent (आशय पत्र)",
+    "WO": "Work Order (कार्य आदेश)",
+    "CC": "Completion Certificate (पूर्णता प्रमाण पत्र)",
+    "NOC": "No Objection Certificate (अनापत्ति प्रमाण पत्र)",
+    "UC": "Utilization Certificate (उपयोगिता प्रमाण पत्र)"
+  },
+  "schemes": {
+    "PMGSY": "Pradhan Mantri Gram Sadak Yojana (प्रधानमंत्री ग्राम सड़क योजना)",
+    "NHAI": "National Highways Authority of India (भारतीय राष्ट्रीय राजमार्ग प्राधिकरण)",
+    "ADB": "Asian Development Bank - Uttarakhand State Road Investment Program (एशियाई विकास बैंक)",
+    "NABARD": "National Bank for Agriculture and Rural Development (राष्ट्रीय कृषि और ग्रामीण विकास बैंक)",
+    "RIDF": "Rural Infrastructure Development Fund (ग्रामीण अवसंरचना विकास निधि)",
+    "PMC": "Project Management Consultant (परियोजना प्रबंधन सलाहकार)",
+    "CRF": "Central Road Fund (केंद्रीय सड़क निधि)",
+    "SCSP": "Scheduled Caste Sub Plan (अनुसूचित जाति उप योजना)",
+    "TSP": "Tribal Sub Plan (जनजातीय उप योजना)",
+    "SIDCUL": "State Infrastructure and Industrial Development Corporation of Uttarakhand (उत्तराखंड राज्य अवसंरचना एवं औद्योगिक विकास निगम)"
+  },
+  "technical": {
+    "RCC": "Reinforced Cement Concrete (प्रबलित सीमेंट कंक्रीट)",
+    "PCC": "Plain Cement Concrete (सादा सीमेंट कंक्रीट)",
+    "WBM": "Water Bound Macadam (जल बंधित मैकेडम)",
+    "GSB": "Granular Sub Base (दानेदार उप आधार)",
+    "DBM": "Dense Bituminous Macadam (सघन बिटुमिनस मैकेडम)",
+    "BC": "Bituminous Concrete (बिटुमिनस कंक्रीट)",
+    "SDBC": "Semi Dense Bituminous Concrete (अर्ध सघन बिटुमिनस कंक्रीट)",
+    "MSS": "Mix Seal Surfacing (मिक्स सील सर्फेसिंग)",
+    "PC": "Prime Coat (प्राइम कोट)",
+    "TC": "Tack Coat (टैक कोट)",
+    "EMD": "Earnest Money Deposit (बयाना राशि)",
+    "SD": "Security Deposit (प्रतिभूति जमा)",
+    "BM": "Bench Mark (बेंच मार्क)",
+    "RL": "Reduced Level (रिड्यूस्ड लेवल)",
+    "RW": "Right of Way (मार्ग का अधिकार)",
+    "ROW": "Right of Way (मार्ग का अधिकार)",
+    "CD": "Cross Drainage (क्रॉस ड्रेनेज)",
+    "LSCD": "Large Span Cross Drainage (बड़े विस्तार का क्रॉस ड्रेनेज)"
+  }
+}

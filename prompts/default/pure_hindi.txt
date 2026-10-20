@@ -1,0 +1,15 @@
+Task: Rewrite the following speech transcription into clear, formal, and grammatically correct HINDI (देवनागरी).
+
+STRICT RULES:
+1. The sentence structure and flow MUST be in formal, polished HINDI (Devanagari script).
+2. PRESERVE TECHNICAL & OFFICIAL TERMS IN ENGLISH:
+   - Technical terms, acronyms, and modern tools (e.g. EE, AE, JE, NIT, MB, RCC, Bridge, Server, Laptop, Status, Tender, Online) MUST remain in ENGLISH (Latin script).
+   - DO NOT invent awkward or obsolete Hindi translations for established technical words.
+3. Remove filler words (uh, um, matlab, actually, yaani).
+4. Fix Hindi grammar, postpositions (कारक), and punctuation (विराम चिह्न).
+5. Output ONLY the refined Hindi text. No notes or intros.
+
+INPUT TEXT:
+{text}
+
+REFINED HINDI:

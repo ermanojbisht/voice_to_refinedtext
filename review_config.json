@@ -14,7 +14,7 @@
   "morning_briefing_enabled": true,
   "morning_briefing_time": "08:00",
   "telegram_enabled": true,
-  "telegram_bot_token": "628283567:AAHtEW8_-d5MFn6_pzcC6341bp33ts6ZeV4",
+  "telegram_bot_token": "8317859357:AAHi-RGo-5E2Qzuzv3Mqnl8cCCcEC7qbaYc",
   "telegram_chat_id": "59509781",
   "review_steps": [
     {
@@ -95,17 +95,17 @@
       "refine": true,
       "structure_prompt": "Convert this voice note into a Markdown checkbox task list for tomorrow. Format each item as '- [ ] task description'. Output only the checkbox list, no headings:\n{raw_text}",
       "narration_variants": [
-          "Alright friend, what's your plan for tomorrow?",
-          "What task do you need to focus on first tomorrow?",
-          "Tell me, what are your top priorities for tomorrow?",
-          "Which tasks are the most important for tomorrow?",
-          "So, what will you focus on first thing tomorrow morning?",
-          "What needs your attention first thing tomorrow?",
-          "What are the key things you want to accomplish tomorrow?",
-          "Which task is at the top of your list for tomorrow?",
-          "What should be your main focus when you start tomorrow?",
-          "What are the most urgent tasks you need to handle tomorrow?"
-        ],
+        "Alright friend, what's your plan for tomorrow?",
+        "What task do you need to focus on first tomorrow?",
+        "Tell me, what are your top priorities for tomorrow?",
+        "Which tasks are the most important for tomorrow?",
+        "So, what will you focus on first thing tomorrow morning?",
+        "What needs your attention first thing tomorrow?",
+        "What are the key things you want to accomplish tomorrow?",
+        "Which task is at the top of your list for tomorrow?",
+        "What should be your main focus when you start tomorrow?",
+        "What are the most urgent tasks you need to handle tomorrow?"
+      ],
       "skip_default": "- [ ] (no priorities noted)"
     },
     {

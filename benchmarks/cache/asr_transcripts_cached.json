@@ -1,0 +1,210 @@
+{
+  "smart_bilingual": {
+    "script1": {
+      "text": "This consideration, I believe it would be more appropriate to have the system automatically update and update the mutual manual to ensure it is always current. While reviewing the technical guidelines, we noticed that several procedural references are outdated and require immediate revision. The software engineering team should automate the documentation pipeline so that whenever a new release is deployed, all user guides and engineering manuals synchronize without requiring manual intervention.",
+      "latency_s": 1.14,
+      "detected_lang": "en"
+    },
+    "script2": {
+      "text": "The executive engineer and assistant engineer conducted a detailed structure inspection of multi-span bridge at chainage 24.5. The concrete code testing confirmed that the pier caps and abutments comply the designated M35 grade specification. However, the elastomeric bearings on pier number 3, so minor lateral displacement and must be recalibrated before the load test is officially scheduled next Tuesday.",
+      "latency_s": 0.946,
+      "detected_lang": "en"
+    },
+    "script3": {
+      "text": "मुख्य बिंता मोदर ने मंडल के सभी अधिसासी अभ्यानताओं को सक्त निर्देश जारी किये हैं कि वित्तिय बर्ष की समाप्ति से पूर्व सभी औसेज देवों का सत्यापन अनिवार रूप से पूर्ण का लिया जाए निर्माण कारियों की प्रगती में अनाविश्यक बिलंग करने वाले ठेकेदारों के बिरुद्ध अन्वन्द की सर्थ के अनसार दंडात्मक कारवाई प्रस्तावित की जाए आगामी सुमवार को आहुत समिक्षा वैटक में सभी खंडों की अधितन प्रकती रिपोर्ट प्रस्तुत करना सुर्श्चत करें",
+      "latency_s": 2.276,
+      "detected_lang": "hi"
+    },
+    "script4": {
+      "text": "पर्वतिय मार के डामरी करण और चौडी करण के कार के स्थली नेक्षण के दौरान जल निकासी नालियों का निर्वाण संतोज जनक पाया गया है। संबेदन सील ढलानों पर भूस्खलन रोकने हेतू RCC रिटेनिंग बॉल और गयावियन संदचनों का कार्ड तेजी से प्रगति पर है। साइग एविंता को निर्देश दिये गए हैं कि बिटुमिनेस कॉंक्रीट बिचाने से पूर्ग सब बेस की समतलता और सगनता की प्रियोकसाला जाच रिपोर्ट अभिलम संकलित करें।",
+      "latency_s": 2.365,
+      "detected_lang": "hi"
+    },
+    "script5": {
+      "text": "आज हमने site visit के दोहान पाया कि contractor ने bridge foundation का excavation work complete कर लिया है मौके पर उपसित E.E. साहब और J.E. को निर्देशित किया जिया कि suttering की alignment और reinforcement steel की spacing को measurement book में तुरन दर्ज करे यदि कल मौसम अनकूल रहा तो दोबार 12 बजे से raft foundation की concreting सुरू कर दी जाएगी",
+      "latency_s": 0.971,
+      "detected_lang": "hi"
+    },
+    "script6": {
+      "text": "The E and JE verified the MB increase for the culvert winding work and cross-checked the rates with the revised SOR item. The contractor has submitted the third RE bill along with the hindrance register and material test certificates. After proper technical vetting, the division will issue the fresh NIT for the remaining road package by Friday afternoon.",
+      "latency_s": 0.718,
+      "detected_lang": "en"
+    },
+    "script7": {
+      "text": "कल सुबार दस बजे डिविजन आफिस में टेंडर रिविलेशन कमिटी की सेडूल करनी है अस्टेड लिए साहब को बोल कर कमपेरिटे स्टेट्मेंट और टेक्निकल वेट्स की समरी फाइल रेडी रखनी होगी जो कॉंट्रेक्टर्स क्वालिफाइं क्रेटरिया मीट नहीं कर रहे हैं उनका अमनस मनी डिपाजिट विलीस करने की पाइल भी अलग से सम्मिट की जाए",
+      "latency_s": 1.535,
+      "detected_lang": "hi"
+    },
+    "script8": {
+      "text": "Actually, in meeting we clearly discussed that, you know, the highway maintenance schedule is getting delayed. The contractor promised that like within two weeks, all potholes between km 8 and km 15 will be passed. But actually, ground reality is that labor is not mobilized. So we must issue an official so-called notice immediately.",
+      "latency_s": 0.698,
+      "detected_lang": "en"
+    },
+    "script9": {
+      "text": "पॉरस के लिए से अप्रूबल इस्टिल पैंडिंग विद दीएफो आफिस इसलिए चेनिस 12 से 15 तक रोड फॉर्मिशन कटिंग टेंप्रेरिली हाल्ट कर दी गई है रेबिन्यू डिपार्टमेंट और SDM साहब के साथ जोएंड इसिफेक्शन कंडेक्ट हो चुकी है लेकिन इलेक्रिकल पॉर्स और ड्रिंकिंग वाटर पाइपलाइन्स की यूटिटी सिफ्टिंग का इस्टिमेट अभी तक जल सस्तान से टापत नहीं हुआ है",
+      "latency_s": 1.559,
+      "detected_lang": "hi"
+    },
+    "script10": {
+      "text": "इस आपने मीजर्मेंट बुक वेरिफाय करने के बाद पाया की अर्थवर्क कॉंटिटी में कुछ वैरिशन है जो एप्रूब्ट ब्योक्यू आइटम ब्योक्यू लिमिट से लगभग साथ परसेंट अधिक है कॉंट्रेक्टर को फाइनल बिल रिलीस करने से पूर्ग रिव क्योटी डिपॉजिट रिफंड नहीं किया जाएगा",
+      "latency_s": 1.352,
+      "detected_lang": "hi"
+    }
+  },
+  "instant_english": {
+    "script1": {
+      "text": "This consideration I believe it would be more appropriate to have the system automatically update and update the mutual manual to ensure it is always current while reviewing the technical guidelines we notice that several procedural references are outdated and require immediate revision. The software engineering team should automate the documentation pipeline so that whenever a new release is deployed, all user guides and engineering manuals synchronize without requiring manual intervention.",
+      "latency_s": 0.772,
+      "detected_lang": "en"
+    },
+    "script2": {
+      "text": "The executive engineer and assistant engineer conducted a detailed structure inspection of multi span bridge at change twenty four point five. The concrete code testing confirmed that the peer caps and avatments comply the designated M thirty five breed specification however, the electromeric bearings on Pier Number Three so minor lateral displacement and uh must be recalibrated before the load test is officially scheduled next Tuesday.",
+      "latency_s": 0.699,
+      "detected_lang": "en"
+    },
+    "script3": {
+      "text": "Mukya binta mundershasi अbontaw coptner, view Smaphis Purshes David, a styaphen, अनिवार रूप से पूर्ण कर लिया जाए. निर्माण कार्यों की प्रगति में अनावश्यक विलंब करने वाले ठेकेदारों के विरुद्ध अनुबंध की शर्त के अनुसार dandartmic carbon kegami somwar को आहुत समीक्षा बैठक में सभी खंडों की अद्त्यन प्रगति रिपोर्ट प्रस्तुत करना सुनिश्चित करें।",
+      "latency_s": 0.678,
+      "detected_lang": "en"
+    },
+    "script4": {
+      "text": "Porvet marger damrik, origin stlie next ke dora gelncasi nolloca Sunt Paya. She gaveta को nerd dhie gatemins concret bichany s basky something or shantagshalaport ablm slitt car",
+      "latency_s": 2.669,
+      "detected_lang": "en"
+    },
+    "script5": {
+      "text": "Site visite contractor ne bridge foundation work complete. Mockst or Johnsetring Alejment or reinforcement steel की spejcing measurement book me drump drgem on kulty raft foundation की concreting short drig",
+      "latency_s": 0.473,
+      "detected_lang": "en"
+    },
+    "script6": {
+      "text": "E and JE verified the MB increase for the culvert white ink and cross checked the rates with the revised SOR item. The contractor has submitted the third arrival along with the hindrance register and material test certificates after proper technical wetting the division will issue the fresh NIT for the remaining road package by Friday afternoon.",
+      "latency_s": 0.559,
+      "detected_lang": "en"
+    },
+    "script7": {
+      "text": "Office tender revolution committee schedule in Sahbolk comparative statement or technical bits sumry fighting rni, Joct qualifying criteria meet neck money deposit release file submit kid.",
+      "latency_s": 0.459,
+      "detected_lang": "en"
+    },
+    "script8": {
+      "text": "Actually, meeting we clearly discuss that you know the highway maintains schedule is getting delayed, the contractor promised that like within two weeks all porthole between kilometer eight and kilometer fifteen will be passed, but actually ground reality they curl mobilized, so we must issue an official soccord notice immediately.",
+      "latency_s": 0.536,
+      "detected_lang": "en"
+    },
+    "script9": {
+      "text": "Forest clients approval is still pending with the TFO office, is lin is twelve fifteen to road formation cutting temporarily hard car doing revenue department, or SDM Sahb Satan conduct ho chucken electrical poles or drinking water pipelins shifting का estimate gel stans.",
+      "latency_s": 0.526,
+      "detected_lang": "en"
+    },
+    "script10": {
+      "text": "Measurement book verify arth quantity mechan, Jopt BOQ It'm Q limits, Lgb Sat percent addict. Contractor को final will release pul revised estimet or time extension approval competent authority drept liability period successfully complete new killing deposit refund neck.",
+      "latency_s": 0.565,
+      "detected_lang": "en"
+    }
+  },
+  "instant_hindi": {
+    "script1": {
+      "text": "जिस कंसीडरशन आई बिलीव इट वुड बी मोर एप्रोप्रिएट टू हाव द सिस्टम ऑटोमेटिकली अपडेट एंड अपडेट द म्यूचुअल मैनुअल टू इंश्योर इट इस आल्वेस करंट वह रिवीविंग द टेक्निकल गाइडलाइन्स वी नोटिस दैट सैलर इफ फ्रेंड्स ए आउटडाटेड एंड रिमेडिएट रिवीज़न द सॉफ्टवेयर इंजीनियरिंग टीम शुड ऑटोमेट द डॉक्यूमेंटेशन पाइपलाइन सो दैट व्हेन एवर ए न्यू रिलीज डॉल्ड ऑल यूजर गुड्स एंड इंजीनियरिंग मैनुअल्स सिंचोनिज विथाउट रिक्विंग मैनुअल इंटरवेंशन",
+      "latency_s": 0.999,
+      "detected_lang": "hi"
+    },
+    "script2": {
+      "text": "द एग्जीक्यूटिव इंजीनियर एंड असिस्टेंट इंजीनियर कंडक्टेड ए डिटेल स्ट्रक्चर इंस्पेक्शन ऑफ मल्टी स्पैन ब्रिज एट चेंज ट्वेंटी फोर पॉइंट फाइव द कंक्रीट को टेस्टिंग कन्फर्म दैट द पियर कैप्स एंड अवर्तमेंट कंपनी द डेसिनेटेड मथे फाइव ब्रेड स्पेसिफिकेशन हावर, द इलेक्ट्रोमेरी बेरिंग्स ऑन पियर नंबर थ्री सो माइनर लाटर डिस्प्ले मस्ट बी रिक्रेटेड बिफोर द लोड टेस्ट इस ऑफिशियली शेड्यूल नेक्स्ट ट्यूसडे।",
+      "latency_s": 0.948,
+      "detected_lang": "hi"
+    },
+    "script3": {
+      "text": "मुख्य विनता महोदय ने मंडल के सभी अधिशासी अभियंताओं को सख्त निर्देश जारी किए हैं कि वित्तीय वर्ष की समाप्ति से पूर्व सभी अवशेष देवों का सत्यापन अनिवार्य रूप से पूर्ण कर लिया जाए। निर्माण कार्यों की प्रगति में अनावश्यक विलंब करने वाले ठेकेदारों के विरुद्ध अनुबंध की शर्त के अनुसार दंडात्मक कार्रवाई प्रस्तावित की जाए। आगामी सोमवार को आहुत समीक्षा बैठक में सभी खंडों की अदित्यन प्रगति रिपोर्ट प्रस्तुत करना सुनिश्चित करें।",
+      "latency_s": 0.768,
+      "detected_lang": "hi"
+    },
+    "script4": {
+      "text": "गर्वतीय मार्ग के दामरीकरण और चौड़ीकरण के कार्य के स्थलीय निरीक्षण के दौरान जल निकासी नालियों का निर्माण संतोषजनक पाया गया। संवेदनशील ढलानों पर भूस्खलन रोकने हेतु आरसीसी रिटेनिंग मॉल और गैविन संरचनाओं का कार्य तेजी से प्रगति पर है। सायगीवता को निर्देश दिए गए हैं कि ब्रिटिमिनस कंक्रीट बिछाने से पूर्व सब बेस की समतलता और सघनता की प्रयोगशाला जांच रिपोर्ट अवलंब संकलित करें।",
+      "latency_s": 0.723,
+      "detected_lang": "hi"
+    },
+    "script5": {
+      "text": "आज हमने साइट विजिट के दौरान पाया कि कॉन्ट्रैक्टर ने ब्रिज फाउंडेशन का एक्सकेवेशन वर्क कम्प्लीट कर लिया है। मौके पर उपस्थित ई साहब और जेई को निर्देशित किया गया कि शटरिंग के अलाइनमेंट और रेइन्फोर्समेंट स्टील की स्पेसिंग को मेजरमेंट बुक में तुरंत दर्ज करें। यदि कल मौसम अनुकूल रहा तो दोपहर बारह बजे से राफ्ट फाउंडेशन की कंक्रीटिंग शुरू कर दी जाएगी।",
+      "latency_s": 0.693,
+      "detected_lang": "hi"
+    },
+    "script6": {
+      "text": "ई एंड जे वेरिफिकेट द मी इनक्रीस फॉर द कल्बर्ट व्हाइटिंग एंड क्रस्ट द रेट्स विथ द रिवाइज सो र इट्स द कॉटर हास एस सबमिट द थर्ड एवल एलोन विथ द हिन्द्रेंस रजिस्टर एंड मेटेर टेस्ट सर्टिफिकेट आफ्टर प्रॉपर्ट टेक्निकल वेटिंग, द डिवीजन विल इशू द फ्रेश ने इट फॉर द रिमिंग रोड पैकेज बाइ फ्राइडे आफ्टरनोन",
+      "latency_s": 0.68,
+      "detected_lang": "hi"
+    },
+    "script7": {
+      "text": "कल सुबह दस बजे डिवीजन ऑफिस में टेंडर रिवोल्यूशन कमेटी की शेड्यूल करनी है। ऑस्ट्रेलिया साहब को बोलकर कम्पेरेटिव स्टेटमेंट और टेक्निकल बिट्स की समरी फाइल रेडी रखनी होगी जो कांट्रैक्टर्स क्वालीफाइंग क्राइटेरिया मीट नहीं कर रहे हैं उनका अनलेस मनी डिपॉजिट रिलीज करने की फाइल भी अलग से सबमिट की जाए।",
+      "latency_s": 0.616,
+      "detected_lang": "hi"
+    },
+    "script8": {
+      "text": "एक्चुअली मतलब मीटिंग में वी क्लियरली डिस्कस दैट यू नो द हाईवे मेंटेन शेड्यूल इस गेटिंग डिलेड, द कॉन्ट्रैक्टर प्रॉमिस दैट लाइक विदिन टू वीक्स ऑल पोर्ट होल बिट्वीन किलोमीटर एट एंड किलोमीटर फिफ्टीन विल बी पास्ट बैक्टीरियल ग्राउंड रियलिटी देखकर लगता है कि लेबर मोबिलाइज नहीं हुई है, सो वी मस्ट इशू आन ऑफिशियल सोकोज नोटिस इमीडिएटली।",
+      "latency_s": 0.712,
+      "detected_lang": "hi"
+    },
+    "script9": {
+      "text": "फॉरेस्ट के लिए अप्रूवल इस स्टिल पेंडिंग विथ द टीफो ऑफिस, इसलिए चेन इस ट्वेल्व से फिफ्टीन तक रोड फॉर्मेशन कटिंग टेम्परेरी हार्ड कर दी गई है। रेवेन्यू डिपार्टमेंट और एसडीएम साहब के साथ ज्वाइन इंस्पेक्शन कंडक्ट हो चुकी है, लेकिन इलेक्ट्रिकल पोल्स और ड्रिंकिंग वाटर पाइपलाइन्स की यूटिटी सेफ्टींग का एस्टीमेट अभी तक जल संस्थान से प्राप्त नहीं हुआ है।",
+      "latency_s": 0.694,
+      "detected_lang": "hi"
+    },
+    "script10": {
+      "text": "साहब ने मेजरमेंट बुक वेरीफाई करने के बाद पाया कि अर्थवर्क क्वांटिटी में कुछ वेरिशन है जो एप्रोप पीओक्यू आइटम बीओक्यू लिमिट से लगभग सात परसेंट अधिक है। कांट्रेक्टर को फाइनल बिल रिलीज करने से पूर्व रिवाइज एस्टीमेट और टाइम एक्सटेंशन अप्रूवल कॉम्पिटेंट अथॉरिटी से लेना अनिवार्य है। जब तक डिफेक्ट लायबिलिटी पीरियड सक्सेसफुली कम्प्लीट नहीं होता तब तक सिक्योरिटी डिपॉजिट रिफंड नहीं किया जाएगा।",
+      "latency_s": 0.818,
+      "detected_lang": "hi"
+    }
+  },
+  "roman_hinglish": {
+    "script1": {
+      "text": "This consideration I believe it would be more appropriate to have the system automatically update and update the mutual manual to ensure it is always current. While reviewing the technical guidelines, we notice that several procedure references are outdated and require immediate revision. The software engineering team should automate the documentation pipeline so that whenever a.New release is deployed. All user guides and engineering manuals synchronize without requiring manual intervention.",
+      "latency_s": 1.802,
+      "detected_lang": "hinglish"
+    },
+    "script2": {
+      "text": "The executive engineer and assistant engineer conducted a detailed structure inspection of multi span bridge at chinis 24.5. The concrete code testing confirm that the peer caps and avatments comply the designated m 35 grade specification. However, the elastomeric bearing on peer number 3 so minor lateral displacement and must be.Recalibrated before the load test is officially scheduled next Tuesday.",
+      "latency_s": 0.586,
+      "detected_lang": "hinglish"
+    },
+    "script3": {
+      "text": "Mukhy avyantata mahoday mandal ke sabhi atishaasiy abhiyantaon ko sakht nirdesh jaari kie. Hai ki vittiy varsh ki samaapti se poorv sabhi avshyj devon ka satyaapan anivaar roop se poorn kar liya jae. Nirmaan kaaryon ki pragti mein anaavashyak vilamb karne vaale thekedaaron ke viruddh anubandh ki sarat ke anusaar dandaatmak kaarravai prastaavit ki jae. Aagaami somvaar ko aahut samiksha baithak mein sabhi khandon ki aadityan prakrti report.nan sunishchit karen.",
+      "latency_s": 0.709,
+      "detected_lang": "hinglish"
+    },
+    "script4": {
+      "text": "Maarg ke daamrikran aur chaudikran ke kaary ke sthali nekshan ke dauraan jal nikaasi naaliyon ka nirmaan santosh jank paaya gaya hai. Sanvednashil dhalaano par bhooskhalan rokne hetu RCC retaining ball aur gayaven sanrachanaon ka kaary teji se pragti par hai. Saiy vibhinnata ko nirdesh die gae hain ki bituminous concrete bichhaane se poorv sab base ki samtalta aur saglanta ki prayogashaala jaanch report abilambh sankalit karen.nan",
+      "latency_s": 0.683,
+      "detected_lang": "hinglish"
+    },
+    "script5": {
+      "text": "Aaj hamne side visit ke dvaan paaya ki contractor ne bridge foundation ka excavation work complete kar liya hai. Mauke par upasthit e saahab aur JEE ko nirdeshit kiya gaya ki satting ki alignment aur reinforcement steel ki spacing ko measurement book mein turant darj karen. Yadi kal mausam anukool raha to do baar baarah baje se raat foundation ki concreting shuroo kar di jaegi.",
+      "latency_s": 0.396,
+      "detected_lang": "hinglish"
+    },
+    "script6": {
+      "text": "The e and j e verified the MB increase for the convert wiring work and cross check the rates with the revised SOR item. The contractor has submitted the third RE bill along with the hintrance register and material test certificates. After proper technical vetting, the division will issue the fresh NIT for the remaining road package by Friday afternoon.",
+      "latency_s": 0.345,
+      "detected_lang": "hinglish"
+    },
+    "script7": {
+      "text": "Kal subah das baje division office mein tender revisions committee ki schedule karni hai. Astrid niyat saahab ko bolkar comparative statement aur technical goods ki summary file ready rakhani hogi. Jo contractors qualifying criteria meet nahin kar rahe hain, unka unless money deposit release karne ki file bhi alag se submit ki jae.",
+      "latency_s": 0.363,
+      "detected_lang": "hinglish"
+    },
+    "script8": {
+      "text": "Actually matlab meeting mein we clearly discuss that you know the highway maintenance schedule is getting delayed. The contractor promise that like within 2 weeks all for hold between kilometer 8 and kilometer 15 will be passed. But actually ground reality dekhakar lagta hai ki labor mobilize nahin ho rahi hai. So we must issue an official so cause notice immediately.",
+      "latency_s": 0.357,
+      "detected_lang": "hinglish"
+    },
+    "script9": {
+      "text": "Force ke lie approval is still pending with the TFO office. Islie Chinese 12 se 15 tak road formation cutting temporarily halt kar di gai hai. Revenue department aur SDM saahab ke saath joint inspection conduct ho chuki hai, lekin electrical poles aur drinking water pipeline ki UTT shifting ka estimate abhi tak jal sansthaan se taapt nahin hua hai.",
+      "latency_s": 0.373,
+      "detected_lang": "hinglish"
+    },
+    "script10": {
+      "text": "Is aapne measurement book verify karne ke baad paaya ki arthabhar quantity mein kuchh variation hai jo approved BOQ item, BOQ limit se lagabhag saat percent adhik hai. Contactor ko final bill release karne se poorv revised estimate aur time extension approval competent authority se lena anivaary hai. Jab tak defect liability period successfully complete nahin hota, tab tak se.Deposit refund nahin kiya jaega.",
+      "latency_s": 0.616,
+      "detected_lang": "hinglish"
+    }
+  }
+}

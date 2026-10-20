@@ -12,8 +12,10 @@ from engine import VoiceEngine
 import review_engine
 import sys
 import signal
+import math
 
 import utils as _utils
+utils = _utils
 
 _AUDIO_QUALITY_RATIO = 0.5   # WAV RMS must be >= SILENCE_THRESHOLD * this ratio
 
@@ -47,18 +49,31 @@ class VoiceAssistantTray:
         self.review_state = None
         self._auto_advance_timer = None   # fires after silence to auto-advance step
 
-        # Icons
-        self.icons = {
-            "idle":       self.create_status_icon("#45475a"),  # Gray
-            "recording":  self.create_status_icon("#f38ba8"),  # Red
-            "processing": self.create_status_icon("#89b4fa"),  # Blue
-            "review":     self.create_status_icon("#a6e3a1"),  # Green
+        # Icons: crisp vector sets with animation frame sequences
+        self.icon_frames = {
+            "idle":       [self.create_status_icon("idle")],
+            "recording":  [self.create_status_icon("recording", f) for f in range(4)],
+            "processing": [self.create_status_icon("processing", f) for f in range(4)],
+            "review":     [self.create_status_icon("review")],
         }
+        self.icons = {
+            "idle":       self.icon_frames["idle"][0],
+            "recording":  self.icon_frames["recording"][0],
+            "processing": self.icon_frames["processing"][0],
+            "review":     self.icon_frames["review"][0],
+        }
+        self._current_icon_state = "idle"
+        self._icon_anim_running = False
+
+        # Setup hotkey configuration from config.json
+        self._setup_hotkey()
 
         # Build tray icon with single static menu (dynamic callables)
+        active_prof = self.engine.config.get("ACTIVE_MODEL_PROFILE") or self.engine.config.get("ASR_ENGINE") or "whisper"
         self.icon = pystray.Icon(
             "AI Voice Refiner",
             self.icons["idle"],
+            title=f"AI Voice Refiner ({active_prof})",
             menu=self._build_static_menu()
         )
 
@@ -83,9 +98,91 @@ class VoiceAssistantTray:
         self._wake_listener = None
         self._init_wake_listener()
 
+        # Start lightweight local settings server daemon (127.0.0.1:8765)
+        try:
+            import settings_server
+            settings_server.start_server_daemon()
+        except Exception as e:
+            _tlog(f"Settings server daemon notice: {e}")
+
+        # Live config file watcher: synchronizes changes made via Web Settings or Dashboard immediately
+        self._last_config_mtime = self._get_config_mtime()
+        self._start_config_watcher()
+
+        # Eager non-blocking background pre-warming (Vulkan shader compile + Ollama warm-up)
+        threading.Thread(target=self._background_prewarm, daemon=True, name="prewarm").start()
+
+    def _get_config_mtime(self) -> float:
+        cfg_path = os.path.join(self.script_dir, "config.json")
+        try:
+            return os.path.getmtime(cfg_path) if os.path.exists(cfg_path) else 0.0
+        except OSError:
+            return 0.0
+
+    def _setup_hotkey(self):
+        """Loads and parses the global hotkey from config.json."""
+        raw_hk = self.engine.config.get("GLOBAL_HOTKEY", "Ctrl+Space")
+        self.hotkey_display = utils.format_hotkey_display(raw_hk)
+        self.hotkey_modifiers, self.hotkey_trigger = utils.parse_hotkey(raw_hk)
+        _tlog(f"Global hotkey configured: {self.hotkey_display}")
+
+    def _sync_config_from_disk(self):
+        """Checks if config.json changed on disk and reloads it, updating title and menu."""
+        current_mtime = self._get_config_mtime()
+        if current_mtime != self._last_config_mtime and current_mtime > 0:
+            self._last_config_mtime = current_mtime
+            _tlog(f"config.json modification detected on disk (mtime={current_mtime}) — updating tray app")
+            self.engine.reload_config()
+            self._setup_hotkey()
+            self._update_tray_title()
+            self._refresh_menu()
+
+    def _start_config_watcher(self):
+        """Periodically checks config.json mtime in background to auto-sync web changes."""
+        def watch_loop():
+            while self.running:
+                time.sleep(1.0)
+                try:
+                    self._sync_config_from_disk()
+                except Exception as exc:
+                    _tlog(f"config watcher notice: {exc}")
+
+        threading.Thread(target=watch_loop, daemon=True, name="config_watcher").start()
+
     def _get_active_config(self):
         """Return the current review config — live session config if active, else reload from disk."""
         return self.review_config or review_engine.load_review_config(self.script_dir)
+
+    def _background_prewarm(self):
+        """Pre-compiles Vulkan shaders and warms up Ollama LLM in the background.
+
+        Eliminates the ~33s cold start delay on the first audio recording without
+        blocking the tray application launch.
+        """
+        _tlog("Background pre-warm started")
+        try:
+            # 1. Warm up active ASR provider (loads weights and compiles Vulkan shaders)
+            if self.engine and hasattr(self.engine, "asr_provider"):
+                import numpy as _np
+                dummy_pcm = _np.zeros(1600, dtype=_np.float32)  # 0.1s silence
+                t0 = time.time()
+                self.engine.asr_provider.transcribe(dummy_pcm)
+                dt = (time.time() - t0) * 1000
+                _tlog(f"Background pre-warm: ASR ready ({dt:.1f}ms, shaders cached)")
+
+            # 2. Warm up Ollama LLM if keep_alive is configured (not '0')
+            keep_alive = self.engine.config.get("OLLAMA_KEEP_ALIVE", "5m")
+            if str(keep_alive).strip().lower() not in {"0", "0s", "none"}:
+                host = self.engine.config.get("OLLAMA_HOST", "http://localhost:11434")
+                model = self.engine.config.get("OLLAMA_MODELS", {}).get("en", "qwen2.5:3b")
+                t0 = time.time()
+                _utils.call_ollama(host, model, "hi", stop_tokens=[], keep_alive=keep_alive)
+                dt = (time.time() - t0) * 1000
+                _tlog(f"Background pre-warm: Ollama '{model}' ready in VRAM ({dt:.1f}ms, keep_alive={keep_alive})")
+            else:
+                _tlog("Background pre-warm: Ollama warm-up skipped (OLLAMA_KEEP_ALIVE=0 for low VRAM)")
+        except Exception as exc:
+            _tlog(f"Background pre-warm notice: {exc}")
 
     def _init_wake_listener(self):
         cfg = self._get_active_config()
@@ -136,12 +233,27 @@ class VoiceAssistantTray:
         def _not_in_review(item):       return not self.is_in_review
         def _awaiting(item):            return self.is_in_review and bool(self.review_state and self.review_state.get("awaiting_more"))
         def _not_awaiting(item):        return self.is_in_review and not bool(self.review_state and self.review_state.get("awaiting_more"))
-        def _mode_label(item):          return f"Mode: {self.engine.config.get('MODE', 'refine').capitalize()}"
+        def _preset_label(item):
+            self._sync_config_from_disk()
+            cur = self.engine.get_active_preset()
+            presets = self.engine.config.get("ASR_PRESETS", {})
+            lbl = presets.get(cur, {}).get("label", cur)
+            return f"🎙 Preset: {lbl}"
+
+        def _goal_label(item):
+            self._sync_config_from_disk()
+            cur = self.engine.get_active_goal()
+            goals = self.engine.config.get("REFINEMENT_GOALS", {})
+            lbl = goals.get(cur, {}).get("label", cur)
+            return f"✨ Goal: {lbl}"
+
         def _has_morning_brief(item):
             import morning_brief as _mb
             return not self.is_in_review and _mb.load_brief_state() is not None
         def _start_review_visible(item):
             return not self.is_in_review and _evening_review_enabled(item)
+        def _record_label(item):
+            return f"Start Recording ({self.hotkey_display})"
 
         return pystray.Menu(
             # ── Review mode ──
@@ -153,12 +265,16 @@ class VoiceAssistantTray:
             pystray.Menu.SEPARATOR,
             # ── Normal mode ──
             pystray.MenuItem("Start Recording",        self.toggle_recording,               visible=_not_in_review),
-            pystray.MenuItem(_mode_label,              self.cycle_mode,                     visible=_not_in_review),
+            pystray.MenuItem("🔁 Re-process Last Audio", self.reprocess_last_audio,         visible=_not_in_review),
+            pystray.MenuItem(_preset_label,            self.cycle_preset,                   visible=_not_in_review),
+            pystray.MenuItem(_goal_label,              self.cycle_goal,                     visible=_not_in_review),
             pystray.MenuItem("Start Evening Review",   self.start_review,                   visible=_start_review_visible),
             pystray.MenuItem("🌅 Replay Morning Brief", self.replay_morning_brief,          visible=_has_morning_brief),
             pystray.MenuItem("Open Dashboard",         self.open_gui,                       visible=_not_in_review),
+            pystray.MenuItem("🏛 PWD Terminology Lookup", self.open_pwd_lookup,               visible=_not_in_review),
             pystray.MenuItem("Audio to Ideas",          self.open_audio_to_idea,              visible=self._audio_to_idea_enabled),
             pystray.MenuItem("Settings",               self.open_settings,                  visible=_not_in_review),
+            pystray.MenuItem("📖 User Manual & Help",   self.open_user_manual,               visible=_not_in_review),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit", self.exit_app)
         )
@@ -174,37 +290,115 @@ class VoiceAssistantTray:
             keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r))
 
     def on_press(self, key):
-        # Only track modifier keys and the three hotkey chars — everything else
-        # is dead weight and would grow pressed_keys unboundedly over a session.
-        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r,
-                   keyboard.Key.alt,  keyboard.Key.alt_l,  keyboard.Key.alt_r):
+        if utils.is_modifier_key(key):
             self.pressed_keys.add(key)
-        elif hasattr(key, "char") and key.char in ("v", "s", "r"):
-            self.pressed_keys.add(key)
-        if not (self._ctrl() and self._alt()):
             return
-        if hasattr(key, "char"):
-            if key.char == "v":
-                self.toggle_recording()
-            elif key.char == "s":
+
+        # 1. Narration hotkeys: Ctrl+Alt+S (stop) and Ctrl+Alt+R (replay)
+        if hasattr(key, "char") and key.char in ("s", "r") and self._ctrl() and self._alt():
+            if key.char == "s":
                 threading.Thread(target=review_engine.stop_narration, daemon=True).start()
+                return
             elif key.char == "r":
                 threading.Thread(target=review_engine.replay_narration,
                                  args=(self._get_active_config(),), daemon=True).start()
+                return
+
+        # 2. Configurable Global Recording Hotkey
+        if utils.matches_hotkey(self.pressed_keys, key, self.hotkey_modifiers, self.hotkey_trigger):
+            self.toggle_recording()
 
     def on_release(self, key):
         self.pressed_keys.discard(key)
 
     # ── Icon helpers ──────────────────────────────────────────────────────────
 
-    def create_status_icon(self, color):
-        image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(image)
-        draw.ellipse((8, 8, 56, 56), fill=color)
-        return image
+    def create_status_icon(self, mode_or_color, frame=0):
+        """Creates a crisp 64x64 RGBA vector icon for the system tray (Mic, Ear, Brain, Moon)."""
+        if isinstance(mode_or_color, str) and mode_or_color.startswith("#"):
+            color_map = {
+                "#45475a": "idle",
+                "#f38ba8": "recording",
+                "#89b4fa": "processing",
+                "#a6e3a1": "review",
+            }
+            mode = color_map.get(mode_or_color, "idle")
+        else:
+            mode = mode_or_color
+
+        img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        # Base pill container with subtle border
+        draw.rounded_rectangle((4, 4, 60, 60), radius=16, fill="#1e1e2e", outline="#363a4f", width=2)
+
+        if mode == "idle":
+            # 🎙 Crisp Microphone
+            col = "#cdd6f4"
+            draw.rounded_rectangle((27, 16, 37, 34), radius=5, fill=col)
+            draw.arc((21, 22, 43, 40), start=0, end=180, fill=col, width=3)
+            draw.line((32, 40, 32, 47), fill=col, width=3)
+            draw.line((25, 47, 39, 47), fill=col, width=3)
+
+        elif mode == "recording":
+            # 👂 Listening Ear with dynamic radiating acoustic waves
+            col = "#f38ba8"
+            draw.arc((14, 18, 32, 46), start=70, end=290, fill=col, width=3)
+            draw.arc((18, 24, 28, 38), start=80, end=280, fill=col, width=2)
+            waves = [(30, 22, 42, 42), (36, 16, 50, 48), (42, 10, 58, 54)]
+            active_count = 1 + (frame % 3)
+            for i in range(active_count):
+                draw.arc(waves[i], start=-55, end=55, fill=col, width=3)
+
+        elif mode == "processing":
+            # 🧠 Neural Brain with orbiting synaptic spark
+            col = "#89b4fa"
+            draw.ellipse((16, 20, 32, 44), outline=col, width=2)
+            draw.ellipse((32, 20, 48, 44), outline=col, width=2)
+            draw.line((32, 22, 32, 42), fill="#363a4f", width=2)
+            angle = (frame * (math.pi / 2))
+            sx = int(32 + 20 * math.cos(angle))
+            sy = int(32 + 13 * math.sin(angle))
+            draw.ellipse((sx - 3, sy - 3, sx + 3, sy + 3), fill="#f9e2af")
+
+        elif mode == "review":
+            # 🌙 Crescent Moon
+            col = "#a6e3a1"
+            draw.ellipse((18, 16, 46, 44), fill=col)
+            draw.ellipse((26, 14, 52, 42), fill="#1e1e2e")
+
+        return img
 
     def update_icon(self, state_name):
-        self.icon.icon = self.icons.get(state_name, self.icons["idle"])
+        self._current_icon_state = state_name
+        frames = self.icon_frames.get(state_name, self.icon_frames["idle"])
+        try:
+            self.icon.icon = frames[0]
+        except Exception as e:
+            _tlog(f"update_icon error: {e}")
+
+        # Launch background frame cycler for animated states if not already running
+        if len(frames) > 1 and not getattr(self, "_icon_anim_running", False):
+            self._icon_anim_running = True
+            threading.Thread(target=self._icon_animation_loop, daemon=True, name="tray_anim").start()
+
+    def _icon_animation_loop(self):
+        """Gentle 5 FPS animation loop cycling tray icon frames during recording and processing."""
+        frame_idx = 0
+        try:
+            while getattr(self, "_icon_anim_running", False):
+                state = getattr(self, "_current_icon_state", "idle")
+                frames = self.icon_frames.get(state, [])
+                if len(frames) <= 1:
+                    break
+                frame_idx = (frame_idx + 1) % len(frames)
+                try:
+                    self.icon.icon = frames[frame_idx]
+                except Exception:
+                    break
+                time.sleep(0.2)  # 5 FPS
+        finally:
+            self._icon_anim_running = False
 
     def _refresh_menu(self):
         try:
@@ -220,10 +414,10 @@ class VoiceAssistantTray:
         elif self.is_recording:
             self.engine.stop_recording()
 
-    def _notify(self, title, message):
+    def _notify(self, title, message, icon="dialog-information", urgency="normal", timeout=4000):
         try:
             subprocess.run(
-                ["notify-send", "-i", "dialog-information", "-t", "4000", title, message],
+                ["notify-send", "-u", urgency, "-i", icon, "-t", str(timeout), title, message],
                 timeout=5, check=False
             )
         except Exception:
@@ -236,7 +430,9 @@ class VoiceAssistantTray:
             self.update_icon("recording")
             _tlog(f"run_full_process started. is_in_review={self.is_in_review}")
 
+            t0 = time.monotonic()
             wav_path = self.engine.record()
+            self._last_record_duration = time.monotonic() - t0
 
             self.is_recording = False
 
@@ -410,7 +606,18 @@ class VoiceAssistantTray:
         _tlog("_run_normal_mode: refining")
         self._notify("Voice Refiner", "Refining text with AI...")
         final_text = self.engine.refine(raw_text)
-        self._notify("Voice Refiner", "Done! Text copied to clipboard.")
+
+        sug = getattr(self.engine, "last_acoustic_suggestion", None)
+        if sug and sug.get("is_mismatch"):
+            is_warn = sug.get("severity") == "warning"
+            icon = "dialog-warning" if is_warn else "dialog-information"
+            urgency = "critical" if is_warn else "normal"
+            title = "⚠️ Language Advisory" if not is_warn else "⚠️ Language Mismatch Warning"
+            msg = f"{sug.get('title')}: Suggested preset is '{sug.get('suggested_preset')}'.\n(Result copied to clipboard)"
+            self._notify(title, msg, icon=icon, urgency=urgency, timeout=8000)
+        else:
+            self._notify("Voice Refiner", "Done! Text copied to clipboard.")
+
         _tlog(f"_run_normal_mode: refined, len={len(final_text)}")
         features = self.engine.config.get("FEATURES", {})
         if features.get("clipboard_output", True):
@@ -427,6 +634,21 @@ class VoiceAssistantTray:
             pass
         if features.get("direct_typing", False):
             self.engine.type_text(final_text)
+
+        # Sync to Web Dashboard in real-time
+        try:
+            from refiner_service import RefinerService
+            RefinerService.get_instance().record_external_clip(
+                raw_text=raw_text,
+                final_text=final_text,
+                duration=getattr(self, "_last_record_duration", 0.0),
+                preset=self.engine.get_active_preset(),
+                goal=self.engine.get_active_goal(),
+                acoustic_suggestion=sug,
+                acoustic_info=getattr(self.engine, "last_acoustic_info", None)
+            )
+        except Exception:
+            pass
 
     # ── Review controls ───────────────────────────────────────────────────────
 
@@ -492,19 +714,25 @@ class VoiceAssistantTray:
         except Exception:
             pass
 
-        # Open the review dashboard window; redirect stderr to log so crashes are visible
-        log_path = os.path.join(self.script_dir, "review_debug.log")
+        # Open the Executive Review Web Studio with fallback to review_dashboard.py
         try:
-            with open(log_path, "a") as log_fh:
-                subprocess.Popen(
-                    [sys.executable, os.path.join(self.script_dir, "review_dashboard.py")],
-                    close_fds=True,
-                    stderr=log_fh,
-                    stdout=log_fh,
-                )
-            _tlog("Dashboard subprocess launched")
+            import review_launcher
+            review_launcher.launch_review_app(date_str=date_str)
+            _tlog("Executive Review Web Studio launched")
         except Exception as e:
-            _tlog(f"ERROR launching dashboard: {e}")
+            _tlog(f"review_launcher failed ({e}); falling back to review_dashboard.py")
+            log_path = os.path.join(self.script_dir, "review_debug.log")
+            try:
+                with open(log_path, "a") as log_fh:
+                    subprocess.Popen(
+                        [sys.executable, os.path.join(self.script_dir, "review_dashboard.py")],
+                        close_fds=True,
+                        stderr=log_fh,
+                        stdout=log_fh,
+                    )
+                _tlog("Dashboard subprocess launched")
+            except Exception as e2:
+                _tlog(f"ERROR launching dashboard: {e2}")
 
     def _load_review_state_or_finish(self):
         """Load current review state; call _review_finished and return None if unavailable."""
@@ -652,7 +880,19 @@ class VoiceAssistantTray:
         _tlog("replay_morning_brief: narrating")
 
     def open_gui(self, icon=None, item=None):
-        subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
+        try:
+            import dashboard_launcher
+            dashboard_launcher.launch_dashboard_app()
+        except Exception:
+            subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
+
+    def open_pwd_lookup(self, icon=None, item=None):
+        """Launches the dedicated PWD Terminology & SOR Lookup app."""
+        try:
+            import pwd_lookup_launcher
+            pwd_lookup_launcher.launch_pwd_lookup_app()
+        except Exception:
+            subprocess.Popen([sys.executable, os.path.join(self.script_dir, "main_gui.py")])
 
     def _audio_to_idea_enabled(self, item=None):
         """Read only the optional module setting; keep tray startup model-free."""
@@ -667,26 +907,107 @@ class VoiceAssistantTray:
         subprocess.Popen([sys.executable, "-m", "audio_to_idea", "gui"], cwd=self.script_dir)
 
     def open_settings(self, icon=None, item=None):
-        subprocess.Popen([sys.executable, os.path.join(self.script_dir, "config_gui.py")])
-
-    def cycle_mode(self, icon=None, item=None):
-        current = self.engine.config.get("MODE", "refine")
-        new_mode = "translate" if current == "refine" else "refine"
-        self.engine.config["MODE"] = new_mode
         try:
-            # Re-read from disk so we only update MODE without clobbering
-            # any settings saved by config_gui.py since the tray started.
-            config_path = os.path.join(self.script_dir, "config.json")
-            disk_cfg = {}
-            if os.path.exists(config_path):
-                with open(config_path, "r", encoding="utf-8") as f:
-                    disk_cfg = json.load(f)
-            disk_cfg["MODE"] = new_mode
-            with open(config_path, "w", encoding="utf-8") as f:
-                json.dump(disk_cfg, f, indent=4)
+            import config_web_launcher
+            config_web_launcher.launch_settings_app()
+        except Exception:
+            subprocess.Popen([sys.executable, os.path.join(self.script_dir, "config_gui.py")])
+
+    def open_user_manual(self, icon=None, item=None):
+        try:
+            from manual_service import manual_service
+            manual_service.open_in_browser()
         except Exception as e:
-            _tlog(f"cycle_mode: error saving config: {e}")
+            subprocess.Popen([sys.executable, os.path.join(self.script_dir, "manual_gui.py")])
+
+    def reprocess_last_audio(self, icon=None, item=None):
+        if self.is_recording:
+            self._notify("Audio Refiner", "Cannot re-process while recording")
+            return
+        def worker():
+            self.update_icon("processing")
+            active_p = self.engine.get_active_preset()
+            active_g = self.engine.get_active_goal()
+            self._notify("Audio Refiner", f"🔁 Re-processing last audio ({active_p} / {active_g})...")
+            try:
+                from refiner_service import RefinerService
+                ref_svc = RefinerService.get_instance()
+                ref_svc.engine = self.engine
+                res = ref_svc.reprocess_last_sync(preset=active_p, goal=active_g)
+                if res.get("ok"):
+                    txt = res.get("final_text") or res.get("text", "")
+                    preview = txt[:90] + ("..." if len(txt) > 90 else "")
+                    self._notify("Audio Refiner", f"✨ Re-processed & Copied to Clipboard:\n{preview}")
+                else:
+                    self._notify("Audio Refiner", f"Error: {res.get('error', 'Failed')}")
+            except Exception as exc:
+                self._notify("Audio Refiner", f"Failed: {exc}")
+            finally:
+                self.update_icon("idle")
+        threading.Thread(target=worker, daemon=True).start()
+
+    def cycle_preset(self, icon=None, item=None):
+        """Cycles to the next configured ASR preset."""
+        presets = list(self.engine.config.get("ASR_PRESETS", {}).keys())
+        if not presets:
+            presets = ["smart_bilingual", "instant_english", "instant_hindi", "roman_hinglish"]
+        cur = self.engine.get_active_preset()
+        next_p = presets[(presets.index(cur) + 1) % len(presets)] if cur in presets else presets[0]
+        self.engine.set_active_preset(next_p)
+
+        cfg_path = os.path.join(self.script_dir, "config.json")
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                disk_cfg = json.load(f)
+            disk_cfg["ACTIVE_ASR_PRESET"] = next_p
+            disk_cfg["ACTIVE_MODEL_PROFILE"] = next_p
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump(disk_cfg, f, indent=4, ensure_ascii=False)
+            self.engine.reload_config()
+        except Exception as e:
+            _tlog(f"cycle_preset: error saving config: {e}")
+
+        info = self.engine.config.get("ASR_PRESETS", {}).get(next_p, {})
+        self._notify("🎙 Preset Changed", f"{info.get('label', next_p)}\n{info.get('description', '')}")
+        self._update_tray_title()
         self._refresh_menu()
+
+    def cycle_goal(self, icon=None, item=None):
+        """Cycles to the next configured Refinement Goal."""
+        goals = list(self.engine.config.get("REFINEMENT_GOALS", {}).keys())
+        if not goals:
+            goals = ["clean_bilingual", "official_english", "official_hindi", "concise_summary", "ideas_actions", "roman_hinglish"]
+        cur = self.engine.get_active_goal()
+        next_g = goals[(goals.index(cur) + 1) % len(goals)] if cur in goals else goals[0]
+        self.engine.set_active_goal(next_g)
+
+        info = self.engine.config.get("REFINEMENT_GOALS", {}).get(next_g, {})
+        cfg_path = os.path.join(self.script_dir, "config.json")
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                disk_cfg = json.load(f)
+            disk_cfg["ACTIVE_REFINEMENT_GOAL"] = next_g
+            disk_cfg["LANGUAGE_MODE"] = info.get("output_lang", "bilingual")
+            disk_cfg["MODE"] = "translate" if info.get("translate") else "refine"
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump(disk_cfg, f, indent=4, ensure_ascii=False)
+            self.engine.reload_config()
+        except Exception as e:
+            _tlog(f"cycle_goal: error saving config: {e}")
+
+        self._notify("✨ Goal Changed", f"{info.get('label', next_g)}\n{info.get('description', '')}")
+        self._refresh_menu()
+
+    def _update_tray_title(self):
+        cur = self.engine.get_active_preset()
+        presets = self.engine.config.get("ASR_PRESETS", {})
+        lbl = presets.get(cur, {}).get("label", cur)
+        if self.icon:
+            self.icon.title = f"AI Voice Refiner ({lbl})"
+
+    # Aliases for backward compatibility
+    cycle_mode = cycle_goal
+    cycle_asr_profile = cycle_preset
 
     def exit_app(self, icon=None, item=None):
         _tlog("exit_app called")
@@ -710,8 +1031,8 @@ class VoiceAssistantTray:
 
         try:
             self.listener.start()
-            _tlog("Tray application running. Ctrl+Alt+V or SIGUSR1 to record.")
-            print("Tray application is running. Use the menu or Ctrl+Alt+V.")
+            _tlog(f"Tray application running. {self.hotkey_display} or SIGUSR1 to record.")
+            print(f"Tray application is running. Use the menu or {self.hotkey_display}.")
             self.icon.run()
         except Exception as e:
             print(f"Error in main loop: {e}")

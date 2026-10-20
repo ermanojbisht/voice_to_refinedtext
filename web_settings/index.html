@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant — Settings & Configuration</title>
+    <style>
+        :root[data-theme="dark"] {
+            --bg-ambient: radial-gradient(circle at 10% 10%, #102a3b 0%, #091e2c 55%, #050e15 100%);
+            --glass-card: rgba(23, 51, 68, 0.75);
+            --glass-card-hover: rgba(28, 62, 82, 0.82);
+            --glass-border: rgba(66, 103, 123, 0.55);
+            --glass-border-focus: rgba(142, 200, 255, 0.8);
+            --field-bg: rgba(16, 42, 59, 0.7);
+            --text-main: #E5F5FC;
+            --text-muted: #B3D2DF;
+            --text-subtle: #7398ab;
+            --accent: #8EC8FF;
+            --teal: #7BDEC4;
+            --primary: #1763AA;
+            --primary-hover: #1C74BD;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.42);
+            --switch-off: #263f50;
+            --switch-on: #1763AA;
+            --badge-bg: rgba(142, 200, 255, 0.15);
+            --badge-text: #8EC8FF;
+            --badge-border: rgba(142, 200, 255, 0.35);
+        }
+
+        :root[data-theme="light"] {
+            --bg-ambient: radial-gradient(circle at 15% 15%, #eff8fd 0%, #dceef7 60%, #c9e0ee 100%);
+            --glass-card: rgba(239, 248, 253, 0.82);
+            --glass-card-hover: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(164, 201, 217, 0.75);
+            --glass-border-focus: rgba(20, 91, 165, 0.8);
+            --field-bg: rgba(248, 252, 255, 0.85);
+            --text-main: #123449;
+            --text-muted: #3C5E72;
+            --text-subtle: #6d8e9f;
+            --accent: #145BA5;
+            --teal: #097B69;
+            --primary: #175AA8;
+            --primary-hover: #114986;
+            --card-shadow: 0 8px 28px 0 rgba(18, 52, 73, 0.12);
+            --switch-off: #d0e2ec;
+            --switch-on: #175AA8;
+            --badge-bg: rgba(20, 91, 165, 0.12);
+            --badge-text: #145BA5;
+            --badge-border: rgba(20, 91, 165, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+        }
+
+        .btn, .tab-btn, .profile-card, .slider, .nav-item, input, select {
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        body {
+            background: var(--bg-ambient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ── Top Header Bar ── */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-card);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            font-size: 1.6rem;
+            filter: drop-shadow(0 0 10px rgba(142, 200, 255, 0.5));
+        }
+
+        .brand-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--badge-text);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .dot-pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--teal);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--teal);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .glass-btn {
+            background: var(--field-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 9px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .glass-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .glass-btn-primary {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary-hover);
+            box-shadow: 0 4px 14px rgba(23, 99, 170, 0.4);
+        }
+
+        .glass-btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* ── Tabs Navigation ── */
+        .tabs-bar {
+            display: flex;
+            gap: 8px;
+            padding: 16px 28px 0;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            padding: 12px 18px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: var(--glass-card);
+        }
+
+        /* ── Main Content Area ── */
+        main {
+            flex: 1;
+            padding: 24px 28px 100px;
+            max-width: 960px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Frosted Glass Cards ── */
+        .glass-card {
+            background: var(--glass-card);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 22px 26px;
+            margin-bottom: 22px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .card-header {
+            margin-bottom: 18px;
+        }
+
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header p {
+            font-size: 0.82rem;
+            color: var(--text-subtle);
+            margin-top: 3px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .form-row:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .form-label small {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-subtle);
+            margin-top: 2px;
+        }
+
+        .form-field {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ── Inputs, Selects, Sliders ── */
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background: var(--field-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--glass-border-focus);
+            box-shadow: 0 0 0 3px rgba(142, 200, 255, 0.2);
+        }
+
+        /* Range Slider */
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: var(--field-bg);
+            border-radius: 4px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .range-badge {
+            min-width: 65px;
+            text-align: center;
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--badge-text);
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* ── Switch Toggles ── */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--switch-off);
+            border: 1px solid var(--glass-border);
+            transition: .25s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .25s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+        }
+
+        input:checked + .slider {
+            background-color: var(--switch-on);
+            border-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Profile Selection Cards */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .profile-card {
+            background: var(--field-bg);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .profile-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .profile-card.selected {
+            border-color: var(--accent);
+            background: var(--badge-bg);
+            box-shadow: 0 0 14px rgba(142, 200, 255, 0.25);
+        }
+
+        .profile-card-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .profile-card-desc {
+            font-size: 0.75rem;
+            color: var(--text-subtle);
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+        /* Fixed Footer Action Bar */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--glass-card);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 84px;
+            right: 28px;
+            background: var(--glass-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--teal);
+            color: var(--teal);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            animation: slideUp 0.25s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <span class="brand-icon">🎙️</span>
+            <div>
+                <div class="brand-title">AI Voice Refiner</div>
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">Settings & Hardware Tuning Hub</div>
+            </div>
+            <span class="brand-badge" id="activePresetBadge">
+                <span class="dot-pulse"></span>
+                <span id="activePresetText">🎙 Preset: smart_bilingual</span>
+            </span>
+            <span class="brand-badge" id="activeGoalBadge" style="margin-left: 6px;">
+                <span id="activeGoalText">✨ Goal: clean_bilingual</span>
+            </span>
+        </div>
+
+        <div class="header-actions">
+            <button class="glass-btn" id="btnThemeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+            <button class="glass-btn" onclick="openManual()">📖 User Manual</button>
+        </div>
+    </header>
+
+    <!-- Tab Bar -->
+    <nav class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-voice')">🎙️ Voice Refiner</button>
+        <button class="tab-btn" onclick="switchTab('tab-review')">🌙 Evening Review</button>
+        <button class="tab-btn" onclick="switchTab('tab-notifications')">📲 Notifications</button>
+        <button class="tab-btn" onclick="switchTab('tab-features')">⚙️ Features</button>
+    </nav>
+
+    <!-- Main Container -->
+    <main>
+        <!-- TAB 1: Voice Refiner -->
+        <div id="tab-voice" class="tab-content active">
+            <!-- Stage 1: ASR Input Presets -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🎙️ Stage 1: ASR Input Presets (🎙 Preset)</h2>
+                    <p>Select speech recognition preset: Whisper Turbo, Nemotron (instant English/Hindi), or Apex. Bundles model, backend, and audio processing.</p>
+                </div>
+                <div class="profile-grid" id="presetGrid">
+                    <!-- Populated via JavaScript -->
+                </div>
+                <div class="form-row" style="margin-top: 14px;">
+                    <div class="form-label">
+                        Whisper Fallback Model
+                        <small>Model used when Faster-Whisper is engaged as fallback engine.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_WHISPER_FALLBACK_MODEL">
+                            <option value="large-v3-turbo">large-v3-turbo (Recommended — Fast & Accurate)</option>
+                            <option value="medium">medium</option>
+                            <option value="small">small</option>
+                            <option value="base">base</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 2: LLM Refinement Goal -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>✨ Stage 2: LLM Refinement Goal (✨ Goal)</h2>
+                    <p>Decoupled refinement rules: selects target script, formatting, acronym treatment, and auto-translation.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Refinement Goal
+                        <small>Target output script & grammar formatting style.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_REFINEMENT_GOAL" onchange="onGoalChange()">
+                            <!-- Populated via JavaScript -->
+                        </select>
+                        <div id="goalDescription" style="font-size: 0.82rem; color: var(--teal); margin-top: 6px;"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        English Refiner Model
+                        <small>Model used for English polishing & PWD acronym recovery.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OLLAMA_MODELS_en" class="model-select"></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Hindi Refiner Model
+                        <small>Model used for Hindi grammar & Devanagari structure.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OLLAMA_MODELS_hi" class="model-select"></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Hindi → English Translate Model
+                        <small>Model used when converting spoken Hindi into fluent English.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OLLAMA_TRANSLATE_MODELS_to_en" class="model-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Engine & VRAM Lifecycle -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>⚡ GPU VRAM Lifecycle & Acoustic Gate</h2>
+                    <p>Control Ollama memory persistence and microphone silence gating.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Ollama Keep-Alive (VRAM)
+                        <small>How long weights stay resident in GPU memory.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OLLAMA_KEEP_ALIVE">
+                            <option value="0">0 (Immediate VRAM Offload — Low Memory)</option>
+                            <option value="2m">2m</option>
+                            <option value="5m">5m (Balanced)</option>
+                            <option value="15m">15m</option>
+                            <option value="60m">60m (Active Session — Instant Response)</option>
+                            <option value="-1">-1 (Indefinite GPU Resident)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Global Recording Hotkey
+                        <small>Single system-wide shortcut to start/stop dictation (e.g. <code>Ctrl+Space</code> or <code>Ctrl+Alt+V</code>). Automatically syncs with GNOME custom shortcuts.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="main_GLOBAL_HOTKEY" placeholder="Ctrl+Space" style="max-width: 220px; font-weight: 600; letter-spacing: 0.5px; font-family: monospace;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Silence Energy Threshold
+                        <small>RMS gate. Lower = sensitive; Higher = ignores room noise.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_SILENCE_THRESHOLD" min="50" max="1000" step="10" oninput="updateRangeLabel('main_SILENCE_THRESHOLD', 'badge_threshold', ' RMS')">
+                        <span class="range-badge" id="badge_threshold">300 RMS</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Silence Duration
+                        <small>Seconds of continuous quiet before recording finishes.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_SILENCE_DURATION" min="0.5" max="5.0" step="0.1" oninput="updateRangeLabel('main_SILENCE_DURATION', 'badge_duration', 's')">
+                        <span class="range-badge" id="badge_duration">2.0s</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Pre-Speech Audio Buffer
+                        <small>Continuous circular buffer (ms) capturing speech onset so the first word/syllable is never cut off.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_PRE_ROLL_BUFFER_MS" min="100" max="1000" step="50" oninput="updateRangeLabel('main_PRE_ROLL_BUFFER_MS', 'badge_preroll', ' ms')">
+                        <span class="range-badge" id="badge_preroll">500 ms</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Silero Neural VAD Sensitivity
+                        <small>Neural vocal tract detection threshold (0.10–0.90). Eliminates background noise and typing clicks. 0.50 recommended.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_VAD_THRESHOLD" min="0.10" max="0.90" step="0.05" oninput="updateRangeLabel('main_VAD_THRESHOLD', 'badge_vad', '')">
+                        <span class="range-badge" id="badge_vad">0.50</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Temperature
+                        <small>0.0–0.1 ensures factual grammar without hallucinations.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_TEMPERATURE" min="0.0" max="1.0" step="0.05" oninput="updateRangeLabel('main_TEMPERATURE', 'badge_temp', '')">
+                        <span class="range-badge" id="badge_temp">0.10</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Ollama Host Address
+                        <small>Local or LAN Ollama endpoint.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="main_OLLAMA_HOST" placeholder="http://localhost:11434">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage & Output Notes Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>📁 Storage & Output Notes</h2>
+                    <p>Configure where voice notes, audio ideas, and session metadata are stored.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Save to Markdown Notes
+                        <small>Automatically export formatted voice notes and raw transcripts.</small>
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="main_SAVE_TO_MARKDOWN">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Notes Directory (MARKDOWN_PATH)
+                        <small>Base directory for voice notes and AudioToIdeas outputs.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="main_MARKDOWN_PATH" placeholder="~/Documents/VoiceNotes">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Cache Retention (Days)
+                        <small>Auto-purge intermediate audio chunks and cached temp files older than this.</small>
+                    </div>
+                    <div class="form-field" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="main_CACHE_RETENTION_DAYS" min="1" max="90" value="7" style="max-width: 90px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass-surface); color: var(--text-main);">
+                        <button type="button" class="btn btn-secondary" onclick="cleanGarbageCache()" style="padding: 6px 14px; font-size: 12px; margin-left: auto;">
+                            🧹 Clean Cache Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Evening Review -->
+        <div id="tab-review" class="tab-content">
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🌙 Obsidian Vault & Notes Sync</h2>
+                    <p>Paths for daily logs, review summaries, and wellness reflections.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Base Vault Directory
+                        <small>Root directory of your Obsidian vault.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_vault_paths_base_vault" placeholder="~/learning_vault">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Daily Notes Folder
+                        <small>Target folder for daily review reflections.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_vault_paths_daily_notes" placeholder="~/learning_vault/My Daily Notes">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Wellness Notes Folder
+                        <small>Target folder for private wellness reflections.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_vault_paths_wellness_notes" placeholder="~/learning_vault/04_Wellness_and_Journal">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🗣️ Speech Synthesis (TTS) & Control</h2>
+                    <p>Voice narration engine and hands-free wake word controls.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Voice Narration
+                        <small>Speaks reflection prompts aloud.</small>
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="rev_voice_narration">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        TTS Engine
+                        <small>Offline neural Piper TTS or lightweight espeak.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="rev_tts_engine">
+                            <option value="piper">Piper Neural (High Quality)</option>
+                            <option value="espeak">eSpeak (Lightweight Fallback)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Hands-Free Voice Control
+                        <small>Allows wake words ('next', 'again', 'stop') during narration.</small>
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="rev_voice_control">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Previous Days Context
+                        <small>Number of past daily notes synthesized for evening context.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="number" id="rev_last_n_days_context" min="1" max="14" style="width: 100px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Notifications -->
+        <div id="tab-notifications" class="tab-content">
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>📲 Telegram Mobile Alerts</h2>
+                    <p>Receive evening review reminders and morning priority briefs directly on your phone.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Enable Telegram Notifications
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="rev_telegram_enabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Bot Token
+                        <small>Issued by @BotFather on Telegram.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_telegram_bot_token" placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWxyz">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        User Chat ID
+                        <small>Your personal chat ID (from @userinfobot).</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_telegram_chat_id" placeholder="59509781">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Connection Test
+                    </div>
+                    <div class="form-field">
+                        <button class="glass-btn" type="button" onclick="testTelegram()">📡 Send Test Message</button>
+                        <span id="tgTestStatus" style="font-size: 0.82rem; font-weight: 600;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🌅 Morning Briefing Timer</h2>
+                    <p>Alerts with your synthesized tasks and priorities at start of workday.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Enable Morning Briefing
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="rev_morning_briefing_enabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Briefing Alert Time
+                        <small>24-hour HH:MM format.</small>
+                    </div>
+                    <div class="form-field">
+                        <input type="text" id="rev_morning_briefing_time" placeholder="08:00" style="width: 120px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Features -->
+        <div id="tab-features" class="tab-content">
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>⚙️ Desktop Capabilities & Integrations</h2>
+                    <p>Toggle individual assistant features without touching code.</p>
+                </div>
+                <div id="featuresList">
+                    <!-- Populated dynamically via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Fixed Action Footer -->
+    <!-- Fixed Action Footer -->
+    <footer>
+        <div class="footer-left">
+            <span style="font-size: 0.85rem; color: var(--text-muted);" id="footerStatus">Active: 🎙️ Preset: smart_bilingual | ✨ Goal: clean_bilingual</span>
+        </div>
+        <div class="footer-right">
+            <button class="glass-btn" onclick="loadConfig()">🔄 Reset</button>
+            <button class="glass-btn glass-btn-primary" onclick="saveAllSettings()">💾 Save All Settings</button>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast">
+        <span>✨</span>
+        <span id="toastMsg">Settings saved successfully!</span>
+    </div>
+
+    <!-- Application Controller Logic -->
+    <script>
+        let currentConfig = null;
+        let selectedPreset = "smart_bilingual";
+        let selectedGoal = "clean_bilingual";
+
+        // Theme management
+        function initTheme() {
+            const saved = localStorage.getItem("voice_refiner_theme") || "dark";
+            document.documentElement.setAttribute("data-theme", saved);
+            updateThemeBtn(saved);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute("data-theme") || "dark";
+            const next = current === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", next);
+            localStorage.setItem("voice_refiner_theme", next);
+            updateThemeBtn(next);
+        }
+
+        function updateThemeBtn(theme) {
+            const btn = document.getElementById("btnThemeToggle");
+            btn.innerHTML = theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+            const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick").includes(tabId));
+            if (targetBtn) targetBtn.classList.add("active");
+            document.getElementById(tabId).classList.add("active");
+        }
+
+        function updateRangeLabel(inputId, badgeId, suffix) {
+            const val = document.getElementById(inputId).value;
+            document.getElementById(badgeId).innerText = val + suffix;
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById("toast");
+            const m = document.getElementById("toastMsg");
+            m.innerText = msg;
+            t.style.borderColor = isError ? "#f38ba8" : "var(--teal)";
+            t.style.color = isError ? "#f38ba8" : "var(--teal)";
+            t.style.display = "flex";
+            setTimeout(() => { t.style.display = "none"; }, 3000);
+        }
+
+        function openManual() {
+            fetch("/api/open_manual", { method: "POST" })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.ok) alert("Error opening manual: " + res.error);
+                })
+                .catch(e => alert("Could not contact daemon: " + e));
+        }
+
+        // Load Configuration from Server
+        async function loadConfig() {
+            try {
+                const res = await fetch("/api/config");
+                const data = await res.json();
+                currentConfig = data;
+
+                // Load models in parallel
+                loadModels();
+
+                // Setup Presets & Goals
+                selectedPreset = data.active_preset || "smart_bilingual";
+                selectedGoal = data.active_goal || "clean_bilingual";
+                renderPresets(data.asr_presets || {}, selectedPreset);
+                renderGoals(data.refinement_goals || {}, selectedGoal);
+
+                // Populate Voice Refiner Tab
+                const m = data.main || {};
+                document.getElementById("main_GLOBAL_HOTKEY").value = data.global_hotkey || m.GLOBAL_HOTKEY || "Ctrl+Space";
+                document.getElementById("main_WHISPER_FALLBACK_MODEL").value = data.whisper_fallback_model || m.WHISPER_FALLBACK_MODEL || m.WHISPER_MODEL || "large-v3-turbo";
+                document.getElementById("main_OLLAMA_KEEP_ALIVE").value = m.OLLAMA_KEEP_ALIVE || "60m";
+
+                document.getElementById("main_SILENCE_THRESHOLD").value = m.SILENCE_THRESHOLD || 300;
+                updateRangeLabel("main_SILENCE_THRESHOLD", "badge_threshold", " RMS");
+
+                document.getElementById("main_SILENCE_DURATION").value = m.SILENCE_DURATION || 2.0;
+                updateRangeLabel("main_SILENCE_DURATION", "badge_duration", "s");
+
+                document.getElementById("main_PRE_ROLL_BUFFER_MS").value = m.PRE_ROLL_BUFFER_MS || 500;
+                updateRangeLabel("main_PRE_ROLL_BUFFER_MS", "badge_preroll", " ms");
+
+                document.getElementById("main_VAD_THRESHOLD").value = m.VAD_THRESHOLD !== undefined ? m.VAD_THRESHOLD : 0.50;
+                updateRangeLabel("main_VAD_THRESHOLD", "badge_vad", "");
+
+                document.getElementById("main_TEMPERATURE").value = m.TEMPERATURE !== undefined ? m.TEMPERATURE : 0.1;
+                updateRangeLabel("main_TEMPERATURE", "badge_temp", "");
+
+                document.getElementById("main_OLLAMA_HOST").value = m.OLLAMA_HOST || "http://localhost:11434";
+                document.getElementById("main_SAVE_TO_MARKDOWN").checked = m.SAVE_TO_MARKDOWN !== undefined ? m.SAVE_TO_MARKDOWN : true;
+                document.getElementById("main_MARKDOWN_PATH").value = m.MARKDOWN_PATH || "~/Documents/VoiceNotes";
+                document.getElementById("main_CACHE_RETENTION_DAYS").value = m.CACHE_RETENTION_DAYS || 7;
+
+                // Populate Evening Review Tab
+                const r = data.review || {};
+                const vp = r.vault_paths || {};
+                document.getElementById("rev_vault_paths_base_vault").value = vp.base_vault || "~/learning_vault";
+                document.getElementById("rev_vault_paths_daily_notes").value = vp.daily_notes || "~/learning_vault/My Daily Notes";
+                document.getElementById("rev_vault_paths_wellness_notes").value = vp.wellness_notes || "~/learning_vault/04_Wellness_and_Journal";
+
+                document.getElementById("rev_voice_narration").checked = r.voice_narration !== false;
+                document.getElementById("rev_tts_engine").value = r.tts_engine || "piper";
+                document.getElementById("rev_voice_control").checked = !!r.voice_control;
+                document.getElementById("rev_last_n_days_context").value = r.last_n_days_context || 3;
+
+                // Populate Notifications Tab
+                document.getElementById("rev_telegram_enabled").checked = !!r.telegram_enabled;
+                document.getElementById("rev_telegram_bot_token").value = r.telegram_bot_token || "";
+                document.getElementById("rev_telegram_chat_id").value = r.telegram_chat_id || "";
+                document.getElementById("rev_morning_briefing_enabled").checked = !!r.morning_briefing_enabled;
+                document.getElementById("rev_morning_briefing_time").value = r.morning_briefing_time || "08:00";
+
+                // Populate Features Tab
+                renderFeatures(data.features_def, m.FEATURES || {});
+
+                // Update Header Status
+                updateHeaderStatus();
+            } catch (err) {
+                console.error("Config fetch error:", err);
+                showToast("Failed to load settings from daemon", true);
+            }
+        }
+
+        function updateHeaderStatus() {
+            const presets = (currentConfig && currentConfig.asr_presets) || {};
+            const goals = (currentConfig && currentConfig.refinement_goals) || {};
+            const pInfo = presets[selectedPreset] || { label: selectedPreset };
+            const gInfo = goals[selectedGoal] || { label: selectedGoal };
+
+            const pText = document.getElementById("activePresetText");
+            if (pText) pText.innerText = `🎙 ${pInfo.label || selectedPreset}`;
+
+            const gText = document.getElementById("activeGoalText");
+            if (gText) gText.innerText = `✨ ${gInfo.label || selectedGoal}`;
+
+            const fStatus = document.getElementById("footerStatus");
+            if (fStatus) fStatus.innerText = `Active: 🎙️ Preset: ${pInfo.label || selectedPreset} | ✨ Goal: ${gInfo.label || selectedGoal}`;
+        }
+
+        function renderPresets(presets, current) {
+            const container = document.getElementById("presetGrid");
+            container.innerHTML = "";
+            const currentPresets = presets || (currentConfig && currentConfig.asr_presets) || {};
+            Object.keys(currentPresets).forEach(key => {
+                const p = currentPresets[key];
+                const card = document.createElement("div");
+                const isSelected = (key === current);
+                card.className = "profile-card" + (isSelected ? " selected" : "");
+                card.onclick = () => {
+                    selectedPreset = key;
+                    renderPresets(currentPresets, key);
+                };
+                card.innerHTML = `
+                    <div class="profile-card-title">
+                        <span>${p.label || key}</span>
+                        ${isSelected ? '<span style="color: var(--teal); font-size: 0.8rem; font-weight: 700;">● Active</span>' : ''}
+                    </div>
+                    <div class="profile-card-desc">${p.description || "Speech preset."}</div>
+                `;
+                container.appendChild(card);
+            });
+            updateHeaderStatus();
+        }
+
+        function renderGoals(goals, current) {
+            const sel = document.getElementById("main_REFINEMENT_GOAL");
+            sel.innerHTML = "";
+            Object.keys(goals).forEach(key => {
+                const g = goals[key];
+                const opt = document.createElement("option");
+                opt.value = key;
+                opt.textContent = g.label || key;
+                if (key === current) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            onGoalChange();
+        }
+
+        function onGoalChange() {
+            const sel = document.getElementById("main_REFINEMENT_GOAL");
+            selectedGoal = sel.value;
+            const goals = (currentConfig && currentConfig.refinement_goals) || {};
+            const info = goals[selectedGoal] || {};
+            const descEl = document.getElementById("goalDescription");
+            if (descEl) {
+                descEl.textContent = info.description || "";
+            }
+            if (info.model && currentConfig) {
+                const enSel = document.getElementById("main_OLLAMA_MODELS_en");
+                if (enSel && info.output_lang !== "pure_hindi") {
+                    for (let opt of enSel.options) {
+                        if (opt.value === info.model) { enSel.value = info.model; break; }
+                    }
+                }
+            }
+            updateHeaderStatus();
+        }
+
+        function renderFeatures(featuresDef, activeFeatures) {
+            const container = document.getElementById("featuresList");
+            container.innerHTML = "";
+            (featuresDef || []).forEach(f => {
+                const isChecked = activeFeatures[f.key] !== false;
+                const row = document.createElement("div");
+                row.className = "form-row";
+                row.innerHTML = `
+                    <div class="form-label">
+                        ${f.label}
+                        <small>${f.note}</small>
+                    </div>
+                    <div class="form-field">
+                        <label class="switch">
+                            <input type="checkbox" id="feat_${f.key}" ${isChecked ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        async function loadModels() {
+            try {
+                const res = await fetch("/api/models");
+                const data = await res.json();
+                const models = data.models || [];
+                
+                const selects = [
+                    { id: "main_OLLAMA_MODELS_en", selected: currentConfig.main?.OLLAMA_MODELS?.en || "qwen2.5:3b" },
+                    { id: "main_OLLAMA_MODELS_hi", selected: currentConfig.main?.OLLAMA_MODELS?.hi || "llama3-hindi" },
+                    { id: "main_OLLAMA_TRANSLATE_MODELS_to_en", selected: currentConfig.main?.OLLAMA_TRANSLATE_MODELS?.to_en || "qwen2.5:3b" }
+                ];
+
+                selects.forEach(s => {
+                    const el = document.getElementById(s.id);
+                    el.innerHTML = "";
+                    models.forEach(m => {
+                        const opt = document.createElement("option");
+                        opt.value = m;
+                        opt.innerText = m;
+                        if (m === s.selected) opt.selected = true;
+                        el.appendChild(opt);
+                    });
+                });
+            } catch (e) {
+                console.error("Failed to load models:", e);
+            }
+        }
+
+        async function testTelegram() {
+            const statusEl = document.getElementById("tgTestStatus");
+            statusEl.innerText = "⏳ Connecting…";
+            statusEl.style.color = "var(--text-muted)";
+
+            const payload = {
+                telegram_enabled: true,
+                telegram_bot_token: document.getElementById("rev_telegram_bot_token").value.trim(),
+                telegram_chat_id: document.getElementById("rev_telegram_chat_id").value.trim()
+            };
+
+            try {
+                const res = await fetch("/api/test_telegram", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    statusEl.innerText = "✅ " + data.message;
+                    statusEl.style.color = "var(--teal)";
+                } else {
+                    statusEl.innerText = "❌ " + data.message;
+                    statusEl.style.color = "#f38ba8";
+                }
+            } catch (err) {
+                statusEl.innerText = "❌ Network failure";
+                statusEl.style.color = "#f38ba8";
+            }
+        }
+
+        // Save All Settings
+        async function saveAllSettings() {
+            const goals = (currentConfig && currentConfig.refinement_goals) || {};
+            const curGoalInfo = goals[selectedGoal] || {};
+            const targetLang = curGoalInfo.output_lang || "bilingual";
+            const fallbackModel = document.getElementById("main_WHISPER_FALLBACK_MODEL").value;
+
+            const mainPatch = {
+                GLOBAL_HOTKEY: document.getElementById("main_GLOBAL_HOTKEY").value.trim() || "Ctrl+Space",
+                ACTIVE_ASR_PRESET: selectedPreset,
+                ACTIVE_MODEL_PROFILE: selectedPreset,
+                ACTIVE_REFINEMENT_GOAL: selectedGoal,
+                LANGUAGE_MODE: targetLang,
+                MODE: curGoalInfo.translate ? "translate" : "refine",
+                WHISPER_FALLBACK_MODEL: fallbackModel,
+                WHISPER_MODEL: fallbackModel,
+                OLLAMA_MODELS: {
+                    en: document.getElementById("main_OLLAMA_MODELS_en").value,
+                    hi: document.getElementById("main_OLLAMA_MODELS_hi").value
+                },
+                OLLAMA_TRANSLATE_MODELS: {
+                    to_en: document.getElementById("main_OLLAMA_TRANSLATE_MODELS_to_en").value,
+                    to_hi: currentConfig.main?.OLLAMA_TRANSLATE_MODELS?.to_hi || "llama3-hindi"
+                },
+                OLLAMA_KEEP_ALIVE: document.getElementById("main_OLLAMA_KEEP_ALIVE").value,
+                SILENCE_THRESHOLD: parseInt(document.getElementById("main_SILENCE_THRESHOLD").value, 10),
+                SILENCE_DURATION: parseFloat(document.getElementById("main_SILENCE_DURATION").value),
+                PRE_ROLL_BUFFER_MS: parseInt(document.getElementById("main_PRE_ROLL_BUFFER_MS").value, 10) || 500,
+                VAD_THRESHOLD: parseFloat(document.getElementById("main_VAD_THRESHOLD").value) || 0.5,
+                TEMPERATURE: parseFloat(document.getElementById("main_TEMPERATURE").value),
+                OLLAMA_HOST: document.getElementById("main_OLLAMA_HOST").value.trim() || "http://localhost:11434",
+                SAVE_TO_MARKDOWN: document.getElementById("main_SAVE_TO_MARKDOWN").checked,
+                MARKDOWN_PATH: document.getElementById("main_MARKDOWN_PATH").value.trim() || "~/Documents/VoiceNotes",
+                CACHE_RETENTION_DAYS: parseInt(document.getElementById("main_CACHE_RETENTION_DAYS").value, 10) || 7,
+                FEATURES: {}
+            };
+
+            // Read feature switches
+            (currentConfig.features_def || []).forEach(f => {
+                const el = document.getElementById("feat_" + f.key);
+                if (el) mainPatch.FEATURES[f.key] = el.checked;
+            });
+
+            const reviewPatch = {
+                vault_paths: {
+                    base_vault: document.getElementById("rev_vault_paths_base_vault").value.trim(),
+                    daily_notes: document.getElementById("rev_vault_paths_daily_notes").value.trim(),
+                    wellness_notes: document.getElementById("rev_vault_paths_wellness_notes").value.trim()
+                },
+                voice_narration: document.getElementById("rev_voice_narration").checked,
+                tts_engine: document.getElementById("rev_tts_engine").value,
+                voice_control: document.getElementById("rev_voice_control").checked,
+                last_n_days_context: parseInt(document.getElementById("rev_last_n_days_context").value, 10) || 3,
+                telegram_enabled: document.getElementById("rev_telegram_enabled").checked,
+                telegram_bot_token: document.getElementById("rev_telegram_bot_token").value.trim(),
+                telegram_chat_id: document.getElementById("rev_telegram_chat_id").value.trim(),
+                morning_briefing_enabled: document.getElementById("rev_morning_briefing_enabled").checked,
+                morning_briefing_time: document.getElementById("rev_morning_briefing_time").value.trim() || "08:00"
+            };
+
+            try {
+                const res = await fetch("/api/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ main: mainPatch, review: reviewPatch })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showToast("✨ Settings saved successfully!");
+                    loadConfig();
+                } else {
+                    showToast("❌ " + (data.errors ? data.errors.join("; ") : "Save failed"), true);
+                }
+            } catch (e) {
+                showToast("Save error: " + e, true);
+            }
+        }
+
+        async function cleanGarbageCache() {
+            const days = parseInt(document.getElementById("main_CACHE_RETENTION_DAYS").value, 10) || 7;
+            try {
+                const res = await fetch("/api/clean_cache", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ retention_days: days })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showToast(`🧹 Cleaned cache: ${data.removed_files} files, ${data.removed_dirs} folders (${data.freed_mb} MB freed).`);
+                } else {
+                    showToast("❌ Cache clean failed: " + (data.error || "Unknown error"), true);
+                }
+            } catch (err) {
+                showToast("Cache clean error: " + err.message, true);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener("DOMContentLoaded", () => {
+            initTheme();
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
