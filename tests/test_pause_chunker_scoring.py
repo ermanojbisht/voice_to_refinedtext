@@ -156,3 +156,118 @@ def test_engine_transcribe_long_audio_guard(tmp_path):
     assert "First half of long dictation." in result_text
     assert "Second half after breath pause." in result_text
     assert mock_provider.transcribe.call_count == 2
+
+
+def test_reprocess_last_audio_uses_pause_chunker(tmp_path):
+    """Verify 'Re-process Last Audio' automatically benefits from Pause-Guided Chunking."""
+    from engine import VoiceEngine
+    import scipy.io.wavfile as wav
+
+    # Create cached 50-second input.wav in tmp_path
+    sr = 16000
+    v1 = (np.sin(2 * np.pi * 300 * np.linspace(0, 25, 25 * sr)) * 10000).astype(np.int16)
+    p = np.zeros(int(0.5 * sr), dtype=np.int16)
+    v2 = (np.sin(2 * np.pi * 300 * np.linspace(0, 24.5, int(24.5 * sr))) * 10000).astype(np.int16)
+    pcm = np.concatenate([v1, p, v2])
+
+    input_wav = str(tmp_path / "input.wav")
+    wav.write(input_wav, sr, pcm)
+
+    engine = VoiceEngine.__new__(VoiceEngine)
+    engine.config = {
+        "LANGUAGE_MODE": "pure_english",
+        "PAUSE_GUIDED_CHUNKING": True,
+        "CHUNK_TARGET_SECONDS": 25.0,
+        "CHUNK_MAX_SECONDS": 35.0,
+        "CHUNK_MIN_SECONDS": 8.0,
+        "CHUNK_MIN_PAUSE_MS": 250,
+        "FEATURES": {"pwd_terminology_corrector": False},
+        "ASR_ENGINE": "mock_asr",
+    }
+    engine.script_dir = str(tmp_path)
+    engine._whisper_model = None
+
+    mock_provider = MagicMock()
+    mock_provider.transcribe.side_effect = [
+        MagicMock(text="Part 1 of cached audio."),
+        MagicMock(text="Part 2 after pause."),
+    ]
+    engine.asr_provider = mock_provider
+    engine.get_active_preset = MagicMock(return_value="smart_bilingual")
+    engine.get_active_goal = MagicMock(return_value="clean_bilingual")
+    engine.set_active_preset = MagicMock()
+    engine.set_active_goal = MagicMock()
+    engine.refine = MagicMock(side_effect=lambda txt: f"Refined: {txt}")
+
+    res = engine.reprocess_last_audio()
+
+    assert res["ok"] is True
+    assert "Part 1 of cached audio." in res["raw_text"]
+    assert "Part 2 after pause." in res["raw_text"]
+    assert "Refined: Part 1 of cached audio. Part 2 after pause." == res["final_text"]
+    assert mock_provider.transcribe.call_count == 2
+
+
+def test_dashboard_recording_worker_uses_pause_chunker(tmp_path):
+    """Verify Web Dashboard recording flow invokes VoiceEngine.transcribe with pause chunker."""
+    from engine import VoiceEngine
+    from refiner_service import RefinerService
+    import scipy.io.wavfile as wav
+
+    sr = 16000
+    v1 = (np.sin(2 * np.pi * 300 * np.linspace(0, 25, 25 * sr)) * 10000).astype(np.int16)
+    p = np.zeros(int(0.5 * sr), dtype=np.int16)
+    v2 = (np.sin(2 * np.pi * 300 * np.linspace(0, 24.5, int(24.5 * sr))) * 10000).astype(np.int16)
+    pcm = np.concatenate([v1, p, v2])
+
+    input_wav = str(tmp_path / "input.wav")
+    wav.write(input_wav, sr, pcm)
+
+    engine = VoiceEngine.__new__(VoiceEngine)
+    engine.config = {
+        "LANGUAGE_MODE": "pure_english",
+        "PAUSE_GUIDED_CHUNKING": True,
+        "CHUNK_TARGET_SECONDS": 25.0,
+        "CHUNK_MAX_SECONDS": 35.0,
+        "CHUNK_MIN_SECONDS": 8.0,
+        "CHUNK_MIN_PAUSE_MS": 250,
+        "FEATURES": {"pwd_terminology_corrector": False, "start_end_sounds": False},
+        "ASR_ENGINE": "mock_asr",
+    }
+    engine.script_dir = str(tmp_path)
+    engine._whisper_model = None
+
+    mock_provider = MagicMock()
+    mock_provider.transcribe.side_effect = [
+        MagicMock(text="Dashboard chunk 1."),
+        MagicMock(text="Dashboard chunk 2."),
+    ]
+    engine.asr_provider = mock_provider
+    engine.get_active_preset = MagicMock(return_value="smart_bilingual")
+    engine.get_active_goal = MagicMock(return_value="clean_bilingual")
+    engine.refine = MagicMock(side_effect=lambda txt: f"Polished: {txt}")
+
+    # Initialize RefinerService
+    import threading
+    ref_svc = RefinerService.__new__(RefinerService)
+    ref_svc.engine = engine
+    ref_svc.script_dir = str(tmp_path)
+    ref_svc.state_lock = threading.Lock()
+    ref_svc.is_recording = False
+    ref_svc.is_processing = False
+    ref_svc.visual_state = "idle"
+    ref_svc.status_message = "Ready"
+    ref_svc.last_refined_text = ""
+    ref_svc.last_raw_text = ""
+    ref_svc.last_duration = 0.0
+    ref_svc.recent_clips = []
+
+    # Calling reprocess_last_sync exercises the exact transcription/refinement pipeline
+    # that the dashboard background worker uses!
+    res = ref_svc.reprocess_last_sync()
+
+    assert res["ok"] is True
+    assert "Dashboard chunk 1." in res["raw_text"]
+    assert "Dashboard chunk 2." in res["raw_text"]
+    assert "Polished: Dashboard chunk 1. Dashboard chunk 2." == res["text"]
+    assert mock_provider.transcribe.call_count == 2
