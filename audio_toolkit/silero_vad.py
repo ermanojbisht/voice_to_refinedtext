@@ -113,6 +113,7 @@ class SileroVAD:
                 threshold=self.threshold,
                 min_speech_duration_ms=min_speech_duration_ms,
                 min_silence_duration_ms=min_silence_duration_ms,
+                speech_pad_ms=max(30, min(100, min_silence_duration_ms // 4)),
             )
             return f_vad.get_speech_timestamps(pcm, vad_opts)
         except Exception:
