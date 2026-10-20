@@ -414,6 +414,36 @@
 </li>
 </ol>
 <hr />
+<h3 id="15-automated-environment-doctor-doctorpy-self-healing-health-checks">1.5 Automated Environment Doctor (<code>doctor.py</code>) &amp; Self-Healing Health Checks</h3>
+<blockquote>
+<p><strong>Goal:</strong> Verify that all audio, model, kernel, and LLM dependencies are operational across any machine with one command.</p>
+</blockquote>
+<p>Whenever setting up the application on a new PC, changing audio devices, or moving models to a new drive, run the diagnostic doctor:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Run complete 6-point subsystem diagnostic</span>
+python<span class="w"> </span>doctor.py
+
+<span class="c1"># Actively probe microphone hardware for 1.5 seconds (verifies audio RMS level)</span>
+python<span class="w"> </span>doctor.py<span class="w"> </span>--mic
+
+<span class="c1"># Output machine-readable JSON for automated scripts or dashboards</span>
+python<span class="w"> </span>doctor.py<span class="w"> </span>--json
+
+<span class="c1"># Interactively execute safe automated fixes (pull missing models, create folders)</span>
+python<span class="w"> </span>doctor.py<span class="w"> </span>--fix
+</code></pre></div>
+
+<h4 id="what-doctorpy-checks">What <code>doctor.py</code> Checks:</h4>
+<ol>
+<li><strong>Python Runtime &amp; Libraries</strong>: Verifies Python $\ge 3.10$ and all core modules (<code>sounddevice</code>, <code>scipy</code>, <code>numpy</code>, <code>evdev</code>, <code>transcribe_cpp</code>, <code>faster_whisper</code>).</li>
+<li><strong>Models &amp; Multi-PC Portability</strong>: Confirms that <code>MODELS_DIR</code> is reachable, checks the existence and non-zero size of all configured <code>.gguf</code> and <code>.bin</code> models, and verifies <code>./models/</code> drop-in readiness.</li>
+<li><strong>Audio Input/Output</strong>: Queries active ALSA/PulseAudio/PipeWire audio devices, verifies default recording mic, and calculates live mic signal RMS levels.</li>
+<li><strong>Desktop Environment &amp; Hotkeys</strong>: Detects Wayland vs X11, verifies <code>/dev/input/event*</code> read permissions for kernel walkie-talkie hotkeys, and verifies <code>ydotool</code> / <code>wl-copy</code> / <code>xdotool</code> availability.</li>
+<li><strong>Ollama LLM Service</strong>: Pings local Ollama daemon, lists pulled models, and ensures required English (<code>qwen2.5:3b</code>) and Hindi (<code>llama3-hindi</code>) refiners are downloaded.</li>
+<li><strong>Audio-to-Idea Batch Tools</strong>: Validates that <code>ffmpeg</code> and <code>ffprobe</code> binaries are available in <code>$PATH</code>.</li>
+</ol>
+<h4 id="gui-integration">GUI Integration:</h4>
+<p>You can also run the doctor directly from the Web Settings GUI (<code>http://127.0.0.1:8765/settings</code>) by clicking the <strong>🏥 System Doctor</strong> button in the top navigation bar. It renders live status chips (<code>PASS</code>, <code>WARN</code>, <code>FAIL</code>) and provides copy-pasteable one-liner fixes for any warning.</p>
+<hr />
 </section>
 <section id="chapter-2" class="chapter-card">
 <div class="chapter-badge">⚙️ Chapter 2</div>
@@ -995,7 +1025,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 20:52:12
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 21:03:18
             </div>
         </div>
     </div>

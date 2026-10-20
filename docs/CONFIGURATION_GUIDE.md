@@ -166,6 +166,38 @@ When transferring this repository to another PC or drive where paths differ:
 
 ---
 
+### 1.5 Automated Environment Doctor (`doctor.py`) & Self-Healing Health Checks
+> **Goal:** Verify that all audio, model, kernel, and LLM dependencies are operational across any machine with one command.
+
+Whenever setting up the application on a new PC, changing audio devices, or moving models to a new drive, run the diagnostic doctor:
+
+```bash
+# Run complete 6-point subsystem diagnostic
+python doctor.py
+
+# Actively probe microphone hardware for 1.5 seconds (verifies audio RMS level)
+python doctor.py --mic
+
+# Output machine-readable JSON for automated scripts or dashboards
+python doctor.py --json
+
+# Interactively execute safe automated fixes (pull missing models, create folders)
+python doctor.py --fix
+```
+
+#### What `doctor.py` Checks:
+1. **Python Runtime & Libraries**: Verifies Python $\ge 3.10$ and all core modules (`sounddevice`, `scipy`, `numpy`, `evdev`, `transcribe_cpp`, `faster_whisper`).
+2. **Models & Multi-PC Portability**: Confirms that `MODELS_DIR` is reachable, checks the existence and non-zero size of all configured `.gguf` and `.bin` models, and verifies `./models/` drop-in readiness.
+3. **Audio Input/Output**: Queries active ALSA/PulseAudio/PipeWire audio devices, verifies default recording mic, and calculates live mic signal RMS levels.
+4. **Desktop Environment & Hotkeys**: Detects Wayland vs X11, verifies `/dev/input/event*` read permissions for kernel walkie-talkie hotkeys, and verifies `ydotool` / `wl-copy` / `xdotool` availability.
+5. **Ollama LLM Service**: Pings local Ollama daemon, lists pulled models, and ensures required English (`qwen2.5:3b`) and Hindi (`llama3-hindi`) refiners are downloaded.
+6. **Audio-to-Idea Batch Tools**: Validates that `ffmpeg` and `ffprobe` binaries are available in `$PATH`.
+
+#### GUI Integration:
+You can also run the doctor directly from the Web Settings GUI (`http://127.0.0.1:8765/settings`) by clicking the **🏥 System Doctor** button in the top navigation bar. It renders live status chips (`PASS`, `WARN`, `FAIL`) and provides copy-pasteable one-liner fixes for any warning.
+
+---
+
 ## 2. Core Voice Refiner (`config.json`) Reference
 
 | Configuration Key | Type | Default | Valid Options | Description & Performance Impact |

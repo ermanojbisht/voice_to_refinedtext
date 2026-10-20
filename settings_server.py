@@ -260,6 +260,15 @@ class SettingsHandler(BaseHTTPRequestHandler):
             self._send_json({"status": "ok", "pid": os.getpid()})
             return
 
+        if path == "/api/doctor":
+            try:
+                import doctor
+                rep = doctor.run_all_checks(run_mic=False)
+                self._send_json(rep.to_dict())
+            except Exception as exc:
+                self._send_json({"error": str(exc), "overall_status": "FAIL"}, 500)
+            return
+
         if path == "/api/refiner/status":
             ref_svc = RefinerService.get_instance()
             self._send_json(ref_svc.get_status())

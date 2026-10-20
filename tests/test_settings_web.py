@@ -104,3 +104,15 @@ def test_web_settings_html_file_exists():
     assert "Nemotron" in content or "nemotron_fast" in content
     assert "main_PRE_ROLL_BUFFER_MS" in content
     assert "main_VAD_THRESHOLD" in content
+    assert "openDoctorModal" in content
+
+
+def test_api_doctor(running_server):
+    url = f"http://127.0.0.1:{running_server}/api/doctor"
+    with urllib.request.urlopen(url, timeout=5.0) as resp:
+        assert resp.status == 200
+        data = json.loads(resp.read().decode("utf-8"))
+        assert "overall_status" in data
+        assert "checks" in data
+        assert isinstance(data["checks"], list)
+        assert len(data["checks"]) > 0
