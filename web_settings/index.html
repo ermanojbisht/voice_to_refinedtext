@@ -513,6 +513,7 @@
     <!-- Tab Bar -->
     <nav class="tabs-bar">
         <button class="tab-btn active" onclick="switchTab('tab-voice')">🎙️ Voice Refiner</button>
+        <button class="tab-btn" onclick="switchTab('tab-paste')">⚡ Auto-Paste & Desktop</button>
         <button class="tab-btn" onclick="switchTab('tab-review')">🌙 Evening Review</button>
         <button class="tab-btn" onclick="switchTab('tab-notifications')">📲 Notifications</button>
         <button class="tab-btn" onclick="switchTab('tab-features')">⚙️ Features</button>
@@ -723,6 +724,110 @@
                         <button type="button" class="btn btn-secondary" onclick="cleanGarbageCache()" style="padding: 6px 14px; font-size: 12px; margin-left: auto;">
                             🧹 Clean Cache Now
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Auto-Paste & Desktop Integration -->
+        <div id="tab-paste" class="tab-content">
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>📋 Clipboard Delivery & Restoration Engine</h2>
+                    <p>Configure how refined speech is delivered to your active desktop window without losing clipboard history.</p>
+                </div>
+
+                <div style="margin-bottom: 20px; padding: 14px 18px; border-radius: 10px; background: rgba(137, 180, 250, 0.1); border-left: 4px solid var(--accent); font-size: 13px; line-height: 1.5; color: var(--text-main);">
+                    <strong>💡 Zero Clipboard Data Loss Guarantee:</strong><br>
+                    When <em>Safe Clipboard Auto-Paste</em> is selected, the system stashes whatever was in your clipboard before you spoke (passwords, URLs, code), injects the newly refined speech into your open application, and automatically restores your previous clipboard memory 150ms later.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">
+                        Paste Delivery Method (PASTE_METHOD)
+                        <small>Choose how dictations are placed into your documents.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_PASTE_METHOD">
+                            <option value="clipboard_restore">⚡ Safe Clipboard Auto-Paste (Recommended — Preserves Previous Clipboard History)</option>
+                            <option value="clipboard_only">📋 Clipboard Only (Copies to Clipboard, You Paste Manually)</option>
+                            <option value="direct_typing">⌨️ Simulated Keystrokes (Types Character-by-Character)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">
+                        Paste Keystroke Combination (PASTE_KEY_COMBO)
+                        <small>Key chord injected into the active window to trigger pasting.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_PASTE_KEY_COMBO">
+                            <option value="shift_insert">Shift + Insert (Universal: Works in Linux Terminals, CLI & Word/GUI) [Recommended]</option>
+                            <option value="ctrl_v">Ctrl + V (Standard GUI Applications Only — Word, Browsers, LibreOffice)</option>
+                            <option value="ctrl_shift_v">Ctrl + Shift + V (Modern Wayland & GNOME Terminals)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">
+                        Target App Consumption Window (PASTE_DELAY_MS)
+                        <small>Quiet delay (in ms) the engine waits before restoring your previous clipboard, allowing the target application event queue to finish pasting.</small>
+                    </div>
+                    <div class="form-field range-wrapper">
+                        <input type="range" id="main_PASTE_DELAY_MS" min="50" max="500" step="25" oninput="updateRangeLabel('main_PASTE_DELAY_MS', 'badge_pastedelay', ' ms')">
+                        <span class="range-badge" id="badge_pastedelay">150 ms</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">
+                        Linux Typing Tool Subsystem (TYPING_TOOL)
+                        <small>Underlying Linux input injection driver.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_TYPING_TOOL">
+                            <option value="auto">Auto-Detect (Recommended — ydotool on Wayland, xdotool on X11)</option>
+                            <option value="ydotool">ydotool (Kernel uinput daemon — works across Wayland & X11)</option>
+                            <option value="xdotool">xdotool (X11 / XWayland native)</option>
+                            <option value="wtype">wtype (Wayland wlroots compositors)</option>
+                            <option value="pynput">pynput (Python Xlib synthetic events)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Recording Overlay Pill Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🎨 Floating Recording Overlay Pill</h2>
+                    <p>Customize the on-screen live waveform heads-up widget position and animation style.</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Overlay Screen Position (OVERLAY_POSITION)
+                        <small>Where the floating recording pill appears on your monitor.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OVERLAY_POSITION">
+                            <option value="top">Top Center (Heads-up display at screen top) [Default]</option>
+                            <option value="bottom">Bottom Center (Above taskbar / dock)</option>
+                            <option value="bottom_right">Bottom Right (Discreet corner badge)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">
+                        Wavefront Motion & Style (OVERLAY_STYLE)
+                        <small>Visual behavior during audio recording.</small>
+                    </div>
+                    <div class="form-field">
+                        <select id="main_OVERLAY_STYLE">
+                            <option value="wave">🌊 Dynamic Reactive Wavefront (Bounces live to your speech volume)</option>
+                            <option value="stagnant">⏸️ Stagnant / Minimal (Steady calm indicator without moving bars)</option>
+                            <option value="hidden">🚫 Hidden / Disabled (Silent tray-only mode, no screen overlay)</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -1026,6 +1131,14 @@
                 document.getElementById("main_MARKDOWN_PATH").value = m.MARKDOWN_PATH || "~/Documents/VoiceNotes";
                 document.getElementById("main_CACHE_RETENTION_DAYS").value = m.CACHE_RETENTION_DAYS || 7;
 
+                document.getElementById("main_PASTE_METHOD").value = m.PASTE_METHOD || "clipboard_restore";
+                document.getElementById("main_PASTE_KEY_COMBO").value = m.PASTE_KEY_COMBO || "shift_insert";
+                document.getElementById("main_PASTE_DELAY_MS").value = m.PASTE_DELAY_MS || 150;
+                updateRangeLabel("main_PASTE_DELAY_MS", "badge_pastedelay", " ms");
+                document.getElementById("main_TYPING_TOOL").value = m.TYPING_TOOL || "auto";
+                document.getElementById("main_OVERLAY_POSITION").value = m.OVERLAY_POSITION || "top";
+                document.getElementById("main_OVERLAY_STYLE").value = m.OVERLAY_STYLE || "wave";
+
                 // Populate Evening Review Tab
                 const r = data.review || {};
                 const vp = r.vault_paths || {};
@@ -1247,6 +1360,12 @@
                 SAVE_TO_MARKDOWN: document.getElementById("main_SAVE_TO_MARKDOWN").checked,
                 MARKDOWN_PATH: document.getElementById("main_MARKDOWN_PATH").value.trim() || "~/Documents/VoiceNotes",
                 CACHE_RETENTION_DAYS: parseInt(document.getElementById("main_CACHE_RETENTION_DAYS").value, 10) || 7,
+                PASTE_METHOD: document.getElementById("main_PASTE_METHOD").value,
+                PASTE_KEY_COMBO: document.getElementById("main_PASTE_KEY_COMBO").value,
+                PASTE_DELAY_MS: parseInt(document.getElementById("main_PASTE_DELAY_MS").value, 10) || 150,
+                TYPING_TOOL: document.getElementById("main_TYPING_TOOL").value,
+                OVERLAY_POSITION: document.getElementById("main_OVERLAY_POSITION").value,
+                OVERLAY_STYLE: document.getElementById("main_OVERLAY_STYLE").value,
                 FEATURES: {}
             };
 

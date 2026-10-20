@@ -48,6 +48,9 @@ def test_api_config(running_server):
         assert "active_profile" in data
         assert "features_def" in data
         assert len(data["features_def"]) >= 5
+        assert data["main"].get("PASTE_METHOD") in ["clipboard_restore", "clipboard_only", "direct_typing"]
+        assert "PASTE_DELAY_MS" in data["main"]
+        assert "PASTE_KEY_COMBO" in data["main"]
 
 
 def test_api_models(running_server):

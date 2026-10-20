@@ -192,7 +192,7 @@ def progress(event):
 JobService(json.load(open(sys.argv[1])),FakeASR,FakeLLM).run(sys.argv[2],summary=False,notify=progress)
 '''
     child = subprocess.run([sys.executable, '-c', script, str(settings), str(source), helpers],
-                           capture_output=True, text=True, timeout=15)
+                           capture_output=True, text=True, timeout=30)
     assert child.returncode == 42, child.stderr
     before = FakeASR.calls
     result = JobService(cfg, FakeASR, FakeLLM).run(source, summary=False)

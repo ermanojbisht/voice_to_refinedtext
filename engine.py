@@ -168,7 +168,7 @@ class VoiceEngine:
         return self._asr_provider
 
     @legacy_recording
-    def record(self, on_start=None, on_end=None, pre_record_notification=None):
+    def record(self, on_start=None, on_end=None, pre_record_notification=None, on_audio_chunk=None):
         """Records audio with pre-roll buffer, neural VAD, and manual stop support."""
         self.stop_event.clear()
         recorder = self.stream_recorder
@@ -188,6 +188,7 @@ class VoiceEngine:
             on_end=on_end,
             pre_record_notification=pre_record_notification,
             play_sounds=play_sounds,
+            on_audio_chunk=on_audio_chunk,
         )
 
     # Languages this app legitimately produces as final output.
@@ -574,17 +575,40 @@ class VoiceEngine:
         if self._stream_recorder is not None:
             self._stream_recorder.stop_recording()
 
-    def type_text(self, text):
-        """Simulates keyboard typing to insert text at the current cursor position.
+    def paste_text(self, text: str) -> bool:
+        """Pastes text at current cursor position using safe clipboard save & restore.
 
-        On Wayland, pynput (Xlib) cannot send events to native Wayland windows.
-        Uses wtype (Wayland) or xdotool (X11/XWayland) when available, with
-        pynput as the last resort for environments without either tool.
+        Preserves user clipboard history, injects Ctrl+V key chord (or configured combo),
+        waits quiet period, and restores original clipboard content.
+        """
+        if not text:
+            return False
+        time.sleep(0.1)
+        try:
+            from audio_toolkit import get_clipboard_manager
+            mgr = get_clipboard_manager()
+            paste_method = self.config.get("PASTE_METHOD", "clipboard_restore")
+            delay_ms = int(self.config.get("PASTE_DELAY_MS", 150))
+            key_combo = self.config.get("PASTE_KEY_COMBO", "ctrl_v")
+            return mgr.paste_with_restore(text, paste_method=paste_method, delay_ms=delay_ms, key_combo=key_combo)
+        except Exception as e:
+            print(f"Error while pasting: {e}")
+            return False
+
+    def type_text(self, text):
+        """Inserts text at the current cursor position.
+
+        If PASTE_METHOD is 'direct_typing', simulates keyboard typing.
+        Otherwise (default 'clipboard_restore' or 'clipboard_only'), routes to paste_text()
+        for instant delivery and zero clipboard history loss.
         """
         if not text:
             return
-        # Small delay so the user's original window regains focus after the
-        # tray/notification activity that happened during recording.
+        method = self.config.get("PASTE_METHOD", "clipboard_restore")
+        if method != "direct_typing":
+            return self.paste_text(text)
+
+        # Legacy character-by-character typing:
         time.sleep(0.8)
         try:
             session = os.environ.get("XDG_SESSION_TYPE", "").lower()

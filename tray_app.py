@@ -136,6 +136,13 @@ class VoiceAssistantTray:
             self._setup_hotkey()
             self._update_tray_title()
             self._refresh_menu()
+            try:
+                from audio_toolkit import get_recording_overlay
+                ov = get_recording_overlay()
+                ov.set_position(self.engine.config.get("OVERLAY_POSITION", "top"))
+                ov.set_style(self.engine.config.get("OVERLAY_STYLE", "wave"))
+            except Exception:
+                pass
 
     def _start_config_watcher(self):
         """Periodically checks config.json mtime in background to auto-sync web changes."""
@@ -425,13 +432,24 @@ class VoiceAssistantTray:
 
     def run_full_process(self):
         """Record → Transcribe → route to review accumulation or normal clipboard."""
+        overlay = None
         try:
+            try:
+                from audio_toolkit import get_recording_overlay
+                overlay = get_recording_overlay()
+                overlay.set_position(self.engine.config.get("OVERLAY_POSITION", "top"))
+                overlay.set_style(self.engine.config.get("OVERLAY_STYLE", "wave"))
+                overlay.show_listening()
+            except Exception:
+                pass
+
             self.is_recording = True
             self.update_icon("recording")
             _tlog(f"run_full_process started. is_in_review={self.is_in_review}")
 
             t0 = time.monotonic()
-            wav_path = self.engine.record()
+            chunk_cb = (lambda chunk, rms: overlay.update_level(rms)) if overlay else None
+            wav_path = self.engine.record(on_audio_chunk=chunk_cb)
             self._last_record_duration = time.monotonic() - t0
 
             self.is_recording = False
@@ -439,9 +457,13 @@ class VoiceAssistantTray:
             # Audio quality gate — reject recordings that are too quiet to transcribe
             if not self._check_audio_quality(wav_path):
                 self.update_icon("review" if self.is_in_review else "idle")
+                if overlay:
+                    overlay.hide()
                 return
 
             self.update_icon("processing")
+            if overlay:
+                overlay.show_thinking()
 
             # Narrate processing so user knows recording was captured
             if self.is_in_review and self.review_config:
@@ -455,6 +477,8 @@ class VoiceAssistantTray:
                 self._notify("Voice Refiner", "No speech detected. Try again.")
                 _tlog("No speech detected")
                 self.update_icon("review" if self.is_in_review else "idle")
+                if overlay:
+                    overlay.hide()
                 return
 
             if self.is_in_review:
@@ -467,6 +491,11 @@ class VoiceAssistantTray:
             self.update_icon("review" if self.is_in_review else "idle")
 
         except Exception as e:
+            if overlay:
+                try:
+                    overlay.hide()
+                except Exception:
+                    pass
             import traceback
             _tlog(f"EXCEPTION in run_full_process:\n{traceback.format_exc()}")
             self._notify("Voice Refiner — Error", str(e)[:120])
@@ -620,7 +649,9 @@ class VoiceAssistantTray:
 
         _tlog(f"_run_normal_mode: refined, len={len(final_text)}")
         features = self.engine.config.get("FEATURES", {})
-        if features.get("clipboard_output", True):
+        paste_method = self.engine.config.get("PASTE_METHOD")
+        is_restore_mode = (features.get("direct_typing", False) and paste_method == "clipboard_restore")
+        if features.get("clipboard_output", True) and not is_restore_mode:
             try:
                 subprocess.run("xclip -selection clipboard", input=final_text.encode(), shell=True, check=False)
             except Exception:
@@ -634,6 +665,17 @@ class VoiceAssistantTray:
             pass
         if features.get("direct_typing", False):
             self.engine.type_text(final_text)
+            try:
+                from audio_toolkit import get_recording_overlay
+                get_recording_overlay().show_done("Pasted!")
+            except Exception:
+                pass
+        else:
+            try:
+                from audio_toolkit import get_recording_overlay
+                get_recording_overlay().show_done("Copied!")
+            except Exception:
+                pass
 
         # Sync to Web Dashboard in real-time
         try:

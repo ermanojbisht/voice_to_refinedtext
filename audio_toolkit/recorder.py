@@ -91,6 +91,7 @@ class StreamRecorder:
         pre_record_notification: Optional[str] = None,
         play_sounds: bool = True,
         max_duration_s: float = 300.0,
+        on_audio_chunk: Optional[Callable[[np.ndarray, float], None]] = None,
     ) -> str:
         """Records speech with pre-roll audio prepending and neural VAD silence auto-stop.
 
@@ -149,12 +150,18 @@ class StreamRecorder:
                     audio_buffer.append(chunk)
                     self.ring_buffer.write(chunk)
 
+                    energy = float(np.sqrt(np.mean(chunk.astype(float) ** 2)))
+                    if on_audio_chunk:
+                        try:
+                            on_audio_chunk(chunk, energy)
+                        except Exception:
+                            pass
+
                     # Neural VAD evaluation
                     if self.vad.is_neural_available:
                         speech_prob = self.vad.speech_probability(chunk)
                         is_speech_now = speech_prob >= self.vad_threshold
                     else:
-                        energy = float(np.sqrt(np.mean(chunk.astype(float) ** 2)))
                         is_speech_now = energy >= self.rms_threshold
 
                     if is_speech_now:

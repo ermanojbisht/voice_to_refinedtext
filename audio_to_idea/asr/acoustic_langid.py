@@ -138,7 +138,18 @@ class AcousticLanguageDetector:
         batch = np.stack(feats, axis=0)
         storage = ctranslate2.StorageView.from_array(batch)
 
-        encoded = model.model.encode(storage)
+        try:
+            encoded = model.model.encode(storage)
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower() or "cuda" in str(e).lower():
+                from faster_whisper import WhisperModel
+                self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8")
+                self._fe = self._model.feature_extractor
+                model = self._model
+                storage = ctranslate2.StorageView.from_array(batch)
+                encoded = model.model.encode(storage)
+            else:
+                raise
         results = model.model.detect_language(encoded)
 
         en_scores = []
