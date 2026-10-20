@@ -133,3 +133,40 @@ Unit tests for all hotkey components are available in the test suite:
 - `test_external_trigger_toggle`: SIGUSR1 toggles cleanly with 800ms auto-repeat protection.
 - `test_parse_hotkey_ctrl_space`: Validates translation to Linux kernel `ecodes`.
 - `test_evdev_mock_state_logic`: Verifies physical modifier matching and release detection.
+
+---
+
+## 6. Real-World Trial & Error Findings (Root Causes & Solutions)
+
+During real-world hardware testing on Ubuntu 26.04 Wayland, two critical failure modes were discovered and permanently solved. These findings are documented here for future maintainers:
+
+### Finding A: The "Voice Too Quiet / Nearly Silent" False Rejection
+* **Symptom**: Holding down the hotkey to dictate resulted in an error notification: *"Recording too quiet — please try again"*, even though the user spoke at normal volume into a working microphone.
+* **Root Cause**:
+  - The application uses an audio quality safety gate (`_check_audio_quality()` in `tray_app.py`) to prevent transcribing dead mic silence:
+    $$\text{Threshold} = \text{SILENCE\_THRESHOLD} \times \text{\_AUDIO\_QUALITY\_RATIO}$$
+  - In `config.json`, `SILENCE_THRESHOLD` was set to `780`, and `_AUDIO_QUALITY_RATIO` was `0.5`, resulting in:
+    $$\text{Threshold} = 780 \times 0.5 = 390.0\text{ RMS}$$
+  - Normal, clear conversational human speech into standard USB and desktop microphones typically measures between **120 and 250 RMS**.
+  - Because `174.5 RMS < 390.0 RMS`, the quality gate misclassified legitimate speech as background noise and aborted transcription!
+* **Permanent Solution**:
+  1. Updated `SILENCE_THRESHOLD` in `config.json` to `250`.
+  2. Tuned `_AUDIO_QUALITY_RATIO` in `tray_app.py` to `0.25`:
+     $$\text{Effective Threshold} = 250 \times 0.25 = 62.5\text{ RMS}$$
+  3. This ensures true silence/dead mic ($0.0\text{ RMS}$) is still safely blocked, while natural conversational speech ($120\text{--}250\text{ RMS}$) is captured flawlessly.
+
+### Finding B: Triple-Listener Signal Collision (Instant 0.05s Cutoff)
+* **Symptom**: Holding `Ctrl+Space` started recording, but the application immediately cut off and stopped within 50 milliseconds (`STOP_RECORDING`).
+* **Root Cause**:
+  - On Ubuntu Wayland, three independent subsystems were simultaneously listening to `Ctrl+Space`:
+    1. **`evdev`**: Physical kernel input listener in `audio_toolkit/evdev_listener.py`.
+    2. **`pynput`**: User-space X11 listener in `tray_app.py`.
+    3. **GNOME Shell**: Custom shortcut (`custom0`) executing `pkill -USR1 -f tray_app.py`.
+  - When the user pressed `Ctrl+Space`:
+    - `evdev` received the physical key-down first and dispatched `START_RECORDING`.
+    - ~30ms later, `pynput` or GNOME's `SIGUSR1` arrived at the coordinator while `stage == RECORDING`.
+    - Because the coordinator saw a second incoming hotkey event while already recording, it interpreted it as a second tap to stop, instantly killing the recording!
+* **Permanent Solution (Exclusive Listener Ownership)**:
+  1. In `tray_app.py`, `pynput`'s `on_press` and `on_release` now check `if not getattr(self, "_evdev_listener", None):`. When `evdev` is active, `pynput` mutes duplicate triggers for `GLOBAL_HOTKEY`.
+  2. In `tray_app.py`, `handle_sigusr1()` checks `if getattr(self, "_evdev_listener", None):` and safely ignores duplicate GNOME shell signals.
+  3. `evdev` is granted **exclusive ownership** of the hotkey lifecycle, allowing holds and releases to be tracked with pure hardware accuracy.
