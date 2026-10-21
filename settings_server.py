@@ -97,6 +97,70 @@ def get_ollama_models(host: str = "http://localhost:11434") -> List[str]:
         ]
 
 
+def handle_api_request(path: str, method: str, body: bytes | None = None) -> tuple[int, str]:
+    """Pure API dispatcher for TTS and modular services (suitable for testing and routing)."""
+    method = method.upper()
+    if method == "GET":
+        if path == "/api/tts/status":
+            try:
+                import pwd_helper.tts as tts
+                return 200, json.dumps(tts.get_status())
+            except Exception as e:
+                return 500, json.dumps({"error": str(e)})
+
+        if path == "/api/tts/voices":
+            voices = [
+                {"id": "ni_delhi_corp_f", "name": "Delhi Corporate Female", "gender": "female", "lang": "en-IN"},
+                {"id": "ni_kahani_f", "name": "Warm Kahani / Storyteller Female", "gender": "female", "lang": "en-IN / hi"},
+                {"id": "ni_air_anchor_m", "name": "AIR / Doordarshan Anchor Male", "gender": "male", "lang": "en-IN / hi"},
+                {"id": "ni_ncr_tech_m", "name": "Noida / NCR Tech Explainer Male", "gender": "male", "lang": "en-IN"},
+                {"id": "ni_fm_rj_f", "name": "Delhi FM Radio Host Female", "gender": "female", "lang": "en-IN"},
+                {"id": "ni_docu_deep_m", "name": "Deep North Indian Documentary Male", "gender": "male", "lang": "en-IN"},
+                {"id": "hf_alpha", "name": "Stock North Indian Broadcast Female", "gender": "female", "lang": "hi"},
+                {"id": "hf_beta", "name": "Stock Warm Conversational Female", "gender": "female", "lang": "hi"},
+                {"id": "hm_omega", "name": "Stock Authoritative Baritone Male", "gender": "male", "lang": "hi"},
+                {"id": "hm_psi", "name": "Stock Modern Syllabic Male", "gender": "male", "lang": "hi"},
+            ]
+            return 200, json.dumps({"ok": True, "voices": voices})
+
+    elif method == "POST":
+        payload = {}
+        if body:
+            try:
+                payload = json.loads(body.decode("utf-8"))
+            except Exception:
+                pass
+
+        if path == "/api/tts/speak":
+            text = payload.get("text", "")
+            blocking = payload.get("blocking", False)
+            speed = float(payload.get("speed", 1.0))
+            lang = payload.get("lang", "auto")
+            voice = payload.get("voice")
+            cfg = payload.get("config") or {}
+            if voice:
+                cfg["voice"] = voice
+                cfg["kokoro_voice"] = voice
+                cfg["kokoro_voice_en"] = voice
+                cfg["kokoro_voice_hi"] = voice
+            try:
+                import pwd_helper.tts as tts
+                ok = tts.speak(text, lang=lang, blocking=blocking, speed=speed, config=cfg)
+                return 200, json.dumps({"ok": ok})
+            except Exception as e:
+                return 500, json.dumps({"ok": False, "error": str(e)})
+
+        if path == "/api/tts/stop":
+            try:
+                import pwd_helper.tts as tts
+                tts.stop()
+                return 200, json.dumps({"ok": True, "message": "Speech stopped"})
+            except Exception as e:
+                return 500, json.dumps({"ok": False, "error": str(e)})
+
+    return 404, json.dumps({"error": f"Endpoint '{path}' not found"})
+
+
 class SettingsHandler(BaseHTTPRequestHandler):
     server_version = "VoiceAssistantSettings/2.0"
 
@@ -187,6 +251,12 @@ class SettingsHandler(BaseHTTPRequestHandler):
         url_parts = self.path.split("?", 1)
         path = url_parts[0]
         query = urllib.parse.parse_qs(url_parts[1]) if len(url_parts) > 1 else {}
+
+        if path.startswith("/api/tts/"):
+            status_code, body_str = handle_api_request(path, "GET", None)
+            self._send_json(json.loads(body_str), status=status_code)
+            return
+
         svc = AudioIdeaWebService.get_instance()
 
         if path == "/" or path == "/index.html":
@@ -419,6 +489,11 @@ class SettingsHandler(BaseHTTPRequestHandler):
         path = self.path.split("?")[0]
         content_len = int(self.headers.get("Content-Length", 0))
         body_bytes = self.rfile.read(content_len) if content_len > 0 else b"{}"
+
+        if path.startswith("/api/tts/"):
+            status_code, body_str = handle_api_request(path, "POST", body_bytes)
+            self._send_json(json.loads(body_str), status=status_code)
+            return
 
         try:
             payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}

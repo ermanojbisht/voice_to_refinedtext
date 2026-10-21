@@ -398,6 +398,9 @@ The repository provides modular shell integration for Bash and Zsh (`~/.zsh/alia
 v         # 1-letter shortcut: speaks and dictates with live Rich Terminal HUD
 voice     # Full alias for 'python pwd_cli.py --listen'
 v-doc     # Runs the 24-point self-healing system doctor diagnostics
+v-speak   # Speaks text aloud: v-speak "Report completed"
+v-read    # Reads Markdown document aloud: v-read notes.md
+v-stop    # Immediately stops active speech playback
 
 # In-Prompt Voice Injection:
 Ctrl+G    # Press Ctrl+G at your active prompt, speak a command (e.g. "git status"),
@@ -412,6 +415,59 @@ Ctrl+G    # Press Ctrl+G at your active prompt, speak a command (e.g. "git statu
 #### 3. Transparent ON vs. OFF Tradeoff:
 - **`CLI_RICH_HUD: true` (ON)**: Visual microphone assurance with animated volume VU meter, clear status transitions (`RECORDING` $\rightarrow$ `TRANSCRIBING` $\rightarrow$ `DONE`), and Catppuccin color-coded panels. Automatically diverts HUD to `stderr` when piping so stdout receives only pure text.
 - **`CLI_RICH_HUD: false` (OFF)**: Minimal unstyled text output for headless servers or automated cron scripts.
+
+### 5.5 Universal Speech Synthesis (TTS) & Markdown Narration
+The speech synthesis subsystem (`pwd_helper/tts/`) provides modular, low-latency text-to-speech across the terminal, Obsidian markdown notes, and external applications.
+
+#### 1. Multi-Tier Engine Priority:
+- **Priority 5 (Primary)**: **Kokoro-82M ONNX** — Pure CPU native synthesis (<50ms latency). Features authentic **Indian English (`en-IN`)** voice blending ($80\% \text{ Hindi} + 20\% \text{ British}$) with Commonwealth `en-gb` phonetics.
+- **Priority 20 (Secondary)**: **Piper Neural ONNX** — Local neural checkpoints stored in `models/` (`en_US-ryan-high.onnx`, `hi_IN-priyamvada-medium.onnx`).
+- **Priority 99 (Fallback Floor)**: **eSpeak-NG** — Zero-dependency safety floor.
+
+#### 2. Available Indian Voice Profiles:
+- **`en_in_female`** *(Default)*: Polished Indian broadcast English (AIR / Doordarshan news anchor style).
+- **`en_in_male`**: Professional Indian male voice.
+- **`hf_alpha`**: Native Hindi female voice (used automatically for Devanagari text).
+- **`hm_omega`**: Native Hindi male voice.
+
+#### 3. Text Normalization Pipeline:
+Before synthesis, raw text passes through `pwd_helper/tts/normalizer.py`:
+- **Obsidian YAML Frontmatter**: Automatically stripped (`--- ... ---`).
+- **Markdown Formatting**: Strips `#` headers, `**bold**`, `*italics*`, `[links](url)`, and table delimiters.
+- **Checkbox Tasks**: Converts `- [ ] Task` $\rightarrow$ *"To do: Task"* and `- [x] Task` $\rightarrow$ *"Completed: Task"*.
+- **Indian Currency**: Expands `₹500` $\rightarrow$ *"500 rupees"* (or *"500 रुपये"* in Hindi), `₹1.5 lakh` $\rightarrow$ *"1.5 lakh rupees"*, and `₹2.5 crore` $\rightarrow$ *"2.5 crore rupees"*.
+- **Civil Engineering Units**: Expands `km` $\rightarrow$ *"kilometres"*, `m3` $\rightarrow$ *"cubic metres"*, `mm` $\rightarrow$ *"millimetres"*, `MT` $\rightarrow$ *"metric tonnes"*.
+- **Emojis**: Strips visual pictographs and dingbats (`🚨`, `📋`, `✨`, `✔`).
+
+#### 4. Terminal CLI Narration:
+```bash
+# Speak text directly with default Indian English voice:
+python pwd_cli.py --speak "Inspection report for Chamba bridge girder is ready."
+
+# Select a specific voice profile:
+python pwd_cli.py --speak "Inspection report is ready." --tts-voice en_in_male
+
+# Read an Obsidian daily note aloud:
+python pwd_cli.py --speak-file ~/learning_vault/"My Daily Notes"/2026-10-21.md
+
+# Hands-free dictation confirmation (speaks back refined text after listening):
+python pwd_cli.py --listen --read-result
+
+# Immediately stop speech:
+python pwd_cli.py --stop-speech
+```
+
+#### 5. REST API Endpoints (`settings_server.py:8765`):
+- `POST /api/tts/speak`: Body `{"text": "...", "lang": "auto", "speed": 1.0, "blocking": false}`
+- `POST /api/tts/stop`: Immediately interrupts active playback.
+- `GET /api/tts/status`: Returns current synthesizer status (`idle` | `speaking`) and available backends.
+
+#### 6. Secrets Isolation:
+Sensitive credentials (such as Telegram bot tokens and cloud API keys) are resolved via `pwd_helper/secrets.py` from:
+1. Environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`)
+2. Local git-ignored `.secrets.json`
+3. Local `.env` file
+Plaintext credentials are automatically prevented from appearing in version control.
 
 ---
 

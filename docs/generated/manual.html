@@ -987,6 +987,9 @@ python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span cl
 v<span class="w">         </span><span class="c1"># 1-letter shortcut: speaks and dictates with live Rich Terminal HUD</span>
 voice<span class="w">     </span><span class="c1"># Full alias for &#39;python pwd_cli.py --listen&#39;</span>
 v-doc<span class="w">     </span><span class="c1"># Runs the 24-point self-healing system doctor diagnostics</span>
+v-speak<span class="w">   </span><span class="c1"># Speaks text aloud: v-speak &quot;Report completed&quot;</span>
+v-read<span class="w">    </span><span class="c1"># Reads Markdown document aloud: v-read notes.md</span>
+v-stop<span class="w">    </span><span class="c1"># Immediately stops active speech playback</span>
 
 <span class="c1"># In-Prompt Voice Injection:</span>
 Ctrl+G<span class="w">    </span><span class="c1"># Press Ctrl+G at your active prompt, speak a command (e.g. &quot;git status&quot;),</span>
@@ -1004,6 +1007,58 @@ Ctrl+G<span class="w">    </span><span class="c1"># Press Ctrl+G at your active 
 <li><strong><code>CLI_RICH_HUD: true</code> (ON)</strong>: Visual microphone assurance with animated volume VU meter, clear status transitions (<code>RECORDING</code> $\rightarrow$ <code>TRANSCRIBING</code> $\rightarrow$ <code>DONE</code>), and Catppuccin color-coded panels. Automatically diverts HUD to <code>stderr</code> when piping so stdout receives only pure text.</li>
 <li><strong><code>CLI_RICH_HUD: false</code> (OFF)</strong>: Minimal unstyled text output for headless servers or automated cron scripts.</li>
 </ul>
+<h3 id="55-universal-speech-synthesis-tts-markdown-narration">5.5 Universal Speech Synthesis (TTS) &amp; Markdown Narration</h3>
+<p>The speech synthesis subsystem (<code>pwd_helper/tts/</code>) provides modular, low-latency text-to-speech across the terminal, Obsidian markdown notes, and external applications.</p>
+<h4 id="1-multi-tier-engine-priority">1. Multi-Tier Engine Priority:</h4>
+<ul>
+<li><strong>Priority 5 (Primary)</strong>: <strong>Kokoro-82M ONNX</strong> — Pure CPU native synthesis (&lt;50ms latency). Features authentic <strong>Indian English (<code>en-IN</code>)</strong> voice blending ($80\% \text{ Hindi} + 20\% \text{ British}$) with Commonwealth <code>en-gb</code> phonetics.</li>
+<li><strong>Priority 20 (Secondary)</strong>: <strong>Piper Neural ONNX</strong> — Local neural checkpoints stored in <code>models/</code> (<code>en_US-ryan-high.onnx</code>, <code>hi_IN-priyamvada-medium.onnx</code>).</li>
+<li><strong>Priority 99 (Fallback Floor)</strong>: <strong>eSpeak-NG</strong> — Zero-dependency safety floor.</li>
+</ul>
+<h4 id="2-available-indian-voice-profiles">2. Available Indian Voice Profiles:</h4>
+<ul>
+<li><strong><code>en_in_female</code></strong> <em>(Default)</em>: Polished Indian broadcast English (AIR / Doordarshan news anchor style).</li>
+<li><strong><code>en_in_male</code></strong>: Professional Indian male voice.</li>
+<li><strong><code>hf_alpha</code></strong>: Native Hindi female voice (used automatically for Devanagari text).</li>
+<li><strong><code>hm_omega</code></strong>: Native Hindi male voice.</li>
+</ul>
+<h4 id="3-text-normalization-pipeline">3. Text Normalization Pipeline:</h4>
+<p>Before synthesis, raw text passes through <code>pwd_helper/tts/normalizer.py</code>:
+- <strong>Obsidian YAML Frontmatter</strong>: Automatically stripped (<code>--- ... ---</code>).
+- <strong>Markdown Formatting</strong>: Strips <code>#</code> headers, <code>**bold**</code>, <code>*italics*</code>, <code>[links](url)</code>, and table delimiters.
+- <strong>Checkbox Tasks</strong>: Converts <code>- [ ] Task</code> $\rightarrow$ <em>"To do: Task"</em> and <code>- [x] Task</code> $\rightarrow$ <em>"Completed: Task"</em>.
+- <strong>Indian Currency</strong>: Expands <code>₹500</code> $\rightarrow$ <em>"500 rupees"</em> (or <em>"500 रुपये"</em> in Hindi), <code>₹1.5 lakh</code> $\rightarrow$ <em>"1.5 lakh rupees"</em>, and <code>₹2.5 crore</code> $\rightarrow$ <em>"2.5 crore rupees"</em>.
+- <strong>Civil Engineering Units</strong>: Expands <code>km</code> $\rightarrow$ <em>"kilometres"</em>, <code>m3</code> $\rightarrow$ <em>"cubic metres"</em>, <code>mm</code> $\rightarrow$ <em>"millimetres"</em>, <code>MT</code> $\rightarrow$ <em>"metric tonnes"</em>.
+- <strong>Emojis</strong>: Strips visual pictographs and dingbats (<code>🚨</code>, <code>📋</code>, <code>✨</code>, <code>✔</code>).</p>
+<h4 id="4-terminal-cli-narration">4. Terminal CLI Narration:</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Speak text directly with default Indian English voice:</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--speak<span class="w"> </span><span class="s2">&quot;Inspection report for Chamba bridge girder is ready.&quot;</span>
+
+<span class="c1"># Select a specific voice profile:</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--speak<span class="w"> </span><span class="s2">&quot;Inspection report is ready.&quot;</span><span class="w"> </span>--tts-voice<span class="w"> </span>en_in_male
+
+<span class="c1"># Read an Obsidian daily note aloud:</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--speak-file<span class="w"> </span>~/learning_vault/<span class="s2">&quot;My Daily Notes&quot;</span>/2026-10-21.md
+
+<span class="c1"># Hands-free dictation confirmation (speaks back refined text after listening):</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--listen<span class="w"> </span>--read-result
+
+<span class="c1"># Immediately stop speech:</span>
+python<span class="w"> </span>pwd_cli.py<span class="w"> </span>--stop-speech
+</code></pre></div>
+
+<h4 id="5-rest-api-endpoints-settings_serverpy8765">5. REST API Endpoints (<code>settings_server.py:8765</code>):</h4>
+<ul>
+<li><code>POST /api/tts/speak</code>: Body <code>{"text": "...", "lang": "auto", "speed": 1.0, "blocking": false}</code></li>
+<li><code>POST /api/tts/stop</code>: Immediately interrupts active playback.</li>
+<li><code>GET /api/tts/status</code>: Returns current synthesizer status (<code>idle</code> | <code>speaking</code>) and available backends.</li>
+</ul>
+<h4 id="6-secrets-isolation">6. Secrets Isolation:</h4>
+<p>Sensitive credentials (such as Telegram bot tokens and cloud API keys) are resolved via <code>pwd_helper/secrets.py</code> from:
+1. Environment variables (<code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code>)
+2. Local git-ignored <code>.secrets.json</code>
+3. Local <code>.env</code> file
+Plaintext credentials are automatically prevented from appearing in version control.</p>
 <hr />
 </section>
 <section id="chapter-6" class="chapter-card">
@@ -1219,7 +1274,7 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </ol>
 </section>
             <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-20 22:51:26
+                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-21 08:46:18
             </div>
         </div>
     </div>

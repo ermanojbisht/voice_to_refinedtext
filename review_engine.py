@@ -1920,6 +1920,13 @@ def stop_narration():
     global _active_narration_proc, _narration_stop_requested
     _narration_stop_requested = True
     stopped = False
+
+    try:
+        import pwd_helper.tts as tts
+        tts.stop()
+    except Exception:
+        pass
+
     with _narration_lock:
         proc = _active_narration_proc
         if proc is not None:
@@ -2133,6 +2140,14 @@ def narrate(text, config, blocking=False):
                 _f.write(text)
         except Exception:
             pass
+    # Route through unified pwd_helper.tts
+    try:
+        import pwd_helper.tts as tts
+        tts.speak(text, blocking=blocking, config=config)
+        return
+    except Exception as e:
+        _rlog(f"narrate: tts dispatcher error ({e}), falling back to internal runner")
+
     engine = config.get("tts_engine", "espeak")
     try:
         if engine == "piper":

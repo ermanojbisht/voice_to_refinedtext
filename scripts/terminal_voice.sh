@@ -20,6 +20,21 @@ fi
 # Quick voice dictation alias
 alias v="${PYTHON_BIN} ${SCRIPT_DIR}/pwd_cli.py --listen"
 
+# Universal Speech Synthesis (TTS) Aliases
+v-speak() {
+    if [ $# -gt 0 ]; then
+        "${PYTHON_BIN}" "${SCRIPT_DIR}/pwd_cli.py" --speak "$*"
+    else
+        "${PYTHON_BIN}" "${SCRIPT_DIR}/pwd_cli.py" --speak "-"
+    fi
+}
+
+v-read() {
+    "${PYTHON_BIN}" "${SCRIPT_DIR}/pwd_cli.py" --speak-file "$1"
+}
+
+alias v-stop="${PYTHON_BIN} ${SCRIPT_DIR}/pwd_cli.py --stop-speech"
+
 # Voice command prompt injector
 voice-cmd() {
     local text

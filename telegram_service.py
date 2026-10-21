@@ -44,10 +44,22 @@ def _post(token, method, payload, timeout=10):
     return resp.json()
 
 
+def _resolve_credentials(config):
+    """Safely resolve token and chat_id via pwd_helper.secrets or environment/config."""
+    try:
+        from pwd_helper.secrets import get_secret
+        token = get_secret("telegram_bot_token", config=config, env_name="TELEGRAM_BOT_TOKEN")
+        chat_id = get_secret("telegram_chat_id", config=config, env_name="TELEGRAM_CHAT_ID")
+    except ImportError:
+        import os
+        token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or config.get("telegram_bot_token", "").strip()
+        chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip() or config.get("telegram_chat_id", "").strip()
+    return token, chat_id
+
+
 def is_configured(config):
     """Return True if Telegram is enabled and credentials look valid."""
-    token = config.get("telegram_bot_token", "").strip()
-    chat_id = config.get("telegram_chat_id", "").strip()
+    token, chat_id = _resolve_credentials(config)
     return (
         config.get("telegram_enabled", False)
         and bool(token)
@@ -64,8 +76,7 @@ def send(text, config):
     """
     if not is_configured(config):
         return False
-    token   = config["telegram_bot_token"].strip()
-    chat_id = config["telegram_chat_id"].strip()
+    token, chat_id = _resolve_credentials(config)
     try:
         resp = _post(token, "sendMessage", {"chat_id": chat_id, "text": text})
         if resp.get("ok"):
@@ -80,12 +91,11 @@ def send(text, config):
 
 def test_connection(config):
     """Verify credentials by calling getMe. Returns (ok: bool, message: str)."""
-    if not config.get("telegram_bot_token", "").strip():
+    token, chat_id = _resolve_credentials(config)
+    if not token:
         return False, "Bot token is empty."
-    if not config.get("telegram_chat_id", "").strip():
+    if not chat_id:
         return False, "Chat ID is empty."
-    token   = config["telegram_bot_token"].strip()
-    chat_id = config["telegram_chat_id"].strip()
     try:
         me = _post(token, "getMe", {})
         if not me.get("ok"):

@@ -3,8 +3,8 @@
     "SAMPLE_RATE": 16000,
     "SETTINGS_PORT": 8765,
     "MODELS_DIR": "/media/manoj/F1/models-handy",
-    "ACTIVE_ASR_PRESET": "smart_bilingual",
-    "ACTIVE_REFINEMENT_GOAL": "concise_summary",
+    "ACTIVE_ASR_PRESET": "instant_hindi",
+    "ACTIVE_REFINEMENT_GOAL": "official_english",
     "WHISPER_FALLBACK_MODEL": "large-v3-turbo",
     "OLLAMA_MODELS": {
         "en": "qwen2.5:3b",
@@ -167,9 +167,13 @@
         }
     },
     "WHISPER_MODEL": "large-v3-turbo",
-    "ASR_ENGINE": "faster_whisper",
-    "ACTIVE_MODEL_PROFILE": "smart_bilingual",
-    "LANGUAGE_MODE": "auto",
-    "MODE": "refine",
-    "CACHE_RETENTION_DAYS": 7
+    "ASR_ENGINE": "transcribe_cpp",
+    "ACTIVE_MODEL_PROFILE": "instant_hindi",
+    "LANGUAGE_MODE": "pure_english",
+    "MODE": "translate",
+    "CACHE_RETENTION_DAYS": 7,
+    "TTS_ENGINE": "kokoro",
+    "KOKORO_MODEL_DIR": "/media/manoj/F1/mkbmodel/kokoro-models",
+    "KOKORO_VOICE_EN": "en_in_female",
+    "KOKORO_VOICE_HI": "hf_alpha"
 }

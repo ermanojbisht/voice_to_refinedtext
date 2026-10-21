@@ -1,25 +1,46 @@
 # AI Voice Refiner
 
-A **local, privacy-first** voice-to-text assistant, currently designed for Ubuntu desktop. Speak in English or Hindi — the system transcribes with Whisper, refines with a local LLM via Ollama, and delivers polished text to your clipboard. Audio transcription and LLM refinement can run locally; optional integrations such as Telegram require network access.
+A **100% local, privacy-first** voice-to-text and speech synthesis assistant for Linux (Ubuntu 22.04 LTS through 26.04 LTS, Wayland and X11). Speak in English or Hindi — the system records, transcribes with Whisper or Nemotron, refines with local Ollama LLMs, and delivers polished text to your clipboard or terminal prompt.
 
-Built on top of this core, the **Evening Review** feature turns daily voice recordings into structured Obsidian notes — running a guided, step-by-step reflection session every evening with full LLM structuring per step.
+> 📚 **Complete Documentation Portal:** See the [Central Documentation Portal](docs/README.md), the comprehensive [User Guide](docs/USER_GUIDE.md), or the in-depth [Developer & Architecture Guide](docs/DEVELOPER_GUIDE.md).
 
-**Audio to Ideas** adds saved-recording and folder processing through a separate GUI and CLI. **Clean paragraph** is the default, with optional Concise summary and Ideas and actions modes, editable prompt templates and Hindi/English/mixed-language preservation. It uses configurable cached Whisper models and local Ollama while retaining timestamped transcripts. See the [user guide](docs/audio_to_idea/usage.md) for setup, recovery, prompts and configuration on another PC.
+---
+
+## ⚡ Quick Start: Master Terminal Shortcuts
+
+Type these commands from **any folder** in your terminal:
 
 ```bash
-python3 -m audio_to_idea gui
-python3 -m audio_to_idea doctor --discover --check-ollama
-python3 -m audio_to_idea process --input /path/to/recordings --output-dir /path/to/outputs
-```
+# 1. Instant Voice Dictation with Animated Rich HUD:
+v
 
-The module's settings live in `audio_to_idea_config.json`; the committed `audio_to_idea_config.example.json` is portable. Existing recording and Evening Review settings remain separate. Optional launch entries appear in the tray and main window when module integration is enabled. See the [developer guide](docs/audio_to_idea/developer_guide.md) for architecture, prompt/output contracts, safe extension and test commands; [verification](docs/audio_to_idea/verification.md) records actual results and open model-quality checks.
+# 2. Voice Dictation with Spoken Audio Readback:
+v -r
+
+# 3. Speak Text Aloud with Natural Indian English Neural Voice:
+v-speak "Site inspection report for Chamba bridge girder is ready."
+
+# 4. Read an Obsidian Daily Note Aloud (auto-cleans frontmatter & tasks):
+v-read ~/learning_vault/"My Daily Notes"/2026-10-21.md
+
+# 5. Stop Speech Playback Instantly:
+v-stop
+
+# 6. Run 24-Point Self-Healing System Doctor:
+v-doc
+
+# 7. In-Prompt Voice Injection (Press Ctrl+G at any prompt):
+Ctrl+G
+```
 
 ---
 
 ## Features
 
-### Core Voice Refiner
-- **High-speed modular ASR** — pluggable speech-to-text engines:
+### 🎙️ Core Voice Refiner & Terminal HUD
+- **1-Letter Terminal Workflow (`v`)** — Instant voice dictation with an animated real-time volume VU meter, phase transitions (`RECORDING` $\rightarrow$ `TRANSCRIBING` $\rightarrow$ `DONE`), and safe clipboard copy.
+- **Universal Speech Synthesis (TTS)** — Offline Kokoro-82M and Piper neural voice synthesis. Features natural **Indian English (`en-IN`)** voice blending ($80\% \text{ Hindi} + 20\% \text{ British}$) with Commonwealth `en-gb` phonetics.
+- **High-speed modular ASR** — Pluggable speech-to-text engines:
   - `transcribe-cpp` (Vulkan/GPU acceleration on NVIDIA RTX 3060, CPU fallback): runs **Nemotron 3.5 Streaming (0.6B Q8_0 GGUF)** in **~138 ms** (~69x real-time), with built-in punctuation and capitalization. Also supports Whisper GGUF/bin (e.g. `Whisper-Hindi2Hinglish-Apex`) and Voxtral Realtime GGUF.
   - `faster-whisper` (CTranslate2): large-v3, turbo, and custom Whisper models.
   - `handy-cli`: headless external CLI fallback using the Handy binary.

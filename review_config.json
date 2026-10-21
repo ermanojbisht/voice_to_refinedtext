@@ -14,8 +14,8 @@
   "morning_briefing_enabled": true,
   "morning_briefing_time": "08:00",
   "telegram_enabled": true,
-  "telegram_bot_token": "8317859357:AAHi-RGo-5E2Qzuzv3Mqnl8cCCcEC7qbaYc",
-  "telegram_chat_id": "59509781",
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
   "review_steps": [
     {
       "step_id": 1,
@@ -132,7 +132,10 @@
     "review_complete": "शाम की समीक्षा पूरी हो गई। बढ़िया काम!",
     "saved_speak_more": "सेव हो गया। और बताना चाहें तो बोलें, या अगले चरण पर बढ़ें।"
   },
-  "tts_engine": "piper",
+  "tts_engine": "kokoro",
+  "kokoro_model_dir": "/media/manoj/F1/mkbmodel/kokoro-models",
+  "kokoro_voice_en": "en_in_female",
+  "kokoro_voice_hi": "hf_alpha",
   "piper_model": "models/en_US-ryan-high.onnx",
   "piper_model_hi": "models/hi_IN-priyamvada-medium.onnx",
   "per_step_context": true,

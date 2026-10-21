@@ -20,3 +20,7 @@ review_log.json
 build/
 *.egg-info/
 servam
+.secrets.json
+.secrets/
+.env
+*.secret

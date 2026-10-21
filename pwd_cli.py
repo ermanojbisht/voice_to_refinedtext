@@ -94,7 +94,7 @@ def run_one_shot(query: str, mode: str = "auto", copy: bool = False, expand: boo
             print("  (Copied translation to clipboard)")
 
 
-def run_voice_input(mode: str = "auto", copy: bool = True, use_hud: bool = True, pipe: bool = False):
+def run_voice_input(mode: str = "auto", copy: bool = True, use_hud: bool = True, pipe: bool = False, read_result: bool = False):
     """Captures microphone speech, transcribes, and runs PWD lookup/translation."""
     try:
         from engine import VoiceEngine
@@ -155,6 +155,10 @@ def run_voice_input(mode: str = "auto", copy: bool = True, use_hud: bool = True,
             copy_to_clipboard(final_text)
             if not pipe:
                 print("  📋 Copied to clipboard!")
+
+        if read_result and final_text:
+            import pwd_helper.tts as tts
+            tts.speak(final_text, blocking=False)
 
     except Exception as exc:
         print(f"❌ Voice processing error: {exc}", file=sys.stderr)
@@ -245,7 +249,8 @@ def run_repl(initial_mode: str = "auto"):
             print(f"  Error: {e}")
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line argument parser for pwd_cli."""
     parser = argparse.ArgumentParser(description="PWD Uttarakhand Language Helper & Terminology Tool")
     parser.add_argument("query", nargs="*", help="Optional abbreviation or sentence for one-shot lookup")
     parser.add_argument("-c", "--copy", action="store_true", help="Copy result to clipboard")
@@ -260,13 +265,55 @@ def main():
     parser.add_argument("-p", "--pipe", action="store_true", help="Output raw refined text only (suitable for UNIX pipes)")
     parser.add_argument("--hud", dest="hud", action="store_true", default=None, help="Force enable Rich terminal HUD")
     parser.add_argument("--no-hud", dest="hud", action="store_false", help="Disable Rich HUD (plain text output)")
+    # Speech Synthesis (TTS) flags
+    parser.add_argument("-s", "--speak", type=str, default=None, help="Speak provided text aloud")
+    parser.add_argument("--speak-file", type=str, default=None, help="Read Markdown or text document aloud")
+    parser.add_argument("--stop-speech", action="store_true", help="Immediately stop active speech playback")
+    parser.add_argument("-r", "--read-result", action="store_true", help="Read back the refined transcription aloud when dictating")
+    parser.add_argument("--tts-voice", type=str, default=None, help="TTS voice preset: ni_delhi_corp_f, ni_kahani_f, ni_air_anchor_m, ni_ncr_tech_m, ni_fm_rj_f, ni_docu_deep_m (or en_in_female, en_in_male, hf_alpha, hm_omega)")
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
+
+    # Handle direct TTS speech commands first
+    if args.stop_speech:
+        import pwd_helper.tts as tts
+        tts.stop()
+        print("🛑 Speech stopped.")
+        return
+
+    tts_cfg = {
+        "voice": args.tts_voice,
+        "kokoro_voice": args.tts_voice,
+        "kokoro_voice_en": args.tts_voice,
+        "kokoro_voice_hi": args.tts_voice,
+    } if args.tts_voice else None
+
+    if args.speak:
+        import pwd_helper.tts as tts
+        text_to_speak = sys.stdin.read() if args.speak == "-" else args.speak
+        tts.speak(text_to_speak, blocking=True, config=tts_cfg)
+        return
+
+    if args.speak_file:
+        import pwd_helper.tts as tts
+        file_path = os.path.expanduser(args.speak_file)
+        if not os.path.isfile(file_path):
+            print(f"❌ File not found: {args.speak_file}", file=sys.stderr)
+            sys.exit(1)
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        tts.speak(content, blocking=True, config=tts_cfg)
+        return
 
     use_hud = True if args.hud is None else args.hud
     active_mode = args.mode if args.mode is not None else ("raw" if args.voice else "auto")
 
     if args.voice:
-        run_voice_input(mode=active_mode, copy=not args.pipe, use_hud=use_hud, pipe=args.pipe)
+        run_voice_input(mode=active_mode, copy=not args.pipe, use_hud=use_hud, pipe=args.pipe, read_result=args.read_result)
     elif args.query:
         query_str = " ".join(args.query)
         run_one_shot(query_str, mode=active_mode, copy=args.copy)
