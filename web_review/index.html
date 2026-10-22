@@ -365,9 +365,11 @@
     .clip-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      max-height: 190px;
+      gap: 10px;
+      min-height: 110px;
+      max-height: 52vh;
       overflow-y: auto;
+      padding-right: 4px;
     }
 
     .clip-bubble {
@@ -377,34 +379,46 @@
       border: 1px solid var(--glass-border);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       position: relative;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .clip-bubble:hover {
+      border-color: var(--accent-teal);
     }
 
     .clip-bubble-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10.5px;
+      font-size: 11px;
       color: var(--text-muted);
     }
 
     .clip-textarea {
-      background: transparent;
-      border: none;
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid transparent;
+      border-radius: 6px;
       color: var(--text-main);
       font-family: inherit;
-      font-size: 13px;
+      font-size: 13.5px;
+      line-height: 1.6;
       resize: vertical;
-      min-height: 40px;
+      min-height: 80px;
+      padding: 8px 10px;
       outline: none;
       user-select: text;
+      transition: all 0.15s ease;
+      width: 100%;
+      box-sizing: border-box;
     }
 
-    .clip-textarea:focus {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 4px;
-      border-radius: 4px;
+    .clip-textarea:focus, .clip-textarea.editing {
+      background: rgba(0, 0, 0, 0.35);
+      border-color: var(--accent-teal);
+      box-shadow: 0 0 10px rgba(123, 222, 196, 0.2);
     }
 
     /* Step 5 Carry-Forward Task Matrix */
@@ -913,10 +927,14 @@
       }
 
       if (!state.active) {
-        document.getElementById('promptTextHi').textContent = "कोई समीक्षा सत्र सक्रिय नहीं है। शुरू करने के लिए नीचे क्लिक करें।";
-        document.getElementById('promptTextEn').textContent = "No active review session. Click below to begin.";
+        document.getElementById('reviewDateTxt').textContent = state.date || 'Today';
+        document.getElementById('streakCount').textContent = state.streak_current || 0;
+        document.getElementById('promptTextHi').textContent = "समीक्षा सत्र पूर्ण या निष्क्रिय है। नया सत्र शुरू करने के लिए नीचे क्लिक करें।";
+        document.getElementById('promptTextEn').textContent = "Review session complete or idle. Click below to begin a new evening review.";
         document.getElementById('advanceBtn').innerHTML = "<span>Start Evening Review 🚀</span>";
         document.getElementById('advanceBtn').onclick = () => startSession();
+        renderClips([]);
+        refreshNotePreview();
         return;
       }
 
@@ -936,7 +954,12 @@
 
       // Update Active Prompt
       const curStep = state.current_step;
-      if (curStep) {
+      if (state.synthesising) {
+        document.getElementById('promptTextHi').textContent = "✨ सहायक आपके सभी नोट्स को व्यवस्थित कर रहा है (Ollama सिंथेसिस प्रगति पर है)...";
+        document.getElementById('promptTextEn').textContent = "✨ Secretary is synthesising and structuring your daily note with Ollama... Please wait.";
+        document.getElementById('advanceBtn').innerHTML = "<span>⏳ Synthesising Note...</span>";
+        document.getElementById('advanceBtn').onclick = null;
+      } else if (curStep) {
         const variants = curStep.narration_variants || [];
         document.getElementById('promptTextHi').textContent = variants[0] || curStep.prompt_notification || '';
         document.getElementById('promptTextEn').textContent = curStep.prompt_notification || '';
@@ -1018,12 +1041,30 @@
       refreshNotePreview();
     }
 
+    // Auto-fit textarea height to content
+    function autoResizeTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.max(el.scrollHeight + 4, 80) + 'px';
+    }
+
+    // Explicit edit mode
+    function editClip(index) {
+      const textarea = document.getElementById(`clipTextarea_${index}`);
+      if (textarea) {
+        textarea.classList.add('editing');
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+      }
+    }
+
     // Render Staged Clips
     function renderClips(clips) {
       const container = document.getElementById('clipList');
-      document.getElementById('stagedCount').textContent = clips.length;
+      const countEl = document.getElementById('stagedCount');
+      if (countEl) countEl.textContent = clips.length;
 
-      if (!clips.length) {
+      if (!clips || !clips.length) {
         container.innerHTML = `
           <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:16px;">
             No speech captured for this step yet. Speak your thoughts above or attach field audio.
@@ -1033,14 +1074,25 @@
       }
 
       container.innerHTML = clips.map((c, i) => `
-        <div class="clip-bubble">
+        <div class="clip-bubble" ondblclick="editClip(${i})" title="Double-click to edit transcribed text">
           <div class="clip-bubble-header">
             <span>Clip #${i + 1} · ${c.words} words</span>
-            <button class="btn" style="padding:2px 6px; font-size:10px; color:var(--accent-rose);" onclick="deleteClip(${i})">🗑️ Delete</button>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="btn" style="padding:2px 8px; font-size:11px; color:var(--accent-teal);" onclick="editClip(${i})" title="Edit text">✏️ Edit</button>
+              <button class="btn" style="padding:2px 8px; font-size:11px; color:var(--accent-rose);" onclick="deleteClip(${i})" title="Delete clip">🗑️ Delete</button>
+            </div>
           </div>
-          <textarea class="clip-textarea" onblur="updateClipText(${i}, this.value)">${escapeHtml(c.text)}</textarea>
+          <textarea id="clipTextarea_${i}" class="clip-textarea"
+            oninput="autoResizeTextarea(this); updateClipText(${i}, this.value)"
+            onblur="this.classList.remove('editing'); updateClipText(${i}, this.value)"
+            placeholder="Edit clip text here...">${escapeHtml(c.text)}</textarea>
         </div>
       `).join('');
+
+      // Auto-size all rendered textareas
+      setTimeout(() => {
+        document.querySelectorAll('.clip-textarea').forEach(autoResizeTextarea);
+      }, 15);
     }
 
     // Render Carry-Forward Tasks
@@ -1062,7 +1114,15 @@
         const data = await resp.json();
         const view = document.getElementById('noteMarkdownView');
         if (data.ok && data.content) {
+          if (data.date) {
+            const dtEl = document.getElementById('reviewDateTxt');
+            if (dtEl && (!currentState || !currentState.active)) {
+              dtEl.textContent = data.date;
+            }
+          }
           view.innerHTML = formatMarkdown(data.content);
+        } else if (data.ok && !data.exists) {
+          view.innerHTML = `<div style="color:var(--text-muted); font-size:13px; padding:16px; text-align:center;">${escapeHtml(data.content || 'No daily note found for this date.')}</div>`;
         }
       } catch (err) {
         console.error('Note preview error:', err);
@@ -1070,14 +1130,42 @@
     }
 
     function formatMarkdown(raw) {
-      return raw
-        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-        .replace(/^\- \[ \] (.*$)/gim, '<li>☐ $1</li>')
-        .replace(/^\- \[x\] (.*$)/gim, '<li>☑ $1</li>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n\n/g, '<br><br>');
+      if (!raw) return '';
+
+      // Strip YAML frontmatter
+      let md = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+
+      // Links << [[prev]] | [[next]] >>
+      md = md.replace(/<<\s*\[\[(.*?)\]\]\s*\|\s*\[\[(.*?)\]\]\s*>>/g, 
+        '<div style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;">📅 &lt;&lt; $1 | $2 &gt;&gt;</div>');
+
+      // Headings
+      md = md.replace(/^### (.*$)/gim, '<h3 style="color:var(--accent-teal); margin:14px 0 4px 0; font-size:14.5px; font-weight:700;">$1</h3>');
+      md = md.replace(/^## (.*$)/gim, '<h2 style="color:var(--accent-blue); margin:16px 0 6px 0; font-size:15.5px; font-weight:700;">$1</h2>');
+      md = md.replace(/^# (.*$)/gim, '<h1 style="color:var(--accent-blue); margin:16px 0 8px 0; font-size:17.5px; font-weight:700;">$1</h1>');
+
+      // Checkboxes
+      md = md.replace(/^[-*]\s+\[ \]\s+(.*$)/gim, '<div style="display:flex; align-items:flex-start; gap:8px; margin:4px 0 4px 6px;"><input type="checkbox" disabled style="margin-top:4px;"> <span>$1</span></div>');
+      md = md.replace(/^[-*]\s+\[x\]\s+(.*$)/gim, '<div style="display:flex; align-items:flex-start; gap:8px; margin:4px 0 4px 6px;"><input type="checkbox" checked disabled style="margin-top:4px;"> <span style="text-decoration:line-through; opacity:0.8;">$1</span></div>');
+
+      // Sub-bullets (2 or 4 spaces indentation)
+      md = md.replace(/^\s{2,4}[-*]\s+(.*$)/gim, '<div style="margin-left:24px; margin-top:2px; margin-bottom:2px; color:var(--text-main);">• $1</div>');
+
+      // Regular top-level bullets
+      md = md.replace(/^[-*]\s+(.*$)/gim, '<div style="margin-left:8px; margin-top:3px; margin-bottom:3px; color:var(--text-main);">• $1</div>');
+
+      // Numbered lists
+      md = md.replace(/^(\d+)\.\s+(.*$)/gim, '<div style="margin-left:8px; margin-top:3px; margin-bottom:3px; color:var(--text-main);"><strong style="color:var(--accent-blue);">$1.</strong> $2</div>');
+
+      // Bold & Italic
+      md = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      md = md.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // Convert double newline to spacer and single newline to line break
+      md = md.replace(/\n\n/g, '<div style="height:8px;"></div>');
+      md = md.replace(/\n/g, '<br>');
+
+      return md;
     }
 
     // User Operations

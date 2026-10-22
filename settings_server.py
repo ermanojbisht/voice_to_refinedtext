@@ -525,8 +525,14 @@ class SettingsHandler(BaseHTTPRequestHandler):
 
         if path == "/api/open_manual":
             try:
-                manual_service.open_in_browser()
-                self._send_json({"ok": True, "message": "Manual opened in browser"})
+                mode = payload.get("mode", "browser") if isinstance(payload, dict) else "browser"
+                if mode == "app":
+                    import manual_launcher
+                    manual_launcher.launch_manual_app()
+                    self._send_json({"ok": True, "message": "Manual launched in app window"})
+                else:
+                    manual_service.open_in_browser()
+                    self._send_json({"ok": True, "message": "Manual opened in browser"})
             except Exception as e:
                 self._send_json({"ok": False, "error": str(e)}, status=500)
             return

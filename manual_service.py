@@ -252,6 +252,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             --accent-red: #ed8796;
             --code-bg: #181926;
         }}
+        :root[data-theme="light"] {{
+            --bg-base: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f1f5f9;
+            --border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-subtle: #475569;
+            --accent-blue: #0284c7;
+            --accent-teal: #0d9488;
+            --accent-green: #16a34a;
+            --accent-yellow: #d97706;
+            --accent-peach: #ea580c;
+            --accent-red: #e11d48;
+            --code-bg: #e2e8f0;
+        }}
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -543,6 +559,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <button class="badge-btn" onclick="window.location.href='/audio-to-idea'">📁 Audio to Ideas</button>
             <button class="badge-btn" onclick="window.location.href='/'">⚙️ Settings</button>
             <button class="badge-btn active" onclick="window.location.href='/manual'">📖 Manual</button>
+            <button class="badge-btn" id="manualThemeBtn" onclick="toggleManualTheme()">☀️ Light Mode</button>
+            <button class="badge-btn" onclick="window.print()">🖨️ Print</button>
         </div>
     </header>
     <div class="app-body">
@@ -568,6 +586,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
     <script>
+        function applyManualTheme(theme) {{
+            document.documentElement.setAttribute('data-theme', theme);
+            const btn = document.getElementById('manualThemeBtn');
+            if (btn) btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }}
+        const savedTheme = localStorage.getItem("voice_refiner_theme") || "dark";
+        applyManualTheme(savedTheme);
+
+        function toggleManualTheme() {{
+            const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            applyManualTheme(next);
+            localStorage.setItem("voice_refiner_theme", next);
+        }}
+
+        window.addEventListener('message', (e) => {{
+            if (e.data && e.data.theme) {{
+                applyManualTheme(e.data.theme);
+            }}
+        }});
+
         if (window.self !== window.top) {{
             document.body.classList.add('in-iframe');
         }}

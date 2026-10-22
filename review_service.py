@@ -48,6 +48,7 @@ class ReviewService:
         self.record_thread: Optional[threading.Thread] = None
         self.last_recorded_clip = ""
         self.last_audio_duration = 0.0
+        self.last_completed_date: Optional[str] = None
 
     def _get_engine(self) -> VoiceEngine:
         with self._engine_lock:
@@ -312,10 +313,13 @@ class ReviewService:
             active, state = review_engine.is_review_active(self.script_dir)
             if not active or state is None:
                 return {"ok": False, "error": "No active review."}
+            cur_date = state.get("date")
 
         config = review_engine.load_review_config(self.script_dir)
         eng = self._get_engine()
         success, error, still_active = review_engine.structure_and_advance(self.script_dir, eng, config)
+        if not still_active and cur_date:
+            self.last_completed_date = cur_date
         return {
             "ok": success,
             "error": error,
@@ -363,34 +367,113 @@ class ReviewService:
                 review_engine._save_state(state)
         return {"ok": success, "task": task_text, "state": self.get_state()}
 
+    def _find_latest_review_date(self, config: Dict[str, Any]) -> str:
+        """Finds the most appropriate review date (last completed or most recent daily note)."""
+        if self.last_completed_date:
+            return self.last_completed_date
+
+        log_path = os.path.join(self.script_dir, "review_log.json")
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r", encoding="utf-8") as f:
+                    logs = json.load(f)
+                if isinstance(logs, list) and logs:
+                    for entry in reversed(logs):
+                        s_date = entry.get("session_date")
+                        if s_date:
+                            p = review_engine.get_daily_note_path(self.script_dir, config, s_date)
+                            if os.path.exists(p):
+                                return s_date
+            except Exception:
+                pass
+
+        today_str = datetime.date.today().isoformat()
+        if os.path.exists(review_engine.get_daily_note_path(self.script_dir, config, today_str)):
+            return today_str
+
+        yesterday_str = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+        if os.path.exists(review_engine.get_daily_note_path(self.script_dir, config, yesterday_str)):
+            return yesterday_str
+
+        return today_str
+
     def get_note_preview(self) -> Dict[str, Any]:
-        """Reads and returns the active daily note Markdown content."""
+        """Reads and returns the active daily note Markdown content with real-time draft assembly."""
         config = review_engine.load_review_config(self.script_dir)
         state = review_engine.load_state()
-        date_str = state.get("date", datetime.date.today().isoformat()) if state else datetime.date.today().isoformat()
-        daily_note_path = review_engine.get_daily_note_path(self.script_dir, config, date_str)
-        
-        if not os.path.exists(daily_note_path):
-            return {
-                "ok": True,
-                "exists": False,
-                "date": date_str,
-                "path": daily_note_path,
-                "content": "*Daily note has not yet been created for this date.*"
-            }
 
-        try:
-            with open(daily_note_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            return {
-                "ok": True,
-                "exists": True,
-                "date": date_str,
-                "path": daily_note_path,
-                "content": content
-            }
-        except Exception as exc:
-            return {"ok": False, "error": str(exc), "date": date_str}
+        if state and state.get("date"):
+            date_str = state["date"]
+            is_active = True
+        else:
+            date_str = self._find_latest_review_date(config)
+            is_active = False
+
+        daily_note_path = review_engine.get_daily_note_path(self.script_dir, config, date_str)
+
+        raw_content = ""
+        if os.path.exists(daily_note_path):
+            try:
+                with open(daily_note_path, "r", encoding="utf-8") as f:
+                    raw_content = f.read()
+            except Exception as exc:
+                return {"ok": False, "error": str(exc), "date": date_str}
+        else:
+            dt = datetime.date.fromisoformat(date_str)
+            prev_day = (dt - datetime.timedelta(days=1)).isoformat()
+            next_day = (dt + datetime.timedelta(days=1)).isoformat()
+            raw_content = (
+                f"---\ncreation date: {date_str}\n---\n\n"
+                f"<< [[{prev_day}]] | [[{next_day}]] >>\n\n"
+                f"# {date_str}\n\n"
+                f"### Movement\n\n"
+                f"### Meeting\n\n"
+                f"### Achievements\n\n"
+                f"### Tomorrow's Priorities\n\n"
+                f"### Focus Word\n\n"
+            )
+
+        # If review is active, merge in-flight interview text into empty sections
+        if is_active and state:
+            interview_raw = state.get("interview_raw", {})
+            current_idx = state.get("current_step_index", 0)
+            steps = config.get("review_steps", [])
+            current_clips = state.get("accumulated_raw", [])
+
+            section_drafts = {}
+            for step in steps:
+                if step.get("isolate_file", False):
+                    continue
+                step_id = str(step.get("step_id", step.get("section_name", "")))
+                sec_name = step.get("section_name", "")
+                if not sec_name:
+                    continue
+                if step_id in interview_raw and interview_raw[step_id].strip():
+                    section_drafts[sec_name] = interview_raw[step_id].strip()
+
+            if 0 <= current_idx < len(steps):
+                cur_step = steps[current_idx]
+                if not cur_step.get("isolate_file", False):
+                    cur_sec = cur_step.get("section_name", "")
+                    if cur_sec and current_clips:
+                        cur_text = "\n".join(current_clips).strip()
+                        if cur_text:
+                            section_drafts[cur_sec] = cur_text
+
+            for sec_name, draft_text in section_drafts.items():
+                pattern = rf"(###\s+{re.escape(sec_name)}\s*\n)(?:\s*\n)*(?=###|\Z)"
+                if re.search(pattern, raw_content):
+                    raw_content = re.sub(pattern, rf"\1{draft_text}\n\n", raw_content, count=1)
+
+        return {
+            "ok": True,
+            "exists": os.path.exists(daily_note_path),
+            "date": date_str,
+            "path": daily_note_path,
+            "content": raw_content,
+            "is_active": is_active,
+            "synthesising": bool(state.get("synthesising", False)) if state else False
+        }
 
     def replay_narration(self) -> Dict[str, Any]:
         """Replays narration of the current step's conversational prompt."""

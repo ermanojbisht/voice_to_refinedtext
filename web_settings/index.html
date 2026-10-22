@@ -1091,8 +1091,21 @@
         </div>
 
         <!-- TAB 6: User Manual & Operations Guide -->
-        <div id="tab-manual" class="tab-content" style="padding: 0; margin-top: 4px; height: calc(100vh - 165px);">
-            <iframe id="manualFrame" src="/manual" style="width: 100%; height: 100%; border: none; border-radius: 12px; background: #1e1e2e;"></iframe>
+        <div id="tab-manual" class="tab-content" style="padding: 0; margin-top: 4px; height: calc(100vh - 165px); transition: all 0.2s ease;">
+            <div class="manual-toolbar" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; background:var(--glass-card); border:1px solid var(--glass-border); border-radius:10px 10px 0 0; margin-bottom:0;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px;">📖</span>
+                    <strong style="font-size:13px;">Operations & Configuration Manual</strong>
+                    <span style="font-size:11px; color:var(--text-subtle);">Offline documentation</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="toggleManualFullscreen()" id="btnManualFullscreen" title="Toggle full-width expanded layout">⛶ Full Width</button>
+                    <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="openManualNewTab()" title="Open manual in full Chrome / Browser window">↗ Pop Out New Tab</button>
+                    <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="launchManualAppWindow()" title="Launch manual in dedicated frameless desktop app window">🚀 App Window</button>
+                    <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="printManualFrame()" title="Print or save as PDF">🖨️ Print</button>
+                </div>
+            </div>
+            <iframe id="manualFrame" src="/manual" style="width: 100%; height: calc(100% - 46px); border: 1px solid var(--glass-border); border-top: none; border-radius: 0 0 12px 12px; background: var(--field-bg);"></iframe>
         </div>
     </main>
 
@@ -1133,6 +1146,12 @@
             document.documentElement.setAttribute("data-theme", next);
             localStorage.setItem("voice_refiner_theme", next);
             updateThemeBtn(next);
+            const mf = document.getElementById("manualFrame");
+            if (mf && mf.contentWindow) {
+                try {
+                    mf.contentWindow.postMessage({theme: next}, "*");
+                } catch (e) {}
+            }
         }
 
         function updateThemeBtn(theme) {
@@ -1145,9 +1164,78 @@
             document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
             document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
 
-            const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick").includes(tabId));
+            const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick") && b.getAttribute("onclick").includes(tabId));
             if (targetBtn) targetBtn.classList.add("active");
             document.getElementById(tabId).classList.add("active");
+
+            // Expand main container for manual to eliminate narrow width restriction
+            const mainEl = document.querySelector("main");
+            if (tabId === "tab-manual") {
+                mainEl.style.maxWidth = "100%";
+                mainEl.style.padding = "10px 20px 70px";
+                // Sync theme with manual iframe
+                const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+                const mf = document.getElementById("manualFrame");
+                if (mf && mf.contentWindow) {
+                    try {
+                        mf.contentWindow.postMessage({theme: currentTheme}, "*");
+                    } catch (e) {}
+                }
+            } else {
+                mainEl.style.maxWidth = "960px";
+                mainEl.style.padding = "24px 28px 100px";
+            }
+        }
+
+        function toggleManualFullscreen() {
+            const container = document.getElementById("tab-manual");
+            const btn = document.getElementById("btnManualFullscreen");
+            if (container.classList.contains("manual-expanded-mode")) {
+                container.classList.remove("manual-expanded-mode");
+                container.style.position = "";
+                container.style.top = "";
+                container.style.left = "";
+                container.style.width = "";
+                container.style.height = "calc(100vh - 165px)";
+                container.style.zIndex = "";
+                btn.innerText = "⛶ Full Width";
+            } else {
+                container.classList.add("manual-expanded-mode");
+                container.style.position = "fixed";
+                container.style.top = "56px";
+                container.style.left = "0";
+                container.style.width = "100vw";
+                container.style.height = "calc(100vh - 56px)";
+                container.style.zIndex = "150";
+                container.style.padding = "10px 16px 16px";
+                btn.innerText = "🗗 Restore Width";
+            }
+        }
+
+        function openManualNewTab() {
+            window.open("/manual", "_blank");
+        }
+
+        async function launchManualAppWindow() {
+            try {
+                await fetch("/api/open_manual", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({mode: "app"})
+                });
+                showToast("Launched manual in dedicated desktop window!");
+            } catch (err) {
+                window.open("/manual", "_blank");
+            }
+        }
+
+        function printManualFrame() {
+            const mf = document.getElementById("manualFrame");
+            if (mf && mf.contentWindow) {
+                mf.contentWindow.print();
+            } else {
+                window.open("/manual", "_blank");
+            }
         }
 
         function updateRangeLabel(inputId, badgeId, suffix) {
