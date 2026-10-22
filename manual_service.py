@@ -5,6 +5,7 @@ standalone HTML with Catppuccin dark theme, and provides programmatic access
 for in-app CustomTkinter and browser viewing.
 """
 import os
+import sys
 import re
 import time
 import webbrowser
@@ -44,10 +45,18 @@ class ManualService:
         self._cached_raw_md: str = ""
 
     def get_source_mtime(self) -> float:
-        """Returns the last modification time of CONFIGURATION_GUIDE.md."""
+        """Returns the last modification time of CONFIGURATION_GUIDE.md and manual_service.py."""
+        mtimes = [0.0]
         if os.path.isfile(self.doc_path):
-            return os.path.getmtime(self.doc_path)
-        return 0.0
+            mtimes.append(os.path.getmtime(self.doc_path))
+        svc_path = os.path.abspath(__file__)
+        if os.path.isfile(svc_path):
+            mtimes.append(os.path.getmtime(svc_path))
+        return max(mtimes)
+
+    def export_html(self, path: Optional[str] = None) -> str:
+        """Alias for generate_html_manual with force=True."""
+        return self.generate_html_manual(force=True)
 
     def load_markdown(self, force: bool = False) -> str:
         """Loads raw markdown from CONFIGURATION_GUIDE.md, reloading if modified."""
@@ -283,7 +292,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             align-items: center;
             justify-content: space-between;
             padding: 10px 24px;
-            background: rgba(36, 39, 58, 0.95);
+            background: var(--bg-surface);
             backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
             z-index: 100;
@@ -496,7 +505,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             vertical-align: top;
         }}
         tr:last-child td {{ border-bottom: none; }}
-        tr:hover td {{ background-color: rgba(255, 255, 255, 0.02); }}
+        tr:hover td {{ background-color: rgba(127, 127, 127, 0.05); }}
         /* Code Blocks */
         pre {{
             background-color: var(--code-bg);
@@ -510,12 +519,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             color: var(--text-main);
         }}
         code {{
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: var(--code-bg);
+            border: 1px solid var(--border);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.88rem;
-            color: var(--accent-yellow);
+            color: var(--accent-blue);
         }}
         pre code {{
             background-color: transparent;
@@ -566,7 +576,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="app-body">
         <div id="sidebar">
             <div class="sidebar-header">
-                <h1>📖 User Manual & Guide</h1>
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <h1>📖 User Manual</h1>
+                    <button class="badge-btn" id="sidebarThemeBtn" onclick="toggleManualTheme()" style="padding:4px 8px; font-size:11px;" title="Toggle Light / Dark Mode">☀️ Light</button>
+                </div>
                 <p>Voice Refiner & Review Hub</p>
             </div>
             <div class="search-container">
@@ -590,15 +603,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             document.documentElement.setAttribute('data-theme', theme);
             const btn = document.getElementById('manualThemeBtn');
             if (btn) btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            const sBtn = document.getElementById('sidebarThemeBtn');
+            if (sBtn) sBtn.innerHTML = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
         }}
-        const savedTheme = localStorage.getItem("voice_refiner_theme") || "dark";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryTheme = urlParams.get('theme');
+        const savedTheme = queryTheme || localStorage.getItem("voice_refiner_theme") || "dark";
         applyManualTheme(savedTheme);
 
         function toggleManualTheme() {{
             const cur = document.documentElement.getAttribute('data-theme') || 'dark';
             const next = cur === 'dark' ? 'light' : 'dark';
             applyManualTheme(next);
-            localStorage.setItem("voice_refiner_theme", next);
+            try {{ localStorage.setItem("voice_refiner_theme", next); }} catch (e) {{}}
+            if (window.parent && window.parent !== window) {{
+                try {{ window.parent.postMessage({{theme: next}}, '*'); }} catch (e) {{}}
+            }}
         }}
 
         window.addEventListener('message', (e) => {{
@@ -652,3 +673,9 @@ def generate_html_manual():
 
 def open_in_browser():
     return manual_service.open_in_browser()
+
+
+if __name__ == "__main__":
+    force_gen = "--force" in sys.argv or "--export" in sys.argv or len(sys.argv) <= 1
+    out_path = manual_service.generate_html_manual(force=force_gen)
+    print(f"[manual_service] Successfully generated manual HTML at: {out_path}")

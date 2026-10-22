@@ -31,7 +31,7 @@ def is_server_ready(port: int = None) -> bool:
         return False
 
 
-def launch_manual_app(port: int = None):
+def launch_manual_app(port: int = None, theme: str = None):
     if port is None:
         port = settings_server.get_configured_port()
     # Ensure daemon is running
@@ -42,7 +42,8 @@ def launch_manual_app(port: int = None):
                 break
             time.sleep(0.05)
 
-    url = f"http://127.0.0.1:{port}/manual"
+    theme_param = f"?theme={theme}" if theme else ""
+    url = f"http://127.0.0.1:{port}/manual{theme_param}"
 
     # Search for Chromium-based browsers that support standalone --app mode
     candidate_browsers = [

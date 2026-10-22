@@ -330,13 +330,11 @@ class SettingsHandler(BaseHTTPRequestHandler):
             return
 
         if path in {"/manual", "/manual/", "/manual.html", "/docs", "/docs/"}:
-            html_file = os.path.join(SCRIPT_DIR, "docs", "generated", "manual.html")
-            if not os.path.isfile(html_file):
-                try:
-                    from manual_service import manual_service
-                    manual_service.export_html(html_file)
-                except Exception:
-                    pass
+            try:
+                from manual_service import manual_service
+                html_file = manual_service.generate_html_manual()
+            except Exception:
+                html_file = os.path.join(SCRIPT_DIR, "docs", "generated", "manual.html")
             if os.path.isfile(html_file):
                 with open(html_file, "rb") as f:
                     content = f.read()
@@ -526,9 +524,10 @@ class SettingsHandler(BaseHTTPRequestHandler):
         if path == "/api/open_manual":
             try:
                 mode = payload.get("mode", "browser") if isinstance(payload, dict) else "browser"
+                theme = payload.get("theme", None) if isinstance(payload, dict) else None
                 if mode == "app":
                     import manual_launcher
-                    manual_launcher.launch_manual_app()
+                    manual_launcher.launch_manual_app(theme=theme)
                     self._send_json({"ok": True, "message": "Manual launched in app window"})
                 else:
                     manual_service.open_in_browser()

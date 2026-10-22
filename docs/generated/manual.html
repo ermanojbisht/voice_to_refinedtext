@@ -21,14 +21,97 @@
             --accent-red: #ed8796;
             --code-bg: #181926;
         }
+        :root[data-theme="light"] {
+            --bg-base: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f1f5f9;
+            --border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-subtle: #475569;
+            --accent-blue: #0284c7;
+            --accent-teal: #0d9488;
+            --accent-green: #16a34a;
+            --accent-yellow: #d97706;
+            --accent-peach: #ea580c;
+            --accent-red: #e11d48;
+            --code-bg: #e2e8f0;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-base);
             color: var(--text-main);
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
+        }
+        .suite-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 24px;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-icon {
+            font-size: 24px;
+        }
+        .brand-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text-subtle);
+        }
+        .badge-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            color: var(--text-main);
+            transition: all 0.15s ease;
+        }
+        .badge-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+        .badge-btn.active {
+            background: var(--accent-blue);
+            color: #181926;
+            border-color: var(--accent-blue);
+        }
+        .app-body {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 53px);
+            overflow: hidden;
+        }
+        .in-iframe .suite-header {
+            display: none !important;
+        }
+        .in-iframe .app-body {
+            height: 100vh !important;
         }
         /* Sidebar Navigation */
         #sidebar {
@@ -182,7 +265,7 @@
             vertical-align: top;
         }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+        tr:hover td { background-color: rgba(127, 127, 127, 0.05); }
         /* Code Blocks */
         pre {
             background-color: var(--code-bg);
@@ -196,12 +279,13 @@
             color: var(--text-main);
         }
         code {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: var(--code-bg);
+            border: 1px solid var(--border);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.88rem;
-            color: var(--accent-yellow);
+            color: var(--accent-blue);
         }
         pre code {
             background-color: transparent;
@@ -230,16 +314,39 @@
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="sidebar-header">
-            <h1>📖 User Manual & Guide</h1>
-            <p>Voice Refiner & Review Hub</p>
+    <header class="suite-header">
+        <div class="brand">
+            <span class="brand-icon">📖</span>
+            <div>
+                <div class="brand-title">AI Voice Refiner</div>
+                <div class="brand-sub">Comprehensive Configuration & Operations Manual</div>
+            </div>
         </div>
-        <div class="search-container">
-            <input type="text" id="manualSearch" class="search-box" placeholder="🔍 Search manual..." onkeyup="filterManual()">
+        <div class="badge-bar">
+            <button class="badge-btn" onclick="window.location.href='/dashboard'">🎙️ Refiner</button>
+            <button class="badge-btn" onclick="window.location.href='/review'">🌙 Evening Review</button>
+            <button class="badge-btn" onclick="window.location.href='/pwd-lookup'">🏛️ PWD Terms</button>
+            <button class="badge-btn" onclick="window.location.href='/audio-to-idea'">📁 Audio to Ideas</button>
+            <button class="badge-btn" onclick="window.location.href='/'">⚙️ Settings</button>
+            <button class="badge-btn active" onclick="window.location.href='/manual'">📖 Manual</button>
+            <button class="badge-btn" id="manualThemeBtn" onclick="toggleManualTheme()">☀️ Light Mode</button>
+            <button class="badge-btn" onclick="window.print()">🖨️ Print</button>
         </div>
-        <nav class="nav-list" id="navList">
-            <a href="#chapter-1" class="nav-link"><span class="nav-icon">🚀</span> <span class="nav-text">1. Quick-Start Hardware Presets</span></a>
+    </header>
+    <div class="app-body">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <h1>📖 User Manual</h1>
+                    <button class="badge-btn" id="sidebarThemeBtn" onclick="toggleManualTheme()" style="padding:4px 8px; font-size:11px;" title="Toggle Light / Dark Mode">☀️ Light</button>
+                </div>
+                <p>Voice Refiner & Review Hub</p>
+            </div>
+            <div class="search-container">
+                <input type="text" id="manualSearch" class="search-box" placeholder="🔍 Search manual..." onkeyup="filterManual()">
+            </div>
+            <nav class="nav-list" id="navList">
+                <a href="#chapter-1" class="nav-link"><span class="nav-icon">🚀</span> <span class="nav-text">1. Quick-Start Hardware Presets</span></a>
 <a href="#chapter-2" class="nav-link"><span class="nav-icon">⚙️</span> <span class="nav-text">2. Core Voice Refiner (`config.json`) Reference</span></a>
 <a href="#chapter-3" class="nav-link"><span class="nav-icon">🌙</span> <span class="nav-text">3. Evening Review (`review_config.json`) Reference</span></a>
 <a href="#chapter-4" class="nav-link"><span class="nav-icon">💡</span> <span class="nav-text">4. Audio to Ideas (`audio_to_idea_config.json`) Reference</span></a>
@@ -248,11 +355,11 @@
 <a href="#chapter-7" class="nav-link"><span class="nav-icon">🔧</span> <span class="nav-text">7. How to Adjust Settings</span></a>
 <a href="#chapter-8" class="nav-link"><span class="nav-icon">🛠</span> <span class="nav-text">8. Tuning & Optimization Guide</span></a>
 <a href="#chapter-9" class="nav-link"><span class="nav-icon">⚡</span> <span class="nav-text">9. Best Practice Matrix: Speed + Accuracy for Input Audio vs Output Goal</span></a>
-        </nav>
-    </div>
-    <div id="content-wrapper">
-        <div class="content-container">
-            <section id="chapter-1" class="chapter-card">
+            </nav>
+        </div>
+        <div id="content-wrapper">
+            <div class="content-container">
+                <section id="chapter-1" class="chapter-card">
 <div class="chapter-badge">🚀 Chapter 1</div>
 <h2 id="1-quick-start-hardware-presets">1. Quick-Start Hardware Presets</h2>
 <p>Copy and paste the preset matching your hardware into <code>config.json</code>.</p>
@@ -1273,12 +1380,45 @@ sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> <
 </li>
 </ol>
 </section>
-            <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-21 08:46:18
+                <div class="footer-note">
+                    Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated 2026-10-22 09:17:58
+                </div>
             </div>
         </div>
     </div>
     <script>
+        function applyManualTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const btn = document.getElementById('manualThemeBtn');
+            if (btn) btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            const sBtn = document.getElementById('sidebarThemeBtn');
+            if (sBtn) sBtn.innerHTML = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryTheme = urlParams.get('theme');
+        const savedTheme = queryTheme || localStorage.getItem("voice_refiner_theme") || "dark";
+        applyManualTheme(savedTheme);
+
+        function toggleManualTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            applyManualTheme(next);
+            try { localStorage.setItem("voice_refiner_theme", next); } catch (e) {}
+            if (window.parent && window.parent !== window) {
+                try { window.parent.postMessage({theme: next}, '*'); } catch (e) {}
+            }
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.theme) {
+                applyManualTheme(e.data.theme);
+            }
+        });
+
+        if (window.self !== window.top) {
+            document.body.classList.add('in-iframe');
+        }
         function filterManual() {
             const input = document.getElementById('manualSearch');
             const filter = input.value.toLowerCase();

@@ -1099,13 +1099,14 @@
                     <span style="font-size:11px; color:var(--text-subtle);">Offline documentation</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="toggleTheme()" id="btnManualThemeToolbar" title="Toggle Light / Dark mode">☀️ Light Mode</button>
                     <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="toggleManualFullscreen()" id="btnManualFullscreen" title="Toggle full-width expanded layout">⛶ Full Width</button>
                     <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="openManualNewTab()" title="Open manual in full Chrome / Browser window">↗ Pop Out New Tab</button>
                     <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="launchManualAppWindow()" title="Launch manual in dedicated frameless desktop app window">🚀 App Window</button>
                     <button class="glass-btn" style="padding:4px 10px; font-size:12px;" onclick="printManualFrame()" title="Print or save as PDF">🖨️ Print</button>
                 </div>
             </div>
-            <iframe id="manualFrame" src="/manual" style="width: 100%; height: calc(100% - 46px); border: 1px solid var(--glass-border); border-top: none; border-radius: 0 0 12px 12px; background: var(--field-bg);"></iframe>
+            <iframe id="manualFrame" src="/manual" onload="syncIframeTheme()" style="width: 100%; height: calc(100% - 46px); border: 1px solid var(--glass-border); border-top: none; border-radius: 0 0 12px 12px; background: var(--field-bg);"></iframe>
         </div>
     </main>
 
@@ -1156,8 +1157,28 @@
 
         function updateThemeBtn(theme) {
             const btn = document.getElementById("btnThemeToggle");
-            btn.innerHTML = theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+            if (btn) btn.innerHTML = theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+            const mBtn = document.getElementById("btnManualThemeToolbar");
+            if (mBtn) mBtn.innerHTML = theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
         }
+
+        function syncIframeTheme() {
+            const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+            const mf = document.getElementById("manualFrame");
+            if (mf && mf.contentWindow) {
+                try {
+                    mf.contentWindow.postMessage({theme: currentTheme}, "*");
+                } catch (e) {}
+            }
+        }
+
+        window.addEventListener("message", (e) => {
+            if (e.data && e.data.theme && e.data.theme !== document.documentElement.getAttribute("data-theme")) {
+                document.documentElement.setAttribute("data-theme", e.data.theme);
+                localStorage.setItem("voice_refiner_theme", e.data.theme);
+                updateThemeBtn(e.data.theme);
+            }
+        });
 
         // Tab Switching
         function switchTab(tabId) {
@@ -1173,12 +1194,16 @@
             if (tabId === "tab-manual") {
                 mainEl.style.maxWidth = "100%";
                 mainEl.style.padding = "10px 20px 70px";
-                // Sync theme with manual iframe
                 const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
                 const mf = document.getElementById("manualFrame");
-                if (mf && mf.contentWindow) {
+                if (mf) {
                     try {
-                        mf.contentWindow.postMessage({theme: currentTheme}, "*");
+                        const targetUrl = `/manual?theme=${encodeURIComponent(currentTheme)}`;
+                        if (!mf.src.includes(`theme=${currentTheme}`)) {
+                            mf.src = targetUrl;
+                        } else if (mf.contentWindow) {
+                            mf.contentWindow.postMessage({theme: currentTheme}, "*");
+                        }
                     } catch (e) {}
                 }
             } else {
@@ -1213,19 +1238,21 @@
         }
 
         function openManualNewTab() {
-            window.open("/manual", "_blank");
+            const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+            window.open(`/manual?theme=${encodeURIComponent(currentTheme)}`, "_blank");
         }
 
         async function launchManualAppWindow() {
+            const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
             try {
                 await fetch("/api/open_manual", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({mode: "app"})
+                    body: JSON.stringify({mode: "app", theme: currentTheme})
                 });
                 showToast("Launched manual in dedicated desktop window!");
             } catch (err) {
-                window.open("/manual", "_blank");
+                window.open(`/manual?theme=${encodeURIComponent(currentTheme)}`, "_blank");
             }
         }
 
