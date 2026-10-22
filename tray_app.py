@@ -1021,6 +1021,10 @@ class VoiceAssistantTray:
 
     def open_user_manual(self, icon=None, item=None):
         try:
+            launcher = os.path.join(self.script_dir, "manual_launcher.py")
+            if os.path.isfile(launcher):
+                subprocess.Popen([sys.executable, launcher])
+                return
             from manual_service import manual_service
             manual_service.open_in_browser()
         except Exception as e:

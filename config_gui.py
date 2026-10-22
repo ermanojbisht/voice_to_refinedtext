@@ -339,6 +339,10 @@ class ConfigApp:
 
     def _open_user_manual(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        launcher = os.path.join(script_dir, "manual_launcher.py")
+        if os.path.isfile(launcher):
+            subprocess.Popen([sys.executable, launcher])
+            return
         subprocess.Popen([sys.executable, os.path.join(script_dir, "manual_gui.py")])
 
     def _build_voice_tab(self, f):

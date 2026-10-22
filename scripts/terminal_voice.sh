@@ -34,6 +34,9 @@ v-read() {
 }
 
 alias v-stop="${PYTHON_BIN} ${SCRIPT_DIR}/pwd_cli.py --stop-speech"
+alias v-manual="${PYTHON_BIN} ${SCRIPT_DIR}/manual_launcher.py"
+alias v-settings="${PYTHON_BIN} ${SCRIPT_DIR}/config_web_launcher.py"
+alias v-dash="${PYTHON_BIN} ${SCRIPT_DIR}/dashboard_launcher.py"
 
 # Voice command prompt injector
 voice-cmd() {

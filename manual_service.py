@@ -209,9 +209,22 @@ class ManualService:
         return self.html_path
 
     def open_in_browser(self) -> str:
-        """Generates the HTML manual (if needed) and opens it in the default system web browser."""
+        """Generates the HTML manual and opens it as a standalone application window."""
         path = self.generate_html_manual()
-        webbrowser.open(f"file://{os.path.abspath(path)}")
+        launcher = os.path.join(self.script_dir, "manual_launcher.py")
+        if os.path.isfile(launcher):
+            try:
+                import subprocess, sys
+                subprocess.Popen([sys.executable, launcher], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return path
+            except Exception:
+                pass
+        try:
+            import settings_server
+            port = settings_server.get_configured_port()
+            webbrowser.open(f"http://127.0.0.1:{port}/manual")
+        except Exception:
+            webbrowser.open(f"file://{os.path.abspath(path)}")
         return path
 
 
@@ -245,8 +258,75 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background-color: var(--bg-base);
             color: var(--text-main);
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
+        }}
+        .suite-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 24px;
+            background: rgba(36, 39, 58, 0.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            flex-shrink: 0;
+        }}
+        .brand {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .brand-icon {{
+            font-size: 24px;
+        }}
+        .brand-title {{
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+        }}
+        .brand-sub {{
+            font-size: 11px;
+            color: var(--text-subtle);
+        }}
+        .badge-bar {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .badge-btn {{
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            color: var(--text-main);
+            transition: all 0.15s ease;
+        }}
+        .badge-btn:hover {{
+            background: var(--bg-card);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+        }}
+        .badge-btn.active {{
+            background: var(--accent-blue);
+            color: #181926;
+            border-color: var(--accent-blue);
+        }}
+        .app-body {{
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 53px);
+            overflow: hidden;
+        }}
+        .in-iframe .suite-header {{
+            display: none !important;
+        }}
+        .in-iframe .app-body {{
+            height: 100vh !important;
         }}
         /* Sidebar Navigation */
         #sidebar {{
@@ -448,27 +528,49 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="sidebar-header">
-            <h1>📖 User Manual & Guide</h1>
-            <p>Voice Refiner & Review Hub</p>
+    <header class="suite-header">
+        <div class="brand">
+            <span class="brand-icon">📖</span>
+            <div>
+                <div class="brand-title">AI Voice Refiner</div>
+                <div class="brand-sub">Comprehensive Configuration & Operations Manual</div>
+            </div>
         </div>
-        <div class="search-container">
-            <input type="text" id="manualSearch" class="search-box" placeholder="🔍 Search manual..." onkeyup="filterManual()">
+        <div class="badge-bar">
+            <button class="badge-btn" onclick="window.location.href='/dashboard'">🎙️ Refiner</button>
+            <button class="badge-btn" onclick="window.location.href='/review'">🌙 Evening Review</button>
+            <button class="badge-btn" onclick="window.location.href='/pwd-lookup'">🏛️ PWD Terms</button>
+            <button class="badge-btn" onclick="window.location.href='/audio-to-idea'">📁 Audio to Ideas</button>
+            <button class="badge-btn" onclick="window.location.href='/'">⚙️ Settings</button>
+            <button class="badge-btn active" onclick="window.location.href='/manual'">📖 Manual</button>
         </div>
-        <nav class="nav-list" id="navList">
-            {nav_links}
-        </nav>
-    </div>
-    <div id="content-wrapper">
-        <div class="content-container">
-            {content}
-            <div class="footer-note">
-                Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated {timestamp}
+    </header>
+    <div class="app-body">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <h1>📖 User Manual & Guide</h1>
+                <p>Voice Refiner & Review Hub</p>
+            </div>
+            <div class="search-container">
+                <input type="text" id="manualSearch" class="search-box" placeholder="🔍 Search manual..." onkeyup="filterManual()">
+            </div>
+            <nav class="nav-list" id="navList">
+                {nav_links}
+            </nav>
+        </div>
+        <div id="content-wrapper">
+            <div class="content-container">
+                {content}
+                <div class="footer-note">
+                    Auto-generated from <code>docs/CONFIGURATION_GUIDE.md</code> &bull; Last updated {timestamp}
+                </div>
             </div>
         </div>
     </div>
     <script>
+        if (window.self !== window.top) {{
+            document.body.classList.add('in-iframe');
+        }}
         function filterManual() {{
             const input = document.getElementById('manualSearch');
             const filter = input.value.toLowerCase();
