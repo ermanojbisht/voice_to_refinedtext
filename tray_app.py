@@ -1009,8 +1009,12 @@ class VoiceAssistantTray:
             return False
 
     def open_audio_to_idea(self, icon=None, item=None):
-        """Use the tray interpreter and repo cwd even when launched by GNOME."""
-        subprocess.Popen([sys.executable, "-m", "audio_to_idea", "gui"], cwd=self.script_dir)
+        """Use web launcher to open Audio-to-Idea studio."""
+        try:
+            import audio_to_idea_launcher
+            audio_to_idea_launcher.launch_audio_idea_app()
+        except Exception:
+            subprocess.Popen([sys.executable, "-m", "audio_to_idea", "gui"], cwd=self.script_dir)
 
     def open_settings(self, icon=None, item=None):
         try:
