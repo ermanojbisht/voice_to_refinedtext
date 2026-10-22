@@ -1160,12 +1160,7 @@
         }
 
         function openManual() {
-            fetch("/api/open_manual", { method: "POST" })
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.ok) alert("Error opening manual: " + res.error);
-                })
-                .catch(e => alert("Could not contact daemon: " + e));
+            window.open("/manual", "_blank");
         }
 
         // Load Configuration from Server

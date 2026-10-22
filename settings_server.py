@@ -329,6 +329,26 @@ class SettingsHandler(BaseHTTPRequestHandler):
                 self.send_error(404, "web_review/index.html not found")
             return
 
+        if path in {"/manual", "/manual/", "/manual.html", "/docs", "/docs/"}:
+            html_file = os.path.join(SCRIPT_DIR, "docs", "generated", "manual.html")
+            if not os.path.isfile(html_file):
+                try:
+                    from manual_service import manual_service
+                    manual_service.export_html(html_file)
+                except Exception:
+                    pass
+            if os.path.isfile(html_file):
+                with open(html_file, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self.send_error(404, "docs/generated/manual.html not found")
+            return
+
         if path == "/api/health":
             self._send_json({"status": "ok", "pid": os.getpid()})
             return
