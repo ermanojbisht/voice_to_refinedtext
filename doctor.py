@@ -270,6 +270,34 @@ def check_models_and_portability(config: Dict[str, Any]) -> List[CheckResult]:
                 message=f"Faster-Whisper profile configured for: {raw_model}",
             ))
 
+    # Check Kokoro TTS Neural Speech Models
+    try:
+        from pwd_helper.tts.backends.kokoro_backend import KokoroBackend
+        kokoro_backend = KokoroBackend()
+        m_file, v_file = kokoro_backend._find_model_paths(config)
+        if m_file and v_file:
+            results.append(CheckResult(
+                category="Models & Portability",
+                name="Kokoro TTS Models",
+                status="PASS",
+                message=f"Neural TTS ready: {os.path.basename(m_file)} and {os.path.basename(v_file)}",
+            ))
+        else:
+            results.append(CheckResult(
+                category="Models & Portability",
+                name="Kokoro TTS Models",
+                status="WARN",
+                message="Kokoro model (kokoro-v1.0.onnx) or voices-v1.0.bin not found in standard paths.",
+                remediation_cmd=f"mkdir -p {local_models_dir}/kokoro-models && cp /path/to/kokoro-models/* {local_models_dir}/kokoro-models/",
+            ))
+    except Exception as exc:
+        results.append(CheckResult(
+            category="Models & Portability",
+            name="Kokoro TTS Models",
+            status="WARN",
+            message=f"Could not verify Kokoro TTS: {exc}",
+        ))
+
     return results
 
 

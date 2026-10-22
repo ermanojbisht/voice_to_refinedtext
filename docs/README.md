@@ -10,6 +10,7 @@ Designed for writers, engineers, and everyday users who want fast, reliable voic
 
 | Document | Purpose & Key Topics |
 | :--- | :--- |
+| **[Office PC Setup Guide](OFFICE_PC_SETUP_GUIDE.md)** | **Workstation Deployment**: Complete offline setup guide for office PC, USB pen drive asset checklist, model paths, autostart, and daily PWD engineering workflows. |
 | **[User Guide](USER_GUIDE.md)** | **Master User Manual**: 1-letter terminal workflow (`v`), global hotkeys (`Ctrl+Space`), Walkie-Talkie push-to-talk, safe clipboard auto-paste, and troubleshooting with `v-doc`. |
 | **[Configuration Guide](CONFIGURATION_GUIDE.md)** | **Single Source of Truth**: The complete 9-chapter reference compiled directly into the standalone HTML manual. All JSON settings, ASR presets, and GUI options. |
 | **[Speech Synthesis & Voice Guide](SPEECH_SYNTHESIS_AND_VOICE_GUIDE.md)** | **Indian TTS Guide**: Voice selection (`en_in_female`, `en_in_male`, `hf_alpha`, `hm_omega`), reading Obsidian notes with `v-read`, and discovering community Kokoro voices. |
