@@ -366,10 +366,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      min-height: 110px;
-      max-height: 52vh;
-      overflow-y: auto;
-      padding-right: 4px;
+      min-height: 100px;
     }
 
     .clip-bubble {
@@ -381,7 +378,6 @@
       flex-direction: column;
       gap: 8px;
       position: relative;
-      cursor: pointer;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
@@ -399,18 +395,18 @@
 
     .clip-textarea {
       background: rgba(0, 0, 0, 0.15);
-      border: 1px solid transparent;
+      border: 1px solid var(--glass-border);
       border-radius: 6px;
       color: var(--text-main);
       font-family: inherit;
       font-size: 13.5px;
       line-height: 1.6;
       resize: vertical;
-      min-height: 80px;
+      min-height: 85px;
       padding: 8px 10px;
       outline: none;
       user-select: text;
-      transition: all 0.15s ease;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
       width: 100%;
       box-sizing: border-box;
     }
@@ -418,7 +414,7 @@
     .clip-textarea:focus, .clip-textarea.editing {
       background: rgba(0, 0, 0, 0.35);
       border-color: var(--accent-teal);
-      box-shadow: 0 0 10px rgba(123, 222, 196, 0.2);
+      box-shadow: 0 0 10px rgba(123, 222, 196, 0.25);
     }
 
     /* Step 5 Carry-Forward Task Matrix */
@@ -1041,14 +1037,23 @@
       refreshNotePreview();
     }
 
-    // Auto-fit textarea height to content
-    function autoResizeTextarea(el) {
+    // State & Cache for Clip Rendering and Editing
+    let lastRenderedClipsJson = null;
+    let clipSaveDebounceTimers = {};
+    let clipManualHeights = {};
+
+    // Auto-fit textarea height to content (respects manual user resize)
+    function autoResizeTextarea(el, index) {
       if (!el) return;
+      if (clipManualHeights[index]) {
+        el.style.height = clipManualHeights[index];
+        return;
+      }
       el.style.height = 'auto';
-      el.style.height = Math.max(el.scrollHeight + 4, 80) + 'px';
+      el.style.height = Math.max(el.scrollHeight + 6, 85) + 'px';
     }
 
-    // Explicit edit mode
+    // Explicit edit mode: focuses textarea, moves cursor to end, applies focus style
     function editClip(index) {
       const textarea = document.getElementById(`clipTextarea_${index}`);
       if (textarea) {
@@ -1058,13 +1063,67 @@
       }
     }
 
-    // Render Staged Clips
+    // Capture manual stretch/resize by user mouse
+    function handleClipMouseUp(textarea, index) {
+      if (textarea && textarea.style.height) {
+        clipManualHeights[index] = textarea.style.height;
+      }
+    }
+
+    // Typing handler: auto-expands on content growth & debounces silent background save
+    function handleClipInput(textarea, index) {
+      if (!clipManualHeights[index] || textarea.scrollHeight > textarea.clientHeight) {
+        textarea.style.height = Math.max(textarea.scrollHeight + 6, 85) + 'px';
+      }
+
+      const statusBadge = document.getElementById(`clipStatus_${index}`);
+      if (statusBadge) statusBadge.textContent = '✏️ Typing...';
+
+      clearTimeout(clipSaveDebounceTimers[index]);
+      clipSaveDebounceTimers[index] = setTimeout(() => {
+        saveClipTextSilently(index, textarea.value);
+      }, 600);
+    }
+
+    // Blur handler: immediately saves pending edit without re-rendering DOM
+    function handleClipBlur(textarea, index) {
+      textarea.classList.remove('editing');
+      clearTimeout(clipSaveDebounceTimers[index]);
+      saveClipTextSilently(index, textarea.value);
+    }
+
+    // Silent background clip save (no state polling loop disruption)
+    async function saveClipTextSilently(index, text) {
+      try {
+        await fetch('/api/review/update_clip', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({index, text})
+        });
+        const statusBadge = document.getElementById(`clipStatus_${index}`);
+        if (statusBadge) {
+          statusBadge.textContent = '💾 Saved';
+          setTimeout(() => { if (statusBadge) statusBadge.textContent = ''; }, 1500);
+        }
+        if (currentState && currentState.clips && currentState.clips[index]) {
+          currentState.clips[index].text = text;
+          currentState.clips[index].words = text.trim() ? text.trim().split(/\s+/).length : 0;
+          lastRenderedClipsJson = JSON.stringify(currentState.clips);
+        }
+      } catch (e) {
+        console.error('Silent clip save error:', e);
+      }
+    }
+
+    // Render Staged Clips with Diff Guard (prevents DOM resets during user typing or stretching)
     function renderClips(clips) {
       const container = document.getElementById('clipList');
       const countEl = document.getElementById('stagedCount');
-      if (countEl) countEl.textContent = clips.length;
+      if (countEl) countEl.textContent = clips ? clips.length : 0;
 
       if (!clips || !clips.length) {
+        if (lastRenderedClipsJson === '[]') return;
+        lastRenderedClipsJson = '[]';
         container.innerHTML = `
           <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:16px;">
             No speech captured for this step yet. Speak your thoughts above or attach field audio.
@@ -1073,25 +1132,48 @@
         return;
       }
 
-      container.innerHTML = clips.map((c, i) => `
+      // Guard 1: If user is actively typing or focused inside ANY clip textarea, DO NOT touch DOM
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.classList && activeEl.classList.contains('clip-textarea')) {
+        return;
+      }
+
+      // Guard 2: If clips data has NOT changed, skip DOM re-render entirely (preserves user stretched heights)
+      const currentJson = JSON.stringify(clips);
+      if (currentJson === lastRenderedClipsJson) {
+        return;
+      }
+      lastRenderedClipsJson = currentJson;
+
+      container.innerHTML = clips.map((c, i) => {
+        const customH = clipManualHeights[i] ? `height: ${clipManualHeights[i]};` : '';
+        return `
         <div class="clip-bubble" ondblclick="editClip(${i})" title="Double-click to edit transcribed text">
           <div class="clip-bubble-header">
-            <span>Clip #${i + 1} · ${c.words} words</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>Clip #${i + 1} · ${c.words} words</span>
+              <span id="clipStatus_${i}" style="font-size:10.5px; color:var(--accent-teal); font-weight:600;"></span>
+            </div>
             <div style="display:flex; align-items:center; gap:6px;">
               <button class="btn" style="padding:2px 8px; font-size:11px; color:var(--accent-teal);" onclick="editClip(${i})" title="Edit text">✏️ Edit</button>
               <button class="btn" style="padding:2px 8px; font-size:11px; color:var(--accent-rose);" onclick="deleteClip(${i})" title="Delete clip">🗑️ Delete</button>
             </div>
           </div>
           <textarea id="clipTextarea_${i}" class="clip-textarea"
-            oninput="autoResizeTextarea(this); updateClipText(${i}, this.value)"
-            onblur="this.classList.remove('editing'); updateClipText(${i}, this.value)"
+            style="${customH}"
+            onmouseup="handleClipMouseUp(this, ${i})"
+            oninput="handleClipInput(this, ${i})"
+            onblur="handleClipBlur(this, ${i})"
             placeholder="Edit clip text here...">${escapeHtml(c.text)}</textarea>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
-      // Auto-size all rendered textareas
+      // Auto-size textareas that do not have custom manual heights
       setTimeout(() => {
-        document.querySelectorAll('.clip-textarea').forEach(autoResizeTextarea);
+        document.querySelectorAll('.clip-textarea').forEach((el, idx) => {
+          autoResizeTextarea(el, idx);
+        });
       }, 15);
     }
 
@@ -1108,6 +1190,7 @@
     }
 
     // Note Preview
+    let lastRenderedNoteContent = null;
     async function refreshNotePreview() {
       try {
         const resp = await fetch('/api/review/note_preview');
@@ -1120,8 +1203,14 @@
               dtEl.textContent = data.date;
             }
           }
+          if (data.content === lastRenderedNoteContent) {
+            return; // Content unchanged, preserve scroll position
+          }
+          lastRenderedNoteContent = data.content;
           view.innerHTML = formatMarkdown(data.content);
         } else if (data.ok && !data.exists) {
+          if (lastRenderedNoteContent === '__empty__') return;
+          lastRenderedNoteContent = '__empty__';
           view.innerHTML = `<div style="color:var(--text-muted); font-size:13px; padding:16px; text-align:center;">${escapeHtml(data.content || 'No daily note found for this date.')}</div>`;
         }
       } catch (err) {
@@ -1217,16 +1306,9 @@
       reader.readAsDataURL(file);
     }
 
-    async function updateClipText(index, text) {
-      await fetch('/api/review/update_clip', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({index, text})
-      });
-      loadState();
-    }
-
     async function deleteClip(index) {
+      lastRenderedClipsJson = null;
+      delete clipManualHeights[index];
       await fetch('/api/review/delete_clip', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1237,6 +1319,8 @@
 
     async function advanceStep() {
       showToast('Processing step and saving to vault...');
+      lastRenderedClipsJson = null;
+      clipManualHeights = {};
       const resp = await fetch('/api/review/advance', {method: 'POST', headers: {'Content-Type': 'application/json'}});
       const res = await resp.json();
       if (!res.still_active) {
@@ -1246,12 +1330,16 @@
     }
 
     async function skipStep() {
+      lastRenderedClipsJson = null;
+      clipManualHeights = {};
       await fetch('/api/review/skip', {method: 'POST', headers: {'Content-Type': 'application/json'}});
       showToast('Step skipped.');
       loadState();
     }
 
     async function redoStep() {
+      lastRenderedClipsJson = null;
+      clipManualHeights = {};
       await fetch('/api/review/redo', {method: 'POST', headers: {'Content-Type': 'application/json'}});
       showToast('Step reset. Ready to record.');
       loadState();
