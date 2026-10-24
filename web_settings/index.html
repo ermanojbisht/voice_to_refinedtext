@@ -1023,10 +1023,10 @@
                 <div class="form-row">
                     <div class="form-label">
                         Bot Token
-                        <small>Issued by @BotFather on Telegram.</small>
+                        <small>Stored in the ignored .env file. Leave blank to keep the current token.</small>
                     </div>
                     <div class="form-field">
-                        <input type="text" id="rev_telegram_bot_token" placeholder="123456789:ABCdefGhIJKlmNoPQRstuvWxyz">
+                        <input type="password" id="rev_telegram_bot_token" autocomplete="new-password" placeholder="Stored securely; enter to replace">
                     </div>
                 </div>
                 <div class="form-row">
@@ -1358,7 +1358,7 @@
 
                 // Populate Notifications Tab
                 document.getElementById("rev_telegram_enabled").checked = !!r.telegram_enabled;
-                document.getElementById("rev_telegram_bot_token").value = r.telegram_bot_token || "";
+                document.getElementById("rev_telegram_bot_token").value = "";
                 document.getElementById("rev_telegram_chat_id").value = r.telegram_chat_id || "";
                 document.getElementById("rev_morning_briefing_enabled").checked = !!r.morning_briefing_enabled;
                 document.getElementById("rev_morning_briefing_time").value = r.morning_briefing_time || "08:00";

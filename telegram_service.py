@@ -91,7 +91,14 @@ def send(text, config):
 
 def test_connection(config):
     """Verify credentials by calling getMe. Returns (ok: bool, message: str)."""
-    token, chat_id = _resolve_credentials(config)
+    # A token entered in the settings form is an explicit test override. Normal
+    # sending still uses the environment/.env secret precedence in the resolver.
+    token = str(config.get("telegram_bot_token", "")).strip()
+    chat_id = str(config.get("telegram_chat_id", "")).strip()
+    if not token or not chat_id:
+        resolved_token, resolved_chat_id = _resolve_credentials(config)
+        token = token or resolved_token
+        chat_id = chat_id or resolved_chat_id
     if not token:
         return False, "Bot token is empty."
     if not chat_id:

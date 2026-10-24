@@ -593,8 +593,9 @@ class ConfigApp:
         self.tg_enabled_var = tk.BooleanVar(value=self.review_raw.get("telegram_enabled", False))
         _row(tg_card, "Enable Telegram:", ctk.CTkSwitch(tg_card, text="", variable=self.tg_enabled_var, button_color=ACCENT, progress_color=ACCENT), 1)
 
-        self.tg_token_var = ctk.StringVar(value=self.review_raw.get("telegram_bot_token", ""))
-        _row(tg_card, "Bot Token:", _entry(tg_card, var=self.tg_token_var, placeholder_text="From @BotFather — keep private"), 2)
+        self.tg_token_var = ctk.StringVar(value="")
+        _row(tg_card, "Bot Token:", _entry(tg_card, var=self.tg_token_var, show="*", placeholder_text="Stored in .env; enter to replace"), 2,
+             "The token is saved in the ignored .env file, not review_config.json. Leave blank to keep the current token.")
 
         self.tg_chat_var = ctk.StringVar(value=self.review_raw.get("telegram_chat_id", ""))
         _row(tg_card, "Chat ID:", _entry(tg_card, var=self.tg_chat_var, placeholder_text="e.g. 59509781"), 3,
@@ -861,7 +862,14 @@ class ConfigApp:
                 existing["review_steps"] = merged_steps
 
             existing["telegram_enabled"]       = self.tg_enabled_var.get()
-            existing["telegram_bot_token"]     = self.tg_token_var.get().strip()
+            from pwd_helper.secrets import set_secret
+            entered_token = self.tg_token_var.get().strip()
+            legacy_token = str(existing.get("telegram_bot_token", "")).strip()
+            if entered_token:
+                set_secret("TELEGRAM_BOT_TOKEN", entered_token)
+            elif legacy_token:
+                set_secret("TELEGRAM_BOT_TOKEN", legacy_token)
+            existing["telegram_bot_token"]     = ""
             existing["telegram_chat_id"]       = self.tg_chat_var.get().strip()
             existing["morning_briefing_enabled"] = self.morning_enabled_var.get()
             try:
