@@ -382,6 +382,8 @@ class SettingsHandler(BaseHTTPRequestHandler):
         if path == "/api/config":
             main_cfg = load_main_config()
             review_cfg = load_review_config()
+            # Never send the bot token back to the browser; it is stored in .env.
+            review_cfg["telegram_bot_token"] = ""
             profiles = list(main_cfg.get("MODEL_PROFILES", {}).keys())
             if not profiles:
                 profiles = ["nemotron_fast", "whisper_large_v3", "whisper_turbo", "hinglish_apex"]
@@ -588,6 +590,15 @@ class SettingsHandler(BaseHTTPRequestHandler):
                 try:
                     rev_file = os.path.join(SCRIPT_DIR, "review_config.json")
                     existing_rev = load_review_config()
+                    from pwd_helper.secrets import set_secret
+                    entered_token = str(review_patch.get("telegram_bot_token", "")).strip()
+                    legacy_token = str(existing_rev.get("telegram_bot_token", "")).strip()
+                    if entered_token:
+                        set_secret("TELEGRAM_BOT_TOKEN", entered_token)
+                    elif legacy_token:
+                        # Migrate a token from older config files on the next save.
+                        set_secret("TELEGRAM_BOT_TOKEN", legacy_token)
+                    review_patch["telegram_bot_token"] = ""
                     existing_rev.update(review_patch)
                     with open(rev_file, "w", encoding="utf-8") as f:
                         json.dump(existing_rev, f, indent=2, ensure_ascii=False)

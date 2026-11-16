@@ -42,6 +42,39 @@ def _read_env_file(path: Path) -> dict[str, str]:
     return result
 
 
+def set_secret(key: str, value: str, path: Path | None = None) -> None:
+    """Store a secret in the ignored .env file, replacing only its own entry."""
+    if not key or "=" in key or "\n" in key:
+        raise ValueError("Invalid environment variable name")
+
+    env_path = path or _ENV_FILE
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    replacement = f'{key}="{str(value).replace(chr(34), chr(92) + chr(34))}"'
+    output: list[str] = []
+    replaced = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            line_key = stripped.split("=", 1)[0].strip()
+            if line_key == key:
+                if not replaced:
+                    output.append(replacement)
+                    replaced = True
+                continue
+        output.append(line)
+    if not replaced:
+        if output and output[-1].strip():
+            output.append("")
+        output.append(replacement)
+
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    env_path.write_text("\n".join(output).rstrip() + "\n", encoding="utf-8")
+    try:
+        env_path.chmod(0o600)
+    except OSError:
+        pass
+
+
 def _read_secrets_json(path: Path) -> dict[str, Any]:
     """Parse local JSON secrets file."""
     if not path.is_file():
